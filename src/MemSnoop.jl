@@ -6,6 +6,8 @@ import Base.Iterators: repeated
 import Base: getindex, iterate, length, push!
 import Base: IteratorSize, HasLength, IteratorEltype, HasEltype
 
+using Serialization
+
 ## Constants
 ############################################################################################
 

@@ -176,3 +176,10 @@ function snoop(pid; sampletime = 2)
         end
     end
 end
+
+"""
+    save(file::String, trace::Trace)
+
+Serialize `trace` for `file`.
+"""
+save(file::String, trace::Trace) = open(f -> serialize(f, trace), file, "w")

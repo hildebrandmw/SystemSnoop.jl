@@ -2,6 +2,7 @@
 *.jl.*.cov
 *.jl.mem
 *.out
+*.trace
 /deps/deps.jl
 /deps/build
 /deps/*.log
