@@ -1,29 +1,26 @@
-using Makie
+# Makie recipe for generating a heatmap of active addresses.
+#
+# Refer to: 
+#
+# http://makie.juliaplots.org/stable/examples-meshscatter.html#Type-recipe-for-molecule-simulation-1
+#
+# for how I'm constructing this recipe.
+#
+# The basic idea behind a recipe is that you can export various function to generate
+# the correct plot without relying on the whole plotting library as a dependency.
+import AbstractPlotting
+import AbstractPlotting: Plot, plot!, to_value
 
-function plot(trace)
+
+# The recipe! - This will get called for plot(!)(trace::Trace)
+function AbstractPlotting.plot!(p::Plot(Trace))
+    # Get the trace out of the plot object.
+    trace = to_value(p[1]) 
+
     # Get all of the virtual pages seen in the trace.
-    pages = allpages(trace)
+    addresses = addresses(trace)
 
-    bitmap = [washit(sample, page) for sample in trace.samples, page in pages]
+    bitmap = [washit(sample, address) for sample in trace, address in addresses]
 
-    return heatmap(bitmap)
-end
-
-function allpages(trace)
-    pages = Set{Int}()
-    for sample in trace.samples
-        for vma in sample.vmas
-            for hit in vma.hits
-                push!(pages, hit)
-            end
-        end
-    end
-    return (sort ∘ collect)(pages)
-end
-
-function washit(sample, page)
-    for vma in sample.vmas
-        in(page, vma.hits) && return true
-    end
-    return false
+    heatmap!(p, bitmap)
 end
