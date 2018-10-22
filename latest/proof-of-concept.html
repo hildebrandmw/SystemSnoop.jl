@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Proof of Concept · MemSnoop.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>MemSnoop.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">MemSnoop</a></li><li class="current"><a class="toctext" href="proof-of-concept.html">Proof of Concept</a><ul class="internal"><li><a class="toctext" href="#Test-Workload-1:-single.cpp-1">Test Workload 1: <code>single.cpp</code></a></li><li><a class="toctext" href="#Test-Workload-2:-double.cpp-1">Test Workload 2: <code>double.cpp</code></a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href="proof-of-concept.html">Proof of Concept</a></li></ul><a class="edit-page" href="https://github.com/hildebrandmw/MemSnoop.jl/blob/master/docs/src/proof-of-concept.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Proof of Concept</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Proof-of-Concept-1" href="#Proof-of-Concept-1">Proof of Concept</a></h1><p>To verify that captured traces are behaving as expected, two synthetic workloads were written in <code>c++</code> with predictable memory access patterns. These test files can be found in <code>deps/src/</code> and can be built either with the <code>Makefile</code> in <code>deps/</code> or by using Julia&#39;s package building functionality with the following </p><pre><code class="language-julia"># Switch to PKG mode
+julia&gt; ]
+
+# Build MemSnoop - automatically building test workloads.
+pkg&gt; build MemSnoop</code></pre><h2><a class="nav-anchor" id="Test-Workload-1:-single.cpp-1" href="#Test-Workload-1:-single.cpp-1">Test Workload 1: <code>single.cpp</code></a></h2><p>This workload uses a single statically allocated array <code>A</code> of 2000000 <code>double</code>s. First, the program enters a wait loop for about 4 seconds. Then, it repeatedly accesses all of <code>A</code> for 4 seconds before returning to an idle loop for another 8 seconds. The code for the main routine is shown below:</p><pre><code class="language-c">const int ARRAY_SIZE = 2000000;
+static double A[ARRAY_SIZE];
+
+int main(int argc, char *argv[])
+{
+    // Display the address of the first element of &quot;A&quot;
+    std::cout &lt;&lt; &amp;A[0] &lt;&lt; &quot;\n&quot;;
+
+    // Time for array accesses (seconds)
+    int runtime = 4;
+
+    // Spend time doing nothing
+    wait(runtime);
+
+    // Repeatedly access &quot;A&quot; for &quot;runtime&quot; seconds
+    std::cout &lt;&lt; &quot;Populating `a`\n&quot;; 
+    access(A, runtime);
+    std::cout &lt;&lt; std::accumulate(A, A + ARRAY_SIZE, 0.0) &lt;&lt; &quot;\n&quot;;
+
+    // Do nothing for a bit longer
+    wait(2 * runtime);
+
+    return 0;
+}</code></pre><p>In terms of access patterns, we would expect to see a relatively minimal accesses to any  memory address for the first four seconds, followed by access to a <code>2000000 * 8 = 16 MB</code>  region of memory while the program is accessing <code>A</code>, followed by a period of relative calm again. Below is a plot of the captured trace for this workload:</p><p><img src="assets/single.png" alt/></p><p>Let&#39;s unpack this a little. First, the <code>x</code>-axis of the figure represents sample number -   <code>MemSnoop</code> was set to sample over two second periods. The <code>y</code>-axis roughly represents the virtual memory address with lower addresses on top and higher addresses on the bottom. (yes, I know this is backwards and will fix it eventually :(  ). Yellow indicates that a page was accessed (i.e. not idle) while purple indicates and idle page.</p><p>Thus, we can see that the above image matches our intuation as to what should happen under the test workload. A large chunk of memory where the array <code>A</code> lives is idle for the first sample period, active for the next three, and idle again for the last two. Furthermore, we can estimate the size of the working set during the active phase by eyeballing the height of the middle yellow blob (exact numbers can be obtained easily from the trace itself). The central yellow mass has a height of roughly 4000, indicating that about 4000 virtual pages were accessed. If each page is 4096 bytes, this works out to around <code>16 MB</code> of total accessed data, which matches what we&#39;d expect for the size of <code>A</code>.</p><h2><a class="nav-anchor" id="Test-Workload-2:-double.cpp-1" href="#Test-Workload-2:-double.cpp-1">Test Workload 2: <code>double.cpp</code></a></h2><p>For the second synthetic workload, two static arrays <code>A</code> and <code>B</code>, each with 2000000  <code>double</code>s were used. The program is idle for 4 seconds, accesses <code>A</code> for 4 seconds, accesses <code>B</code> for 4 seconds, and the is idle for 4 more seconds. The relevant code is shown below.</p><pre><code class="language-c">const int ARRAY_SIZE = 2000000;
+static double A[ARRAY_SIZE];
+static double B[ARRAY_SIZE];
+
+int main(int argc, char *argv[])
+{
+    // Display addresses of items in memory
+    std::cout &lt;&lt; &amp;A[0] &lt;&lt; &quot;\n&quot;;
+    std::cout &lt;&lt; &amp;B[0] &lt;&lt; &quot;\n&quot;;
+
+    // Time for population
+    int time = 4;
+
+    // Spend time doing nothing
+    wait(time); 
+
+    // Spend time populating &quot;A&quot;
+    std::cout &lt;&lt; &quot;Populating `A`\n&quot;; 
+    access(A, time);
+    std::cout &lt;&lt; std::accumulate(A, A + ARRAY_SIZE, 0.0) &lt;&lt; &quot;\n&quot;;
+
+    // Spend time populating &quot;B&quot;
+    std::cout &lt;&lt; &quot;Populating `B`\n&quot;; 
+    access(B, time);
+    std::cout &lt;&lt; std::accumulate(B, B + ARRAY_SIZE, 0.0) &lt;&lt; &quot;\n&quot;;
+
+    // Do nothing for a bit longer
+    wait(time);
+
+    return 0;
+}</code></pre><p>Here, we&#39;d expect a memory trace to begin with a period of relative calm, followed by one large region of memory being accessed, and then another large region of memory begin  accessed. A plot of the trace is shown below:</p><p><img src="assets/double.png" alt/></p><p>Once again, the plot seems to match our intuition, lending support that this technique might actually be working.</p><footer><hr/><a class="previous" href="index.html"><span class="direction">Previous</span><span class="title">MemSnoop</span></a></footer></article></body></html>
