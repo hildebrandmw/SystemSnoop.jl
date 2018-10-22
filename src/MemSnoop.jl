@@ -2,10 +2,8 @@ module MemSnoop
 
 const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
 
-
 import Base.Iterators: repeated
-import Base: length
-
+import Base: length, push!
 
 include("tester.jl")
 
@@ -198,9 +196,39 @@ function readidle(process::AbstractProcess; buffer = UInt8[])
 end
 
 ############################################################################################
+#
+#
+
+struct ActivePages
+    vma :: VMA
+    hits :: Vector{Int}
+end
+
+
+struct Sample
+    pages :: Vector{ActivePages}
+end
+
+function process_sample(vmas::Vector{VMA}, indices::Vector{Set{Int}})
+    pages = ActivePages[]
+    for (vma, index) in zip(vmas, indices)
+        translated_pages = sort([i + vma.start for i in index])
+        push!(pages, ActivePages(vma, translated_pages))
+    end
+
+    return Sample(pages)
+end
+
+
+struct Trace
+    samples :: Vector{Sample}
+end
+Trace() = Trace(Sample[])
+push!(T::Trace, S::Sample) = push!(T.samples, S)
+
 
 function snoop(pid; sampletime = 2)
-    trace = []
+    trace = Trace()
     process = Process(pid)
 
     try
@@ -209,9 +237,13 @@ function snoop(pid; sampletime = 2)
             sleep(sampletime)
 
             pause(process)
-            getvmas!(process.vmas, process.pid)
+            getvmas!(process.vmas, process.pid, heap_filter)
             pages = readidle(process)
-            push!(trace, pages)
+
+            # Construct a sample from the list of hit pages.
+            sample = process_sample(process.vmas, pages)
+
+            push!(trace, sample)
             markidle(process)
             resume(process)
         end
@@ -219,7 +251,6 @@ function snoop(pid; sampletime = 2)
         @show err
         return trace
     end
-
 end
 
 
