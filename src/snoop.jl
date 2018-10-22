@@ -94,6 +94,7 @@ record(vma::VMA, indices) = ActiveRecord(vma, UInt64.(PAGESIZE .* indices) .+ vm
 ############
 ## Sample ##
 ############
+
 struct Sample
     records :: Vector{ActiveRecord}
 end
@@ -147,6 +148,9 @@ once.
 """
 addresses(trace::Trace) = (sort ∘ collect ∘ reduce)(union, addresses.(trace))
 
+
+############################################################################################
+# Snoop
 
 function snoop(pid; sampletime = 2)
     trace = Trace()

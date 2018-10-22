@@ -22,7 +22,7 @@ bool timedout( T stoptime ) {
 }
 
 template <class T>
-void spin( T& array, int spintime ) {
+void access( T& array, int spintime ) {
     clock_t stoptime = clock() + spintime * CLOCKS_PER_SEC;
     // Initialiaze
     for (auto &i: array) {
@@ -32,6 +32,11 @@ void spin( T& array, int spintime ) {
     while ( !timedout(stoptime) ) {
         populate(array);
     } 
+}
+
+void wait(int time) {
+    clock_t stoptime = clock() + time * CLOCKS_PER_SEC;
+    while (!timedout(stoptime)) {}
 }
 
 static double A[ARRAY_SIZE];
@@ -44,25 +49,23 @@ int main(int argc, char *argv[])
     std::cout << &B[0] << "\n";
 
     // Time for population
-    int runtime = 4;
+    int time = 4;
 
     // Spend time doing nothing
-    clock_t stoptime = clock() + runtime * CLOCKS_PER_SEC;
-    while ( !timedout(stoptime) ) {}
+    wait(time); 
 
     // Spend time populating "A"
     std::cout << "Populating `A`\n"; 
-    spin(A, runtime);
+    access(A, time);
     std::cout << std::accumulate(A, A + ARRAY_SIZE, 0.0) << "\n";
 
     // Spend time populating "B"
     std::cout << "Populating `B`\n"; 
-    spin(B, runtime);
+    access(B, time);
     std::cout << std::accumulate(B, B + ARRAY_SIZE, 0.0) << "\n";
 
     // Do nothing for a bit longer
-    stoptime = clock() + runtime * CLOCKS_PER_SEC;
-    while ( !timedout(stoptime) ) {}
+    wait(time);
 
     return 0;
 }
