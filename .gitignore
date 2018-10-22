@@ -3,4 +3,6 @@
 *.jl.mem
 *.out
 /deps/deps.jl
+/deps/build
+/deps/*.log
 /docs/build
