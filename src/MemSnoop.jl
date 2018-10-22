@@ -6,6 +6,7 @@ import Base.Iterators: repeated
 import Base: length, push!
 
 include("tester.jl")
+#include("plots.jl")
 
 ## Constants
 ############################################################################################
@@ -199,14 +200,14 @@ end
 #
 #
 
-struct ActivePages
+struct VMAHits
     vma :: VMA
     hits :: Vector{Int}
 end
 
 
 struct Sample
-    pages :: Vector{ActivePages}
+    vmas :: Vector{VMAHits}
 end
 
 function process_sample(vmas::Vector{VMA}, indices::Vector{Set{Int}})
@@ -225,6 +226,7 @@ struct Trace
 end
 Trace() = Trace(Sample[])
 push!(T::Trace, S::Sample) = push!(T.samples, S)
+length(T::Trace) = length(T.samples)
 
 
 function snoop(pid; sampletime = 2)
