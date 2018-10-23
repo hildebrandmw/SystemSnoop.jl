@@ -81,14 +81,14 @@ Fields
 """
 struct ActiveRecord
     vma :: VMA
-    addresses :: Vector{UInt64}
+    addresses :: Set{UInt64}
 end
 
 addresses(record::ActiveRecord) = record.addresses
 
 # Resolve the offset indices returned by "readidle" to the actual pages within the VMA
 # that were hit.
-record(vma::VMA, indices) = ActiveRecord(vma, UInt64.(PAGESIZE .* indices) .+ vma.start)
+record(vma::VMA, indices) = ActiveRecord(vma, Set(UInt64.(PAGESIZE .* indices) .+ vma.start))
 
 
 ############
@@ -122,7 +122,7 @@ isactive(sample::Sample, address::UInt) = any(x -> in(address, x.addresses), sam
 
 Return a set of all active addresses in `sample`.
 """
-addresses(sample::Sample) = reduce(union, Set.(addresses.(sample)))
+addresses(sample::Sample) = reduce(union, addresses.(sample))
 
 
 ############################################################################################
