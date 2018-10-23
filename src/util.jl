@@ -44,14 +44,6 @@ Resume process with `pid`.
 resume(pid) = run(`kill -CONT $pid`)
 
 
-"""
-    slurpbytes!(file::String, b::AbstractVector{UInt8}, nb=length(b))
-
-Read at most `nb` bytes from `file` into `b`, returning the number of bytes read. The size
-of `b` will be increased if needed, but it will never be decreased.
-"""
-slurpbytes!(file::String, b, nb = length(b)) = open(x -> readbytes!(x, b, nb), file)
-
 ## Types
 ############################################################################################
 

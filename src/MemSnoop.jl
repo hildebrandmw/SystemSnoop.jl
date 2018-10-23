@@ -2,7 +2,7 @@ module MemSnoop
 
 const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
 
-import Base.Iterators: repeated
+import Base.Iterators: repeated, drop
 import Base: getindex, iterate, length, push!
 import Base: IteratorSize, HasLength, IteratorEltype, HasEltype
 

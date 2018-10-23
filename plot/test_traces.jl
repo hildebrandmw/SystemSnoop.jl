@@ -12,7 +12,7 @@ for test in tests
     @info "Running workload: $test"
     fullpath = joinpath(BUILDDIR, test)
     pid, process, pipe = MemSnoop.launch(fullpath)
-    trace = MemSnoop.snoop(pid)
+    trace = MemSnoop.trace(pid)
 
     # Save the trace.
     name, _ =  splitext(test)

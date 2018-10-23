@@ -7,10 +7,33 @@ resume(p::AbstractProcess) = resume(p.pid)
 struct Process <: AbstractProcess
     pid :: Int64
     vmas :: Vector{VMA}
+    bitmap :: Vector{UInt8}
 end
 
-Process(pid::Integer) = Process(Int64(pid), Vector{VMA}())
+function Process(pid::Integer) 
+    p = Process(Int64(pid), Vector{VMA}(), UInt8[])
+    initbuffer!(p)
+    return p
+end
 
+"""
+    initbuffer!(p::AbstractProcess)
+
+Read once from `page_idle/bitmap` to get the size of the bitmap. Set the `bitmap` in
+`p` to this size to avoid reallocation every time the bitmap is read.
+"""
+function initbuffer!(p::AbstractProcess)
+    # Get the number of bytes in the bitmap
+    # Since this isn't a normal file, normal methods like "filesize" or "seekend" don't
+    # work, so we actually have to buffer the whole array once to get the size. Since this
+    # only happens at the beginning of a trace, it's okay to pay this additional latency.
+    nbytes = open(IDLE_BITMAP) do bitmap
+        buffer = read(bitmap)
+        return length(buffer)
+    end
+    resize!(p.bitmap, nbytes)
+    return nothing
+end
 
 """
     markidle(process::AbstractProcess)
@@ -46,7 +69,8 @@ function readidle(process::AbstractProcess; buffer = UInt8[])
     active_pages = Vector{Vector{Int}}()
     # Read the whole idle bitmap buffer. This can take a while for systems with a large
     # amound of memory.
-    buffer = reinterpret(UInt64, read(IDLE_BITMAP))
+    read!(IDLE_BITMAP, buffer)
+    bitmap = reinterpret(UInt64, buffer)
     walkpagemap(process.pid, process.vmas) do pagemap_region
         active_bitmap = Vector{Int}()
         for (index, entry) in enumerate(pagemap_region)
@@ -54,7 +78,7 @@ function readidle(process::AbstractProcess; buffer = UInt8[])
             if inmemory(entry)
                 pfn = pfnmask(entry)
                 # Convert from 0-based to 1-based indexing
-                chunk = buffer[div64(pfn) + 1]
+                chunk = bitmap[div64(pfn) + 1]
 
                 if !isbitset(chunk, mod64(pfn))
                     push!(active_bitmap, index - 1)
@@ -150,25 +174,25 @@ addresses(trace::Trace) = (sort ∘ collect ∘ reduce)(union, addresses.(trace)
 
 
 ############################################################################################
-# Snoop
+# trace
 
-function snoop(pid; sampletime = 2)
+function trace(pid; sampletime = 2)
     trace = Trace()
     process = Process(pid)
 
     try
         while true
-
             sleep(sampletime)
 
             pause(process)
+            # Get VMAs, read idle bits and set idle bits
             getvmas!(process.vmas, process.pid)
-            index_vector = readidle(process)
+            index_vector = readidle(process; buffer = process.bitmap)
+            markidle(process)
+            resume(process)
 
             # Construct a sample from the list of hit pages.
             push!(trace, sample(process.vmas, index_vector))
-            markidle(process)
-            resume(process)
         end
     catch err
         # Assume the "pause" failed - return the trace
@@ -178,6 +202,100 @@ function snoop(pid; sampletime = 2)
         else
             rethrow(err)
         end
+    end
+end
+
+
+############################################################################################
+# Stack based analysis for rereference intervals and WSS estimation.
+#
+
+increment!(d::AbstractDict, k, v) = haskey(d, k) ? (d[k] += v) : (d[k] = v)
+
+function transform(distances)
+    maxdepth = maximum(keys(distances))
+    v = [get(distances, k, 0) for k in 1:maxdepth]
+    push!(v, distances[-1])
+    v
+end
+
+function cdf(x) 
+    s = sum(x)
+    c = [first(x) / s]
+    for i in drop(x, 1)
+        push!(c, last(c) + (i / s))
+    end
+    c 
+end
+
+"""
+    upstack!(bucketstack, frame) -> Int
+
+Add `frame` to the first bucket of `bucketstack`. Delete `frame` from lower buckets in the
+stack and return the depth of the frame. If `frame` was not previously found in 
+`bucketstack`, return `-1`.
+"""
+function upstack!(bucketstack, frame)
+    # Push the frame to the first bucket since it was accessed.
+    push!(first(bucketstack), frame)
+    nframes = length(first(bucketstack)) - 1
+    # Skip the first bucket in the stack
+    for bucket in drop(bucketstack, 1)
+        nframes += length(bucket)
+        if frame in bucket
+            delete!(bucket, frame)
+            return nframes
+        end 
+    end
+    return -1
+end
+
+function stackidle!(process, bucketstack, distances; buffer = process.bitmap)
+    read!(IDLE_BITMAP, buffer)
+    bitmap = reinterpret(UInt64, buffer)
+    # The index of the VMA being referenced.
+    vma_index = 1
+    # Create a new entry in the bucketstack
+    pushfirst!(bucketstack, Set{Int}())
+    walkpagemap(process.pid, process.vmas) do pagemap_region
+        vma = process.vmas[vma_index]
+        # Iterate over the pagemap entries. If an entry is in memory and not idle,
+        # get its virtual frame number and update the bucket stack
+        for (index, entry) in enumerate(pagemap_region)
+            if inmemory(entry)
+                pfn = pfnmask(entry)
+                chunk = bitmap[div64(pfn) + 1]
+
+                if !isbitset(chunk, mod64(pfn))
+                    frame = vma.start + index - 1
+                    depth = upstack!(bucketstack, frame)
+                    increment!(distances, depth, 1)
+                end
+            end
+        end
+    end
+    nothing
+end
+
+
+function stack(pid; sampletime = 2)
+    process = Process(pid)
+
+    bucketstack = Vector{Set{UInt}}()
+    distances = Dict{Int,Int}() 
+
+    try
+        while true
+            sleep(sampletime)
+            pause(process)
+            getvmas!(process.vmas, process.pid)
+            stackidle!(process, bucketstack, distances)
+            markidle(process)
+            resume(process)
+        end
+
+    catch err
+        return distances
     end
 end
 
