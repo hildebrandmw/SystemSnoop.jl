@@ -1,6 +1,14 @@
 ## Helper Functions
 ############################################################################################
 
+
+"""
+    increment!(d::AbstractDict, k, v)
+
+Increment `d[k]` by `v`. If `d[k]` does not exist, initialize it to `v`.
+"""
+increment!(d::AbstractDict, k, v) = haskey(d, k) ? (d[k] += v) : (d[k] = v)
+
 """
     pfnmask(x::UInt) -> UInt
 
@@ -9,12 +17,31 @@ physical page number (pfn) of that entry.
 """
 pfnmask(x) = x & (~(UInt(0x1ff) << 55))
 
+
 """
     inmemory(x::UInt) -> Bool
 
 Return `true` if `x` (interpreted as an entry in Linux `/pagemap`) if located in memory.
 """
 inmemory(x) = isbitset(x, 63)
+
+
+"""
+    isactive(x::Integer, buffer::Vector{UInt64})
+
+TODO
+"""
+@inline function isactive(x::Integer, buffer::Vector{UInt64})
+    # Filter out frames that are not active in memory.
+    if inmemory(x)
+        # Get the physical frame number from the entry. Check the buffer to see if the
+        # frame is active or not.
+        framenumber =  pfnmask(x)
+        chunk = buffer[div64(framenumber) + 1]
+        return !isbitset(chunk, mod64(framenumber))
+    end
+    return false
+end
 
 
 div64(x::Integer) = x >> 6

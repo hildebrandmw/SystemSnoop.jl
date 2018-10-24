@@ -7,11 +7,11 @@ resume(p::AbstractProcess) = resume(p.pid)
 struct Process <: AbstractProcess
     pid :: Int64
     vmas :: Vector{VMA}
-    bitmap :: Vector{UInt8}
+    bitmap :: Vector{UInt64}
 end
 
 function Process(pid::Integer) 
-    p = Process(Int64(pid), Vector{VMA}(), UInt8[])
+    p = Process(Int64(pid), Vector{VMA}(), UInt64[])
     initbuffer!(p)
     return p
 end
@@ -27,11 +27,11 @@ function initbuffer!(p::AbstractProcess)
     # Since this isn't a normal file, normal methods like "filesize" or "seekend" don't
     # work, so we actually have to buffer the whole array once to get the size. Since this
     # only happens at the beginning of a trace, it's okay to pay this additional latency.
-    nbytes = open(IDLE_BITMAP) do bitmap
-        buffer = read(bitmap)
+    nentries = open(IDLE_BITMAP) do bitmap
+        buffer = reinterpret(UInt64, read(bitmap))
         return length(buffer)
     end
-    resize!(p.bitmap, nbytes)
+    resize!(p.bitmap, nentries)
     return nothing
 end
 
@@ -59,33 +59,37 @@ function markidle(process::AbstractProcess)
     return nothing
 end
 
+function markidle_all(process::AbstractProcess)
+    open(IDLE_BITMAP, "w") do bitmap
+        for _ in 1:length(process.bitmap)
+        #while !eof(bitmap)
+            unsafe_write(bitmap, Ref(typemax(UInt64)), sizeof(UInt64))
+        end
+    end
+    nothing
+end
+
 
 """
     readidle(process::AbstractProcess; buffer = UInt8[])
 
 TODO
 """
-function readidle(process::AbstractProcess; buffer = UInt8[])
+function readidle(process::AbstractProcess; buffer = UInt64[])
     active_pages = Vector{Vector{Int}}()
     # Read the whole idle bitmap buffer. This can take a while for systems with a large
     # amound of memory.
     read!(IDLE_BITMAP, buffer)
-    bitmap = reinterpret(UInt64, buffer)
     walkpagemap(process.pid, process.vmas) do pagemap_region
-        active_bitmap = Vector{Int}()
+        active_indices = Vector{Int}()
         for (index, entry) in enumerate(pagemap_region)
-
-            if inmemory(entry)
-                pfn = pfnmask(entry)
-                # Convert from 0-based to 1-based indexing
-                chunk = bitmap[div64(pfn) + 1]
-
-                if !isbitset(chunk, mod64(pfn))
-                    push!(active_bitmap, index - 1)
-                end
+            # Check if the active bit for this page is set. If so, add this frame's index
+            # to the collection of active indices.
+            if isactive(entry, buffer)
+                push!(active_indices, index - 1)
             end
         end
-        push!(active_pages, active_bitmap)
+        push!(active_pages, active_indices)
     end
 
     return active_pages
@@ -210,7 +214,23 @@ end
 # Stack based analysis for rereference intervals and WSS estimation.
 #
 
-increment!(d::AbstractDict, k, v) = haskey(d, k) ? (d[k] += v) : (d[k] = v)
+struct BucketStack{T}
+    buckets::Vector{Set{T}}
+end
+
+BucketStack{T}() where T = BucketStack(Vector{Set{T}}())
+
+# Standard iterator stuff
+length(B::BucketStack) = length(B.buckets)
+eltype(B::BucketStack) = eltype(B.buckete)
+iterate(B::BucketStack, args...) = iterate(B.buckets, args...)
+getindex(B::BucketStack, inds...) = getindex(B.buckets, inds...)
+
+IteratorSize(::Type{BucketStack}) = HasLength()
+IteratorEltype(::Type{BucketStack}) = HasEltype()
+
+pushfirst!(B::BucketStack{T}) where T = pushfirst!(B.buckets, Set{T}())
+
 
 function transform(distances)
     maxdepth = maximum(keys(distances))
@@ -229,73 +249,95 @@ function cdf(x)
 end
 
 """
-    upstack!(bucketstack, frame) -> Int
+    upstack!(stack::BucketStack, item) -> Tuple{Int,Int}
 
 Add `frame` to the first bucket of `bucketstack`. Delete `frame` from lower buckets in the
 stack and return the depth of the frame. If `frame` was not previously found in 
 `bucketstack`, return `-1`.
 """
-function upstack!(bucketstack, frame)
+function upstack!(stack::BucketStack{T}, item::T) where T
     # Push the frame to the first bucket since it was accessed.
-    push!(first(bucketstack), frame)
-    nframes = length(first(bucketstack)) - 1
+    push!(first(stack), item)
+    nitems = length(first(stack)) - 1
     # Skip the first bucket in the stack
-    for bucket in drop(bucketstack, 1)
-        nframes += length(bucket)
-        if frame in bucket
-            delete!(bucket, frame)
-            return nframes
+    for (depth, bucket) in enumerate(drop(stack, 1))
+        nitems += length(bucket)
+        if item in bucket
+            delete!(bucket, item)
+            return nitems
         end 
     end
     return -1
 end
 
-function stackidle!(process, bucketstack, distances; buffer = process.bitmap)
+Base.@kwdef struct StackTracker
+    distances       :: Dict{Int,Int} = Dict{Int,Int}()
+    resident_pages  :: Vector{Int} = Int[]
+    active_pages    :: Vector{Int} = Int[]
+    vma_size        :: Vector{Int} = Int[]
+    max_depth       :: Vector{Int} = Int[] 
+end
+
+function stackidle!(process, stack::BucketStack, tracker::StackTracker; buffer = process.bitmap)
+    # Initialize counters and tracking variables
+    active_pages   = 0
+    resident_pages = 0
+    max_size       = -1
+    max_depth      = -1
+
     read!(IDLE_BITMAP, buffer)
-    bitmap = reinterpret(UInt64, buffer)
+
     # The index of the VMA being referenced.
     vma_index = 1
     # Create a new entry in the bucketstack
-    pushfirst!(bucketstack, Set{Int}())
+    pushfirst!(stack)
+
     walkpagemap(process.pid, process.vmas) do pagemap_region
         vma = process.vmas[vma_index]
         # Iterate over the pagemap entries. If an entry is in memory and not idle,
         # get its virtual frame number and update the bucket stack
         for (index, entry) in enumerate(pagemap_region)
             if inmemory(entry)
-                pfn = pfnmask(entry)
-                chunk = bitmap[div64(pfn) + 1]
-
-                if !isbitset(chunk, mod64(pfn))
-                    frame = vma.start + index - 1
-                    depth = upstack!(bucketstack, frame)
-                    increment!(distances, depth, 1)
-                end
+                resident_pages += 1
+            end
+            if isactive(entry, buffer)
+                active_pages += 1
+                frame = vma.start + index - 1
+                depth = upstack!(stack, frame)
+                increment!(tracker.distances, depth, 1)
+                # Update the maximum depth tracker
+                max_depth = max(max_depth, depth)
             end
         end
+        vma_index += 1
     end
+
+    push!(tracker.active_pages, active_pages)
+    push!(tracker.resident_pages, resident_pages)
+    push!(tracker.max_depth, max_depth)
+    push!(tracker.vma_size, sum(length, process.vmas))
+
     nothing
 end
 
 
-function stack(pid; sampletime = 2)
+function trackstack(pid; sampletime = 2)
     process = Process(pid)
 
-    bucketstack = Vector{Set{UInt}}()
-    distances = Dict{Int,Int}() 
-
+    stack = BucketStack{UInt}()
+    tracker = StackTracker()
     try
         while true
             sleep(sampletime)
             pause(process)
             getvmas!(process.vmas, process.pid)
-            stackidle!(process, bucketstack, distances)
-            markidle(process)
+            stackidle!(process, stack, tracker)
+            markidle_all(process)
             resume(process)
         end
 
     catch err
-        return distances
+        return tracker
     end
 end
 

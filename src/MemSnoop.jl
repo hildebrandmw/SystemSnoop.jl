@@ -3,10 +3,15 @@ module MemSnoop
 const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
 
 import Base.Iterators: repeated, drop
-import Base: getindex, iterate, length, push!
+import Base: getindex, iterate, length, push!, pushfirst!, string
 import Base: IteratorSize, HasLength, IteratorEltype, HasEltype
 
 using Serialization
+
+# Check if huge pages are enabled and display a warning if they are.
+function __init__()
+    check_hugepages()
+end
 
 ## Constants
 ############################################################################################
@@ -21,6 +26,7 @@ const PAGEMAP_ENTRY_SIZE_BYTES = 8
 include("util.jl")
 include("snoop.jl")
 include("launch.jl")
+include("hugepages.jl")
 
 ############################################################################################
 
