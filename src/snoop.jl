@@ -230,6 +230,7 @@ IteratorSize(::Type{BucketStack}) = HasLength()
 IteratorEltype(::Type{BucketStack}) = HasEltype()
 
 pushfirst!(B::BucketStack{T}) where T = pushfirst!(B.buckets, Set{T}())
+pop!(B::BucketStack) = pop!(B.buckets)
 
 
 function transform(distances)
@@ -268,6 +269,12 @@ function upstack!(stack::BucketStack{T}, item::T) where T
         end 
     end
     return -1
+end
+
+function garbage_collect!(stack::BucketStack)
+    while isempty(last(stack))
+        pop!(stack)
+    end
 end
 
 Base.@kwdef struct StackTracker
@@ -316,6 +323,9 @@ function stackidle!(process, stack::BucketStack, tracker::StackTracker; buffer =
     push!(tracker.resident_pages, resident_pages)
     push!(tracker.max_depth, max_depth)
     push!(tracker.vma_size, sum(length, process.vmas))
+
+    # Do some garbage collection in the stack
+    #@time garbage_collec!(stack)
 
     nothing
 end

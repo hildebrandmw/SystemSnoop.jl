@@ -17,3 +17,9 @@ function launch(command::String)
     pid = parse(Int, readline(pipe)) 
     return pid, process, pipe
 end
+
+function sample(command::String; sampletime = 0.2)
+    pid, _, _ = launch(command)
+    tracker = trackstack(pid; sampletime = sampletime)
+    return tracker
+end
