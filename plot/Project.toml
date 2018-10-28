@@ -1,4 +1,0 @@
-[deps]
-Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-MemSnoop = "c30797a9-91c2-5451-bcc7-95710ac2a28d"
-TracePlot = "62994910-1328-56ca-90d1-d08b0ecd0600"
