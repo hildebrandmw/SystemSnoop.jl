@@ -48,7 +48,7 @@
     # Last sample should have no hits
     # I think there's some cleanup code or something that runs near the end, so take the
     # second to last record.
-    sample = trace[end-1]
+    sample = trace[end]
     for frame in start_page:pagesize:end_page
         @test !MemSnoop.isactive(sample, frame)
         if MemSnoop.isactive(sample, frame)
