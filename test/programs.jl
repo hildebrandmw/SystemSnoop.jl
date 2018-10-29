@@ -37,6 +37,12 @@
     sample = first(trace)
     for frame in start_page:pagesize:end_page
         @test MemSnoop.isactive(sample, frame)
+        if !MemSnoop.isactive(sample, frame)
+            @show start_page
+            @show end_page
+            @show frame
+            break
+        end
     end
 
     # Last sample should have no hits
@@ -45,5 +51,11 @@
     sample = trace[end-1]
     for frame in start_page:pagesize:end_page
         @test !MemSnoop.isactive(sample, frame)
+        if MemSnoop.isactive(sample, frame)
+            @show start_page
+            @show end_page
+            @show frame
+            break
+        end
     end
 end
