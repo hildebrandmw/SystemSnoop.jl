@@ -13,6 +13,10 @@ git:
 # Need sudo for nooping
 sudo: required
 
+script:
+    - julia --color=yes -e "using Pkg; Pkg.build()"
+    - sudo julia --check-bounds=yes --color=yes -e "using Pkg; Pkg.test(coverage=true);"
+
 ## uncomment the following lines to allow failures on nightly julia
 ## (tests will run but not make your overall status red)
 #matrix:
