@@ -8,15 +8,15 @@ julia:
 notifications:
   email: false
 git:
-  depth: 99999999
+  depth: 1
 
 # Need sudo for nooping
 sudo: required
 
 script:
-    - alias sudo="sudo " # Check out https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
     - julia --color=yes -e "using Pkg; Pkg.build()"
-    - sudo julia --check-bounds=yes --color=yes -e "using Pkg; Pkg.test(coverage=true);"
+    # Julia gets installed in ~/julia
+    - sudo ~/julia/bin/julia --check-bounds=yes --color=yes -e "using Pkg; Pkg.test(coverage=true);"
 
 ## uncomment the following lines to allow failures on nightly julia
 ## (tests will run but not make your overall status red)
