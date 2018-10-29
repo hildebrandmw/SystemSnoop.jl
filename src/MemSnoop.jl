@@ -3,7 +3,7 @@ module MemSnoop
 const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
 
 import Base.Iterators: repeated, drop
-import Base: getindex, iterate, length, push!, pushfirst!, string
+import Base: getindex, iterate, length, push!, pushfirst!, string, lastindex
 import Base: IteratorSize, HasLength, IteratorEltype, HasEltype
 
 using Serialization
@@ -24,7 +24,7 @@ const PAGESIZE = 4096
 const PAGEMAP_ENTRY_SIZE_BYTES = 8
 
 include("util.jl")
-include("snoop.jl")
+include("process.jl")
 include("launch.jl")
 include("hugepages.jl")
 

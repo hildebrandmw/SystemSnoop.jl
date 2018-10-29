@@ -3,7 +3,4 @@
 *.jl.mem
 *.out
 *.trace
-/deps/deps.jl
-/deps/build
-/deps/*.log
-/docs/build
+test/deps/build

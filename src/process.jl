@@ -1,20 +1,26 @@
-## AbstractProcess ##
-abstract type AbstractProcess end
+abstract type IdleWriter end
+struct AllWrite <: IdleWriter end
+struct SeekWrite <: IdleWriter end
 
+## AbstractProcess ##
+abstract type AbstractProcess{W <: IdleWriter} end
 pause(p::AbstractProcess) = pause(p.pid)
 resume(p::AbstractProcess) = resume(p.pid)
 
-struct Process <: AbstractProcess
+
+struct Process{W <: IdleWriter} <: AbstractProcess{W}
     pid :: Int64
     vmas :: Vector{VMA}
     bitmap :: Vector{UInt64}
 end
 
 function Process(pid::Integer) 
-    p = Process(Int64(pid), Vector{VMA}(), UInt64[])
+    p = Process{SeekWrite}(Int64(pid), Vector{VMA}(), UInt64[])
     initbuffer!(p)
     return p
 end
+
+getvmas!(process::AbstractProcess, args...) = getvmas!(process.vmas, process.pid, args...)
 
 """
     initbuffer!(p::AbstractProcess)
@@ -40,7 +46,7 @@ end
 
 TODO
 """
-function markidle(process::AbstractProcess)
+function markidle(process::AbstractProcess{SeekWrite})
     open(IDLE_BITMAP, "w") do bitmap
         walkpagemap(process.pid, process.vmas) do pagemap_region
             for entry in pagemap_region
@@ -59,10 +65,9 @@ function markidle(process::AbstractProcess)
     return nothing
 end
 
-function markidle_all(process::AbstractProcess)
+function markidle(process::AbstractProcess{AllWrite})
     open(IDLE_BITMAP, "w") do bitmap
         for _ in 1:length(process.bitmap)
-        #while !eof(bitmap)
             unsafe_write(bitmap, Ref(typemax(UInt64)), sizeof(UInt64))
         end
     end
@@ -71,15 +76,17 @@ end
 
 
 """
-    readidle(process::AbstractProcess; buffer = UInt8[])
+    readidle(process::AbstractProcess)
 
 TODO
 """
-function readidle(process::AbstractProcess; buffer = UInt64[])
+function readidle(process::AbstractProcess)
     active_pages = Vector{Vector{Int}}()
+    buffer = process.bitmap
     # Read the whole idle bitmap buffer. This can take a while for systems with a large
     # amound of memory.
     read!(IDLE_BITMAP, buffer)
+
     walkpagemap(process.pid, process.vmas) do pagemap_region
         active_indices = Vector{Int}()
         for (index, entry) in enumerate(pagemap_region)
@@ -164,6 +171,7 @@ length(T::Trace) = length(T.samples)
 eltype(T::Trace) = eltype(T.samples)
 iterate(T::Trace, args...) = iterate(T.samples, args...)
 getindex(T::Trace, inds...) = getindex(T.samples, inds...)
+lastindex(T::Trace) = lastindex(T.samples)
 
 IteratorSize(::Type{Trace}) = HasLength()
 IteratorEltype(::Type{Trace}) = HasEltype()
@@ -180,18 +188,22 @@ addresses(trace::Trace) = (sort ∘ collect ∘ reduce)(union, addresses.(trace)
 ############################################################################################
 # trace
 
-function trace(pid; sampletime = 2)
+function trace(pid; sampletime = 2, iter = Forever())
     trace = Trace()
     process = Process(pid)
 
+    pause(process)
+    markidle(process)
+    resume(process)
+
     try
-        while true
+        for _ in iter
             sleep(sampletime)
 
             pause(process)
             # Get VMAs, read idle bits and set idle bits
-            getvmas!(process.vmas, process.pid)
-            index_vector = readidle(process; buffer = process.bitmap)
+            getvmas!(process)
+            index_vector = readidle(process)
             markidle(process)
             resume(process)
 
@@ -207,6 +219,7 @@ function trace(pid; sampletime = 2)
             rethrow(err)
         end
     end
+    return trace
 end
 
 
@@ -342,11 +355,12 @@ function trackstack(pid; sampletime = 2)
             pause(process)
             getvmas!(process.vmas, process.pid)
             stackidle!(process, stack, tracker)
-            markidle_all(process)
+            markidle(process)
             resume(process)
         end
 
     catch err
+        @show err
         return tracker
     end
 end

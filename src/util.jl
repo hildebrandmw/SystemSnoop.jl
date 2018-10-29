@@ -1,6 +1,11 @@
 ## Helper Functions
 ############################################################################################
 
+struct Forever end
+
+iterate(Forever, args...) = (nothing, nothing)
+IteratorSize(::Forever) = IsInfinite()
+
 
 """
     increment!(d::AbstractDict, k, v)
@@ -83,11 +88,7 @@ struct VMA
 end
 
 length(vma::VMA) = vma.stop - vma.start
-function translate(vma::VMA; entrysize = PAGEMAP_ENTRY_SIZE_BYTES, shift = (Int ∘ log2)(PAGESIZE))
-    start = entrysize * vma.start >> shift
-    stop = entrysize * vma.stop >> shift
-    return start, stop
-end
+translate(vma::VMA; shift = (Int ∘ log2)(PAGESIZE)) = (vma.start, vma.stop) .>> shift
 
 # VMA Filters
 tautology(args...) = true
@@ -147,22 +148,26 @@ end
 
 
 """
-function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt8} = UInt8[])
+function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt64} = UInt64[])
     # Open the pagemap file. Expect address ranges for the VMAs to be in order.
     open("/proc/$pid/pagemap") do pagemap
         for vma in vmas
 
             start, stop = translate(vma)
-            nbytes = stop - start
-            # Seek to the start address.
-            seek(pagemap, start)
+            nwords = stop - start + 1
 
-            empty!(buffer)
-            readbytes!(pagemap, buffer, nbytes)
-            region = reinterpret(UInt64, buffer)
+            # Seek to the start address.
+            seek(pagemap, start * sizeof(UInt64))
+
+            if eof(pagemap)
+                empty!(buffer)
+            else
+                resize!(buffer, nwords)
+                read!(pagemap, buffer)
+            end
 
             # Call the passed function
-            f(region)
+            f(buffer)
         end
     end
 end
