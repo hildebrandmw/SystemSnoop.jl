@@ -100,8 +100,8 @@ function stackidle!(process, stack::BucketStack, tracker::StackTracker; buffer =
 end
 
 
-function trackstack(pid; sampletime = 2, iter = Forever())
-    process = Process(pid)
+function trackstack(pid; sampletime = 2, iter = Forever(), filter = tautology)
+    process = Process{SeekWrite}(pid)
 
     stack = BucketStack{UInt}()
     tracker = StackTracker()
@@ -109,7 +109,7 @@ function trackstack(pid; sampletime = 2, iter = Forever())
         for _ in iter
             sleep(sampletime)
             pause(process)
-            getvmas!(process.vmas, process.pid)
+            getvmas!(process.vmas, process.pid, filter)
             stackidle!(process, stack, tracker)
             markidle(process)
             resume(process)

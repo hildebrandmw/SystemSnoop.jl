@@ -14,7 +14,9 @@ struct Process{W <: IdleWriter} <: AbstractProcess{W}
     bitmap :: Vector{UInt64}
 end
 
-function Process(pid::Integer) 
+Process(pid::Integer) = Process{SeekWrite}(pid)
+
+function Process{W}(pid::Integer) where W
     p = Process{SeekWrite}(Int64(pid), Vector{VMA}(), UInt64[])
     initbuffer!(p)
     return p
@@ -48,16 +50,25 @@ TODO
 """
 function markidle(process::AbstractProcess{SeekWrite})
     open(IDLE_BITMAP, "w") do bitmap
+
+        # Keep track of positions in the bitmap file that have already been written to.
+        # Avoids reseeking and rewriting of positions already marked as idle.
+        positions = Set{UInt}()
+
         walkpagemap(process.pid, process.vmas) do pagemap_region
             for entry in pagemap_region
                 if inmemory(entry)
                     pfn = pfnmask(entry)
                     pos = 8 * div64(pfn)
 
-                    seek(bitmap, pos)
+                    if !in(pos, positions)
+                        # Mark this position as read
+                        push!(positions, pos)
 
-                    # Faster write than plain "write"
-                    unsafe_write(bitmap, Ref(typemax(UInt64)), sizeof(UInt64))
+                        # Seek and write
+                        seek(bitmap, pos)
+                        unsafe_write(bitmap, Ref(typemax(UInt64)), sizeof(UInt64))
+                    end
                 end
             end
         end

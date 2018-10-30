@@ -89,7 +89,7 @@ save(file::String, x) = open(f -> serialize(f, x), file, "w")
 Return the `cdf` of `x`.
 """
 function cdf(x) 
-    v = normalize(x, 1)
+    v = x ./ sum(x)
     for i in 2:length(v)
         v[i] = v[i] + v[i-1]
     end
@@ -141,7 +141,17 @@ translate(vma::VMA; shift = (Int ∘ log2)(PAGESIZE)) = (vma.start, vma.stop) .>
 
 # VMA Filters
 tautology(args...) = true
-heap_filter(vma::VMA) = occursin("heap", vma.remainder)
+heap(vma::VMA) = occursin("heap", vma.remainder)
+
+readable(vma::VMA) = vma.remainder[1] == 'r'
+writable(vma::VMA) = vma.remainder[2] == 'w'
+executable(vma::VMA) = vma.remainder[3] == 'x'
+flagset(vma::VMA) = readable(vma) || writable(vma) || executable(vma)
+
+longerthan(x, n::Integer) = length(x) > n
+longerthan(n::Integer) = x -> longerthan(x, n)
+
+
 
 
 """
