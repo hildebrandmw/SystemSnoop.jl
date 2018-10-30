@@ -11,5 +11,7 @@ BUILDDIR = joinpath(DEPSDIR, "build")
 # Compile the test programs
 include(joinpath(DEPSDIR, "build.jl"))
 
+include("util.jl")
+
 # Include tests
 include("programs.jl")

@@ -28,6 +28,9 @@ include("process.jl")
 include("launch.jl")
 include("hugepages.jl")
 
+include("analysis/trace.jl")
+include("analysis/stack.jl")
+
 ############################################################################################
 
 

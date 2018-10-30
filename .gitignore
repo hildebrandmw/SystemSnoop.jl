@@ -4,3 +4,4 @@
 *.out
 *.trace
 test/deps/build
+extra/plot
