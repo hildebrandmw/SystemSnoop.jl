@@ -43,16 +43,10 @@ Add `x` to the end of `R`, merging `x` into the final range if appropriate.
 """
 function push!(R::RangeVector{T}, x::T) where T
     # Check to see if `x` can be appended to the last element of `R`.
-    if isempty(R.ranges) 
-        push!(R.ranges, x:x)
+    if !isempty(R.ranges) && (x - lastelement(R)) == one(T)
+        R.ranges[end] = (first ∘ last)(R.ranges):x
     else
-        # Ensure sortedness
-        @assert x > lastelement(R)
-        if (x - lastelement(R)) == one(T)
-            R.ranges[end] = first(R.ranges[end]):x
-        else
-            push!(R.ranges, x:x)
-        end
+        push!(R.ranges, x:x)
     end
     nothing
 end
