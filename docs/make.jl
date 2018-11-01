@@ -4,7 +4,13 @@ makedocs(
     modules = [MemSnoop],
     format = :html,
     sitename = "MemSnoop.jl",
-    pages = Any["index.md", "proof-of-concept.md"]
+    pages = Any[
+        "index.md", 
+        "proof-of-concept.md",
+        "Analyses" => Any[
+            "trace.md",
+        ]
+    ]
 )
 
 deploydocs(

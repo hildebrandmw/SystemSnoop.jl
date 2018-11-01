@@ -41,7 +41,7 @@ function upstack!(stack::BucketStack{T}, item::T) where T
     # Skip the first bucket in the stack
     for bucket in drop(stack, 1)
         nitems += length(bucket)
-        if item in bucket
+        if in(item, bucket)
             delete!(bucket, item)
             return nitems
         end 
@@ -116,8 +116,8 @@ function trackstack(pid; sampletime = 2, iter = Forever(), filter = tautology)
         end
 
     # Catch errors that turn up because the PID no longer exists
-    catch err
-        isa(err, ErrorException) || rethrow(err)
+    catch error
+        isa(error, PIDException) || rethrow(error)
     end
     return tracker
 end

@@ -32,7 +32,7 @@ for test in tests
     plt = plot(trace)
 
     savefig("$test.png")
-    #MemSnoop.save("$name.trace", trace) 
+    MemSnoop.save("$name.trace", trace) 
 end
 
 

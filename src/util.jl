@@ -1,6 +1,11 @@
 ## Helper Functions
 ############################################################################################
+#
+struct PIDException <: Exception end
 
+"""
+In iterator that returns an infinite amount of `nothing`.
+"""
 struct Forever end
 
 iterate(Forever, args...) = (nothing, nothing)
@@ -63,17 +68,31 @@ isbitset(x::Integer, b) = !iszero(x & (1 << b))
 """
     pause(pid)
 
-Pause process with `pid`.
+Pause process with `pid`. If process does not exist, throw a [`PIDException`](@ref).
 """
-pause(pid) = run(`kill -STOP $pid`)
+function pause(pid) 
+    try
+        run(`kill -STOP $pid`)
+    catch error
+        isa(error, ErrorException) ? throw(PIDException()) : rethrow(error)
+    end
+    return nothing
+end
 
 
 """
     resume(pid)
 
-Resume process with `pid`.
+Resume process with `pid`. If process does not exist, throw a [`PIDException`](@ref)
 """
-resume(pid) = run(`kill -CONT $pid`)
+function resume(pid)  
+    try
+        run(`kill -CONT $pid`)
+    catch error
+        isa(error, ErrorException) ? throw(PIDException()) : rethrow(error)
+    end
+    return nothing
+end
 
 
 """
@@ -123,6 +142,8 @@ struct VMA
     remainder :: String
 end
 
+getpage(vma::VMA, i) = vma.start + PAGESIZE * i
+
 
 """
     length(vma::VMA) -> Int
@@ -152,13 +173,11 @@ longerthan(x, n::Integer) = length(x) > n
 longerthan(n::Integer) = x -> longerthan(x, n)
 
 
-
-
 """
     getvmas!(buffer::Vector{VMA}, pid, [filter])
 
 Fill `buffer` with the Virtual Memory Areas associated with the process with `pid`. Can
-optinally supply a filter. 
+optinally supply a filter. VMAs in `buffer` will be sorted by virtual address.
 
 Filter
 ------
@@ -183,18 +202,30 @@ function getvmas!(buffer::Vector{VMA}, pid, filter = tautology)
     # Where the first pair of numbers is the range of addresses for this unit.
     # The strategy here is to find up to the first "-", parse as an int, then parse to the
     # next " "
+    #
+    # Ordering of VMAs comes from the ordering from /proc/pid/maps
     empty!(buffer)
-    open("/proc/$pid/maps") do f
-        while !eof(f)
-            start = parse(UInt, readuntil(f, '-'); base = 16)
-            stop = parse(UInt, readuntil(f, ' '); base = 16) - one(UInt)
+    try
+        open("/proc/$pid/maps") do f
+            while !eof(f)
+                start = parse(UInt, readuntil(f, '-'); base = 16)
+                stop = parse(UInt, readuntil(f, ' '); base = 16) - one(UInt)
 
-            # Wrap to the next line
-            remainder = readuntil(f, '\n')
-            vma = VMA(start, stop, remainder)
-            filter(vma) || continue
+                # Wrap to the next line
+                remainder = readuntil(f, '\n')
+                vma = VMA(start, stop, remainder)
+                filter(vma) || continue
 
-            push!(buffer, vma)
+                push!(buffer, vma)
+            end
+        end
+    catch error
+        # Check the error, if it's a "file not found", throw a PID error to excape.
+        # otherwise, rethrow the error
+        if isa(error, SystemError) && error.errnum == 2
+            throw(PIDException())
+        else
+            rethrow(error)
         end
     end
     return nothing
@@ -211,24 +242,35 @@ Note that it is possible for `buffer` to be empty.
 """
 function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt64} = UInt64[])
     # Open the pagemap file. Expect address ranges for the VMAs to be in order.
-    open("/proc/$pid/pagemap") do pagemap
-        for vma in vmas
+    try 
+        open("/proc/$pid/pagemap") do pagemap
+            for vma in vmas
 
-            start, stop = translate(vma)
-            nwords = stop - start + 1
+                start, stop = translate(vma)
+                nwords = stop - start + 1
 
-            # Seek to the start address.
-            seek(pagemap, start * sizeof(UInt64))
+                # Seek to the start address.
+                seek(pagemap, start * sizeof(UInt64))
 
-            if eof(pagemap)
-                empty!(buffer)
-            else
-                resize!(buffer, nwords)
-                read!(pagemap, buffer)
+                if eof(pagemap)
+                    empty!(buffer)
+                else
+                    resize!(buffer, nwords)
+                    read!(pagemap, buffer)
+                end
+
+                # Call the passed function
+                f(buffer)
             end
-
-            # Call the passed function
-            f(buffer)
+        end
+    catch error
+        # Check the error, if it's a "file not found", throw a PID error to excape.
+        # otherwise, rethrow the error
+        if isa(error, SystemError) && error.errnum == 2
+            throw(PIDException())
+        else
+            rethrow(error)
         end
     end
+    return nothing
 end

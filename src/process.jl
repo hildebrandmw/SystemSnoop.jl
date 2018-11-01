@@ -53,7 +53,7 @@ function markidle(process::AbstractProcess{SeekWrite})
 
         # Keep track of positions in the bitmap file that have already been written to.
         # Avoids reseeking and rewriting of positions already marked as idle.
-        positions = Set{UInt}()
+        positions = Set{UInt64}()
 
         walkpagemap(process.pid, process.vmas) do pagemap_region
             for entry in pagemap_region
@@ -67,7 +67,7 @@ function markidle(process::AbstractProcess{SeekWrite})
 
                         # Seek and write
                         seek(bitmap, pos)
-                        unsafe_write(bitmap, Ref(typemax(UInt64)), sizeof(UInt64))
+                        write(bitmap, typemax(UInt64))
                     end
                 end
             end

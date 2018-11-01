@@ -5,3 +5,4 @@
 *.trace
 test/deps/build
 extra/plot
+docs/build

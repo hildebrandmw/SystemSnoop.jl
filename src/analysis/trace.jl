@@ -1,94 +1,182 @@
+
 """
-    readidle(process::AbstractProcess)
+Compact representation of data of type `T` that is both sorted and usually occurs in 
+contiguous ranges. For example, since groups of virtual memory pages are usually accessed
+together, a `RangeVector` can encode those more compactly than a normal vector.
+
+Fields
+------
+
+* `ranges :: Vector{UnitRange{T}` - The elements of the `RangeVector`, compacted into
+    contiguous ranges.
+
+Constructor
+-----------
+
+    RangeVector{T}() -> RangeVector{T}
+
+Construct a empty `RangeVector` with element type `T`.
+"""
+struct RangeVector{T}
+    ranges::Vector{UnitRange{T}}
+end
+RangeVector{T}() where {T} = RangeVector{T}(UnitRange{T}[])
+
+# Convenience methods
+length(R::RangeVector) = isempty(R.ranges) ? 0 : sum(length, R.ranges)
+eltype(R::RangeVector{T}) where {T} = T
+iterate(R::RangeVector, args...) = iterate(Iterators.flatten(R.ranges), args...)
+IteratorEltype(::Type{<:RangeVector}) = HasEltype()
+IteratorSize(::Type{<:RangeVector}) = HasLength()
+
+"""
+    lastelement(R::RangeVector{T}) -> T
+
+Return the last element of the last range of `R`.
+"""
+lastelement(R::RangeVector) = (last ∘ last)(R.ranges)
+
+"""
+    push!(R::RangeVector{T}, x::T)
+
+Add `x` to the end of `R`, merging `x` into the final range if appropriate.
+"""
+function push!(R::RangeVector{T}, x::T) where T
+    # Check to see if `x` can be appended to the last element of `R`.
+    if isempty(R.ranges) 
+        push!(R.ranges, x:x)
+    else
+        # Ensure sortedness
+        @assert x > lastelement(R)
+        if (x - lastelement(R)) == one(T)
+            R.ranges[end] = first(R.ranges[end]):x
+        else
+            push!(R.ranges, x:x)
+        end
+    end
+    nothing
+end
+
+"""
+    insorted(R::RangeVector, x) -> Bool
+
+Perform an efficient search of `R` for item `x`, assuming the ranges in `R` are sorted and
+non-overlapping.
+"""
+function insorted(R::RangeVector, x)
+    ranges = R.ranges
+    index = searchsortedfirst(ranges, x; lt = (x, y) -> (last(x) < y))
+    return (index < length(ranges)) && in(x, ranges[index])
+end
+
+############################################################################################
+
+"""
+    readidle(process::AbstractProcess) -> Vector{RangeVector{Int}}
 
 TODO
 """
 function readidle(process::AbstractProcess)
-    active_pages = Vector{Vector{Int}}()
+    pages = RangeVector{UInt64}()
     buffer = process.bitmap
     # Read the whole idle bitmap buffer. This can take a while for systems with a large
     # amound of memory.
     read!(IDLE_BITMAP, buffer)
 
+    # Index of the VMA currently being accessed.
+    vma_index = 1
+
     walkpagemap(process.pid, process.vmas) do pagemap_region
-        active_indices = Vector{Int}()
+        active_indices = RangeVector{Int}()
         for (index, entry) in enumerate(pagemap_region)
+            vma = process.vmas[vma_index]
             # Check if the active bit for this page is set. If so, add this frame's index
             # to the collection of active indices.
             if isactive(entry, buffer)
-                push!(active_indices, index - 1)
+                # Convert to page number and add to pages
+                pagenumber = (index - 1) + (vma.start >> 12)
+                push!(pages, pagenumber)
             end
         end
-        push!(active_pages, active_indices)
+        vma_index += 1
     end
 
-    return active_pages
+    return pages
 end
 
 ############################################################################################
-
-
-"""
-Record of the active (non-idle) pages within a Virtual Memory Area (VMA)
-
-Fields
-------
-
-* `vma::VMA` - The VMA that this record is for.
-* `address::Vector{UInt64}` - The virtual page addresses within this VMA that were active.
-"""
-struct ActiveRecord
-    vma :: VMA
-    addresses :: Set{UInt64}
-end
-
-addresses(record::ActiveRecord) = record.addresses
-
-# Resolve the offset indices returned by "readidle" to the actual pages within the VMA
-# that were hit.
-record(vma::VMA, indices) = ActiveRecord(vma, Set(UInt64.(PAGESIZE .* indices .+ vma.start)))
-
 
 ############
 ## Sample ##
 ############
 
+"""
+Simple container containing the list of VMAs analyzed for a sample as well as the individual
+pages accessed.
+
+Fields
+------
+
+* `vmas :: Vector{VMA}` - The VMAs analyzed during this sample.
+
+* `pages :: RangeVector{UInt64}` - The pages that were active during this sample. Pages are
+    encoded by virtual page number. To get an address, multiply the page number by the
+    pagesize (generally 4096).
+"""
 struct Sample
-    records :: Vector{ActiveRecord}
+    vmas :: Vector{VMA}
+    # Recording page number ...
+    pages :: RangeVector{UInt64}
 end
 
-sample(vmas, indices) = Sample(record.(vmas, indices))
 
 # Convenience methods
-length(S::Sample) = length(S.records)
-eltype(S::Sample) = eltype(S.records)
-iterate(S::Sample, args...) = iterate(S.records, args...)
-getindex(S::Sample, inds...) = getindex(S.records, inds...)
+length(S::Sample) = length(S.pages)
+eltype(S::Sample) = eltype(S.pages)
+iterate(S::Sample, args...) = iterate(S.pages, args...)
 
 IteratorSize(::Type{Sample}) = HasLength()
 IteratorEltype(::Type{Sample}) = HasEltype()
 
 """
-    isactive(sample::Sample, address) -> Bool
+    isactive(sample::Sample, page) -> Bool
 
-Return `true` if `address` was active in `sample`.
+Return `true` if `page` was active in `sample`.
 """
-isactive(sample::Sample, address::UInt) = any(x -> in(address, x.addresses), sample)
+isactive(sample::Sample, page) = insorted(sample.pages, page)
 
 """
-    addresses(sample::Sample) -> Set{UInt64}
+    pages(sample::Sample) -> Set{UInt64}
 
-Return a set of all active addresses in `sample`.
+Return a set of all active pages in `sample`.
 """
-addresses(sample::Sample) = mapreduce(addresses, union, sample)
+pages(sample::Sample) = Set(sample.pages)
 
 
 ############################################################################################
 # Trace
+"""
+Collection of [`Sample`](@ref)s recorded by the [`trace`](@ref) function. Implements the 
+standard `Array` and iterator interface.
+
+Fields
+------
+
+* `samples :: Vector{Sample}` - The collection of samples.
+
+Constructor
+-----------
+
+    Trace()
+
+Return an empty `Trace` object.
+"""
 struct Trace
     samples :: Vector{Sample}
 end
 Trace() = Trace(Sample[])
+
+
 push!(T::Trace, S::Sample) = push!(T.samples, S)
 length(T::Trace) = length(T.samples)
 eltype(T::Trace) = eltype(T.samples)
@@ -100,38 +188,49 @@ IteratorSize(::Type{Trace}) = HasLength()
 IteratorEltype(::Type{Trace}) = HasEltype()
 
 """
-    addresses(trace::Trace) -> Vector{UInt64}
+    pages(trace::Trace) -> Vector{UInt64}
 
-Return a sorted vector of all addresses in `trace` that were marked as "active" at least
-once.
+Return a sorted vector of all pages in `trace` that were marked as "active" at least
+once. Pages are encoded by virtual page number.
 """
-addresses(trace::Trace) = (sort ∘ collect ∘ mapreduce)(addresses, union, trace)
-
-############################################################################################
-"""
-Wrapper for a [`Trace`](@ref) that provides a lazy array behavior. Useful for generating
-heatmaps or bitmaps for pages that were hit or not.
-"""
-struct HeatmapWrapper <: AbstractArray{Bool, 2}
-    trace :: Trace
-    addresses :: Vector{UInt64}
+function pages(trace::Trace)
+    pgs = Set{UInt64}()
+    for (index, sample) in enumerate(trace)
+        union!(pgs, pages(sample))
+    end
+    return (sort ∘ collect)(pgs)
 end
-
-HeatmapWrapper(trace::Trace) = HeatmapWrapper(trace, addresses(trace))
-
-IteratorSize(::Type{HeatmapWrapper}) = Base.HasShape{2}()
-IteratorEltype(::Type{HeatmapWrapper}) = HasEltype()
-eltype(::HeatmapWrapper) = Bool
-length(H::HeatmapWrapper) = prod(size(H))
-
-Base.size(H::HeatmapWrapper) = (length(H.addresses), length(H.trace))
-Base.IndexStyle(::Type{HeatmapWrapper}) = Base.IndexCartesian()
-
-getindex(H::HeatmapWrapper, x, y) = isactive(H.trace[y], H.addresses[x])
 
 ############################################################################################
 # trace
 
+"""
+    trace(pid; [sampletime], [iter], [filter]) -> Trace
+
+Record the full trace of pages accessed by an application with `pid`. Function will 
+gracefully exit and return `Trace` if process `pid` no longer exists.
+
+The general flow of this function is as follows:
+
+1. Sleep for `sampletime`.
+2. Pause `pid`.
+3. Get the VMAs for `pid`, applying `filter`.
+4. Read all of the active pages.
+5. Mark all pages as idle.
+6. Resume `pid.
+7. Repeat for each element of `iter`.
+
+Keyword Arguments
+-----------------
+* `sampletime` : Time between reading and reseting the idle page flags to determine page
+    activity. Default: `2`
+
+* `iter` : Iterator to control the number of samples to take. Default behavior is to keep
+    sampling until monitored process terminates. Default: [`Forever()`](@ref)
+
+* `filter` : Filter to apply to process `VMAs` to reduce total amount of memory tracked.
+    Default: [`tautology`](@ref)
+"""
 function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
     trace = Trace()
     process = Process(pid)
@@ -143,22 +242,45 @@ function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
             pause(process)
             # Get VMAs, read idle bits and set idle bits
             getvmas!(process, filter)
-            index_vector = readidle(process)
+            pages = readidle(process)
             markidle(process)
             resume(process)
 
             # Construct a sample from the list of hit pages.
-            push!(trace, sample(process.vmas, index_vector))
+            push!(trace, Sample(process.vmas, pages))
         end
-    catch err
-        @show err
-        # Assume the "pause" failed - return the trace
-        if isa(err, ErrorException)
-            return trace
-        # If some other error occurs, rethrow so we get better stack traces at the REPL.
-        else
-            rethrow(err)
-        end
+    catch error
+        isa(error, PIDException) || rethrow(error)
     end
     return trace
 end
+
+
+############################################################################################
+"""
+Wrapper for a [`Trace`](@ref) that provides a lazy array behavior. Useful for generating
+heatmaps or bitmaps for pages that were hit or not.
+
+Constructor
+-----------
+
+    HeatmapWrapper(trace::Trace)
+
+Construct a `HeadmapWrapper` from `trace`.
+"""
+struct HeatmapWrapper <: AbstractArray{Bool, 2}
+    trace :: Trace
+    pages :: Vector{UInt64}
+end
+
+HeatmapWrapper(trace::Trace) = HeatmapWrapper(trace, pages(trace))
+
+IteratorSize(::Type{HeatmapWrapper}) = Base.HasShape{2}()
+IteratorEltype(::Type{HeatmapWrapper}) = HasEltype()
+eltype(::HeatmapWrapper) = Bool
+length(H::HeatmapWrapper) = prod(size(H))
+
+Base.size(H::HeatmapWrapper) = (length(H.pages), length(H.trace))
+Base.IndexStyle(::Type{HeatmapWrapper}) = Base.IndexCartesian()
+
+getindex(H::HeatmapWrapper, x, y) = isactive(H.trace[y], H.pages[x])

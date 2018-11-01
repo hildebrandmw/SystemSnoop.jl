@@ -30,12 +30,12 @@
     start_address = parse(UInt64, readline(pipe))  
     end_address = parse(UInt64, readline(pipe))
 
-    start_page = div(start_address, pagesize) * pagesize
-    end_page = div(end_address, pagesize) * pagesize
+    start_page = div(start_address, pagesize)
+    end_page = div(end_address, pagesize)
 
     # First sample should have all the hits
     sample = first(trace)
-    for frame in start_page:pagesize:end_page
+    for frame in start_page:end_page
         @test MemSnoop.isactive(sample, frame)
         if !MemSnoop.isactive(sample, frame)
             @show start_page
