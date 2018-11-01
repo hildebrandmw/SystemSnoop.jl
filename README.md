@@ -2,7 +2,7 @@
 
 | **Documentation**                                                               | **Build Status**                                                                                |
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://hildebrandmw.github.io/MemSnoop.jl/stable) | ![Lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg) [![Build Status](https://travis-ci.org/hildebrandmw/MemSnoop.jl.svg?branch=master)](https://travis-ci.org/hildebrandmw/MemSnoop.jl) [![codecov.io](http://codecov.io/github/hildebrandmw/MemSnoop.jl/coverage.svg?branch=master)](http://codecov.io/github/hildebrandmw/MemSnoop.jl?branch=master) |
+| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://hildebrandmw.github.io/MemSnoop.jl/latest) | ![Lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg) [![Build Status](https://travis-ci.org/hildebrandmw/MemSnoop.jl.svg?branch=master)](https://travis-ci.org/hildebrandmw/MemSnoop.jl) [![codecov.io](http://codecov.io/github/hildebrandmw/MemSnoop.jl/coverage.svg?branch=master)](http://codecov.io/github/hildebrandmw/MemSnoop.jl?branch=master) |
 
 Tool that uses [idle page tracking](https://www.kernel.org/doc/html/latest/admin-guide/mm/idle_page_tracking.html)
 to give insight in to the memory useage of arbitrary programs at the page level of 
