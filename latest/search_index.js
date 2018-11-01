@@ -176,4 +176,60 @@ var documenterSearchIndex = {"docs": [
     "text": "For generating plots, the MemSnoop.HeatmapWrapper type is provided, which lazily  wraps the trace type and can produce a boolean map of addresses hit. General usage looks  something likeusing Plots\n\nheatmap(HeatmapWrapper(trace))MemSnoop.HeatmapWrapper"
 },
 
+{
+    "location": "distance.html#",
+    "page": "Distance / WSS",
+    "title": "Distance / WSS",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "distance.html#MemSnoop.track_distance",
+    "page": "Distance / WSS",
+    "title": "MemSnoop.track_distance",
+    "category": "function",
+    "text": "track_distance(pid; [sampletime], [iter], [filter]) -> DistanceTracker\n\nReturn a DistanceTracker with memory usage statistics for the system process with pid. Like Trace, this function will gracefully exit when pid no longer exists.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime.\nPause pid.\nGet the VMAs for pid, applying filter.\nRead all of the active pages.\nMark all pages as idle.\nResume `pid.\nRepeat for each element of iter.\n\nKeyword Arguments\n\nsampletime : Time between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Forever()\nfilter : Filter to apply to process VMAs to reduce total amount of memory tracked.   Default: tautology\n\n\n\n\n\n"
+},
+
+{
+    "location": "distance.html#MemSnoop.DistanceTracker",
+    "page": "Distance / WSS",
+    "title": "MemSnoop.DistanceTracker",
+    "category": "type",
+    "text": "Struct tracking various page use metrics for an application without keeping a whole trace of page activity.\n\nFields\n\ndistances::Dict{Int,Int} - Reuse distance count. Keys to the dictionary are (an upper    bound on) the number of unique pages accessed between subsequent accesses to an    individual page. Values of the dictionary are the count of that distance.\nThe distances (keys) are an upper bound because of the discrete sampletime.\nresident_pages::Vector{Int} - The number of resident pages. Accessing resident_pages[i]   gives the number of resident pages for sample window i.\nactive_pages::Vector{Int} - The number of active pages.\nvma_size::Vector{Int} - Collective size of all the monitored VMA regions.\nmax_depth::Vector{Int} - The maximum depth seen for a sample.\n\n\n\n\n\n"
+},
+
+{
+    "location": "distance.html#Distance-/-WSS-1",
+    "page": "Distance / WSS",
+    "title": "Distance / WSS",
+    "category": "section",
+    "text": "To perform an analysis to estimate the Working Set Size (WSS) of an application, as well as the Memory Reuse Distance of pages, use the MemSnoop.track_distance function.MemSnoop.track_distance\nMemSnoop.DistanceTracker"
+},
+
+{
+    "location": "distance.html#MemSnoop.BucketStack",
+    "page": "Distance / WSS",
+    "title": "MemSnoop.BucketStack",
+    "category": "type",
+    "text": "BucketStack{T}\n\nLike a stack, but entries in the stack are buckets of elements rather than single elements. This models the fact that we sample active pages over an interval and don\'t have an exact trace.\n\nFields\n\nbuckets::Vector{Set{T}}\n\nConstructor\n\nBucketStack{T}()\n\nConstruct an empty BucketStack with element types T.\n\n\n\n\n\n"
+},
+
+{
+    "location": "distance.html#MemSnoop.upstack!",
+    "page": "Distance / WSS",
+    "title": "MemSnoop.upstack!",
+    "category": "function",
+    "text": "upstack!(stack::BucketStack, item) -> Int\n\nAdd item to the first bucket of stack. Delete item from lower buckets in the stack and return the depth of the item. If item was not previously found in  stack, return -1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "distance.html#BucketStack-1",
+    "page": "Distance / WSS",
+    "title": "BucketStack",
+    "category": "section",
+    "text": "A custom MemSnoop.BucketStack type is used to perform the stack analysis to estimate page Reuse Distance.MemSnoop.BucketStack\nMemSnoop.upstack!"
+},
+
 ]}
