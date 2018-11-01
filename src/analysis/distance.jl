@@ -1,6 +1,24 @@
 ############################################################################################
 # Stack based analysis for rereference intervals and WSS estimation.
 
+"""
+    BucketStack{T}
+
+Like a stack, but entries in the stack are buckets of elements rather than single elements.
+This models the fact that we sample active pages over an interval and don't have an exact
+trace.
+
+Fields
+------
+* `buckets::Vector{Set{T}}`
+
+Constructor
+-----------
+    
+    BucketStack{T}()
+
+Construct an empty `BucketStack` with element types `T`.
+"""
 struct BucketStack{T}
     buckets::Vector{Set{T}}
 end
@@ -9,7 +27,7 @@ BucketStack{T}() where T = BucketStack(Vector{Set{T}}())
 
 # Standard iterator stuff
 length(B::BucketStack) = length(B.buckets)
-eltype(B::BucketStack) = eltype(B.buckete)
+eltype(B::BucketStack) = eltype(B.buckets)
 iterate(B::BucketStack, args...) = iterate(B.buckets, args...)
 getindex(B::BucketStack, inds...) = getindex(B.buckets, inds...)
 
@@ -17,22 +35,21 @@ IteratorSize(::Type{BucketStack}) = HasLength()
 IteratorEltype(::Type{BucketStack}) = HasEltype()
 
 pushfirst!(B::BucketStack{T}) where T = pushfirst!(B.buckets, Set{T}())
-pop!(B::BucketStack) = pop!(B.buckets)
 
-function transform(distances)
-    maxdepth = maximum(keys(distances))
-    v = [get(distances, k, 0) for k in 1:maxdepth]
-    push!(v, distances[-1])
-    v
+function cleanup!(B::BucketStack)
+    # Find all the empty indices
+    inds = findall(isempty, B.buckets) 
+    deleteat!(B.buckets, inds)
+    nothing
 end
 
 
 """
     upstack!(stack::BucketStack, item) -> Int
 
-Add `frame` to the first bucket of `bucketstack`. Delete `frame` from lower buckets in the
-stack and return the depth of the frame. If `frame` was not previously found in 
-`bucketstack`, return `-1`.
+Add `item` to the first bucket of `stack`. Delete `item` from lower buckets in the
+stack and return the depth of the item. If `item` was not previously found in 
+`stack`, return `-1`.
 """
 function upstack!(stack::BucketStack{T}, item::T) where T
     nitems = length(first(stack))
@@ -49,7 +66,30 @@ function upstack!(stack::BucketStack{T}, item::T) where T
     return -1
 end
 
-Base.@kwdef struct StackTracker
+
+"""
+Struct tracking various page use metrics for an application without keeping a whole trace
+of page activity.
+
+Fields
+------
+
+* `distances::Dict{Int,Int}` - Reuse distance count. Keys to the dictionary are (an upper 
+    bound on) the number of unique pages accessed between subsequent accesses to an 
+    individual page. Values of the dictionary are the count of that distance.
+
+    The distances (keys) are an upper bound because of the discrete sampletime.
+
+* `resident_pages::Vector{Int}` - The number of resident pages. Accessing `resident_pages[i]`
+    gives the number of resident pages for sample window `i`.
+
+* `active_pages::Vector{Int}` - The number of active pages.
+
+* `vma_size::Vector{Int}` - Collective size of all the monitored VMA regions.
+
+* `max_depth::Vector{Int}` - The maximum depth seen for a sample.
+"""
+Base.@kwdef struct DistanceTracker
     distances       :: Dict{Int,Int} = Dict{Int,Int}()
     resident_pages  :: Vector{Int} = Int[]
     active_pages    :: Vector{Int} = Int[]
@@ -57,7 +97,16 @@ Base.@kwdef struct StackTracker
     max_depth       :: Vector{Int} = Int[] 
 end
 
-function stackidle!(process, stack::BucketStack, tracker::StackTracker; buffer = process.bitmap)
+
+function transform(distances)
+    maxdepth = maximum(keys(distances))
+    v = [get(distances, k, 0) for k in 1:maxdepth]
+    push!(v, distances[-1])
+    v
+end
+
+
+function stackidle!(process, stack::BucketStack, tracker::DistanceTracker; buffer = process.bitmap)
     # Initialize counters and tracking variables
     active_pages   = 0
     resident_pages = 0
@@ -88,6 +137,9 @@ function stackidle!(process, stack::BucketStack, tracker::StackTracker; buffer =
                 max_depth = max(max_depth, depth)
             end
         end
+
+        # Book-keeping at the end of a loop.
+        cleanup!(stack)
         vma_index += 1
     end
 
@@ -100,11 +152,39 @@ function stackidle!(process, stack::BucketStack, tracker::StackTracker; buffer =
 end
 
 
-function trackstack(pid; sampletime = 2, iter = Forever(), filter = tautology)
+"""
+    track_distance(pid; [sampletime], [iter], [filter]) -> DistanceTracker
+
+Return a [`DistanceTracker`](@ref) with memory usage statistics for the system process
+with `pid`. Like [`Trace`](@ref), this function will gracefully exit when `pid` no longer
+exists.
+
+The general flow of this function is as follows:
+
+1. Sleep for `sampletime`.
+2. Pause `pid`.
+3. Get the VMAs for `pid`, applying `filter`.
+4. Read all of the active pages.
+5. Mark all pages as idle.
+6. Resume `pid.
+7. Repeat for each element of `iter`.
+
+Keyword Arguments
+-----------------
+* `sampletime` : Time between reading and reseting the idle page flags to determine page
+    activity. Default: `2`
+
+* `iter` : Iterator to control the number of samples to take. Default behavior is to keep
+    sampling until monitored process terminates. Default: [`Forever()`](@ref)
+
+* `filter` : Filter to apply to process `VMAs` to reduce total amount of memory tracked.
+    Default: [`tautology`](@ref)
+"""
+function track_distance(pid; sampletime = 2, iter = Forever(), filter = tautology)
     process = Process{SeekWrite}(pid)
 
     stack = BucketStack{UInt}()
-    tracker = StackTracker()
+    tracker = DistanceTracker()
     try
         for _ in iter
             sleep(sampletime)

@@ -9,6 +9,7 @@ makedocs(
         "proof-of-concept.md",
         "Analyses" => Any[
             "trace.md",
+            "distance.md",
         ]
     ]
 )

@@ -23,7 +23,7 @@
     pid, process, pipe = MemSnoop.launch(path)
 
     # Pass a single length range as the iterator so we only take one sample.
-    trace = MemSnoop.trace(pid; sampletime = 2)
+    trace = MemSnoop.trace(pid; sampletime = 6)
 
     # Read the start and end addresses from the pipe
     # Convert these addresses into pages.

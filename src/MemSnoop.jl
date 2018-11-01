@@ -29,7 +29,7 @@ include("launch.jl")
 include("hugepages.jl")
 
 include("analysis/trace.jl")
-include("analysis/stack.jl")
+include("analysis/distance.jl")
 
 ############################################################################################
 
