@@ -1,7 +1,7 @@
 using MemSnoop
 using Test
 
-#MemSnoop.enable_hugepages(MemSnoop.Never)
+MemSnoop.enable_hugepages(MemSnoop.Never)
 
 # Set up some variables for running the test programs.
 TESTDIR = @__DIR__
@@ -15,4 +15,4 @@ include("util.jl")
 include("trace.jl")
 
 # Include tests
-# include("programs.jl")
+include("programs.jl")
