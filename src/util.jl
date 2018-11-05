@@ -110,11 +110,10 @@ Return the `cdf` of `x`.
 function cdf(x) 
     v = x ./ sum(x)
     for i in 2:length(v)
-        v[i] = x[i] + v[i-1]
+        v[i] = v[i] + v[i-1]
     end
-    v
+    return v
 end
-
 
 ## Types
 ############################################################################################

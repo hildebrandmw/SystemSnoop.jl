@@ -117,10 +117,13 @@ function stackidle!(process, stack::BucketStack, tracker::DistanceTracker; buffe
 
     # The index of the VMA being referenced.
     vma_index = 1
-    # Create a new entry in the bucketstack
+
+    # Create a new entry in the bucketstack - run cleanup first to remove any empty entries.
+    cleanup!(stack)
     pushfirst!(stack)
 
     walkpagemap(process.pid, process.vmas) do pagemap_region
+
         vma = process.vmas[vma_index]
         # Iterate over the pagemap entries. If an entry is in memory and not idle,
         # get its virtual frame number and update the bucket stack
@@ -139,10 +142,10 @@ function stackidle!(process, stack::BucketStack, tracker::DistanceTracker; buffe
         end
 
         # Book-keeping at the end of a loop.
-        cleanup!(stack)
         vma_index += 1
     end
 
+    # Update tracker variables.
     push!(tracker.active_pages, active_pages)
     push!(tracker.resident_pages, resident_pages)
     push!(tracker.max_depth, max_depth)
