@@ -33,16 +33,16 @@ MemSnoop.pages(::MemSnoop.Sample)
 
 ## Plotting
 
-For generating plots, the [`MemSnoop.HeatmapWrapper`](@ref) type is provided, which lazily 
+For generating plots, the [`MemSnoop.ArrayView`](@ref) type is provided, which lazily 
 wraps the `trace` type and can produce a boolean map of addresses hit. General usage looks 
 something like
 
 ```julia
 using Plots
 
-heatmap(HeatmapWrapper(trace))
+heatmap(ArrayView(trace))
 ```
 
 ```@docs
-MemSnoop.HeatmapWrapper
+MemSnoop.ArrayView
 ```

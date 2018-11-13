@@ -1,6 +1,6 @@
 
 """
-Compact representation of data of type `T` that is both sorted and usually occurs in 
+Compact representation of data of type `T` that is both sorted and usually occurs in
 contiguous ranges. For example, since groups of virtual memory pages are usually accessed
 together, a `RangeVector` can encode those more compactly than a normal vector.
 
@@ -59,7 +59,12 @@ non-overlapping.
 """
 function insorted(R::RangeVector, x)
     ranges = R.ranges
-    index = searchsortedfirst(ranges, x; lt = (x, y) -> (last(x) < y))
+    # Find the first range that can possibly contain "x". Since ranges are expected to be
+    # sorted, this is the ONLY range that can container "x".
+    index = searchsortedfirst(ranges, x; lt = (y, x) -> (last(y) < x))
+
+    # Make sure index is inbounds (if no range is found, index will be out of bounds), then
+    # check if "x" is actually in the range.
     return (index < length(ranges)) && in(x, ranges[index])
 end
 
@@ -88,7 +93,7 @@ function readidle(process::AbstractProcess)
             # to the collection of active indices.
             if isactive(entry, buffer)
                 # Convert to page number and add to pages
-                pagenumber = (index - 1) + (vma.start >> 12)
+                pagenumber = (index - 1) + vma.start
                 push!(pages, pagenumber)
             end
         end
@@ -123,14 +128,20 @@ struct Sample
     pages :: RangeVector{UInt64}
 end
 
-
-# Convenience methods
-length(S::Sample) = length(S.pages)
-eltype(S::Sample) = eltype(S.pages)
-iterate(S::Sample, args...) = iterate(S.pages, args...)
+vmas(S::Sample) = S.vmas
 
 IteratorSize(::Type{Sample}) = HasLength()
 IteratorEltype(::Type{Sample}) = HasEltype()
+
+
+function getvma(S::Sample, page)
+    index = searchsortedfirst(S.vmas, page; lt = (vma, page) -> (vma.stop < page))
+    if index < length(S) && S.vmas[index].start <= page
+        return S.vmas[index]
+    else
+        return nothing
+    end
+end
 
 """
     isactive(sample::Sample, page) -> Bool
@@ -138,6 +149,13 @@ IteratorEltype(::Type{Sample}) = HasEltype()
 Return `true` if `page` was active in `sample`.
 """
 isactive(sample::Sample, page) = insorted(sample.pages, page)
+
+
+# These could be implemented better.
+gettrace(sample::Sample, vma::VMA) = [isactive(sample, p) for p in vma.start:vma.stop]
+gettrace(samples::Vector{Sample}, vma::VMA) =
+    [isactive(s,p) for p in vma.start:vma.stop, s in samples]
+
 
 """
     pages(sample::Sample) -> Set{UInt64}
@@ -147,39 +165,7 @@ Return a set of all active pages in `sample`.
 pages(sample::Sample) = Set(sample.pages)
 
 
-############################################################################################
-# Trace
-"""
-Collection of [`Sample`](@ref)s recorded by the [`trace`](@ref) function. Implements the 
-standard `Array` and iterator interface.
-
-Fields
-------
-
-* `samples :: Vector{Sample}` - The collection of samples.
-
-Constructor
------------
-
-    Trace()
-
-Return an empty `Trace` object.
-"""
-struct Trace
-    samples :: Vector{Sample}
-end
-Trace() = Trace(Sample[])
-
-
-push!(T::Trace, S::Sample) = push!(T.samples, S)
-length(T::Trace) = length(T.samples)
-eltype(T::Trace) = eltype(T.samples)
-iterate(T::Trace, args...) = iterate(T.samples, args...)
-getindex(T::Trace, inds...) = getindex(T.samples, inds...)
-lastindex(T::Trace) = lastindex(T.samples)
-
-IteratorSize(::Type{Trace}) = HasLength()
-IteratorEltype(::Type{Trace}) = HasEltype()
+vmas(trace::Vector{Sample}) = mapreduce(vmas, (x,y) -> compact(union(x,y)), trace)
 
 """
     pages(trace::Trace) -> Vector{UInt64}
@@ -187,7 +173,7 @@ IteratorEltype(::Type{Trace}) = HasEltype()
 Return a sorted vector of all pages in `trace` that were marked as "active" at least
 once. Pages are encoded by virtual page number.
 """
-function pages(trace::Trace)
+function pages(trace::Vector{Sample})
     pgs = Set{UInt64}()
     for (index, sample) in enumerate(trace)
         union!(pgs, pages(sample))
@@ -199,10 +185,10 @@ end
 # trace
 
 """
-    trace(pid; [sampletime], [iter], [filter]) -> Trace
+    trace(pid; [sampletime], [iter], [filter]) -> Vector{Sample}
 
-Record the full trace of pages accessed by an application with `pid`. Function will 
-gracefully exit and return `Trace` if process `pid` no longer exists.
+Record the full trace of pages accessed by an application with `pid`. Function will
+gracefully exit and return `Vector{Sample}` if process `pid` no longer exists.
 
 The general flow of this function is as follows:
 
@@ -216,7 +202,7 @@ The general flow of this function is as follows:
 
 Keyword Arguments
 -----------------
-* `sampletime` : Time between reading and reseting the idle page flags to determine page
+* `sampletime` : Seconds between reading and reseting the idle page flags to determine page
     activity. Default: `2`
 
 * `iter` : Iterator to control the number of samples to take. Default behavior is to keep
@@ -226,7 +212,7 @@ Keyword Arguments
     Default: [`tautology`](@ref)
 """
 function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
-    trace = Trace()
+    trace = Sample[]
     process = Process(pid)
 
     try
@@ -241,7 +227,8 @@ function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
             resume(process)
 
             # Construct a sample from the list of hit pages.
-            push!(trace, Sample(process.vmas, pages))
+            # Need to actually copy the VMAs.
+            push!(trace, Sample(copy(process.vmas), pages))
         end
     catch error
         isa(error, PIDException) || rethrow(error)
@@ -252,29 +239,32 @@ end
 
 ############################################################################################
 """
-Wrapper for a [`Trace`](@ref) that provides a lazy array behavior. Useful for generating
-heatmaps or bitmaps for pages that were hit or not.
+Wrapper for a [`Vector{Sample}`](@ref) that provides a lazy array behavior. Useful for
+generating heatmaps or bitmaps for pages that were hit or not.
 
 Constructor
 -----------
 
-    HeatmapWrapper(trace::Trace)
+    ArrayView(trace::Trace)
 
 Construct a `HeadmapWrapper` from `trace`.
 """
-struct HeatmapWrapper <: AbstractArray{Bool, 2}
-    trace :: Trace
+struct ArrayView <: AbstractArray{Bool, 2}
+    trace :: Vector{Sample}
     pages :: Vector{UInt64}
 end
 
-HeatmapWrapper(trace::Trace) = HeatmapWrapper(trace, pages(trace))
+ArrayView(trace::Vector{Sample}) = ArrayView(trace, pages(trace))
 
-IteratorSize(::Type{HeatmapWrapper}) = Base.HasShape{2}()
-IteratorEltype(::Type{HeatmapWrapper}) = HasEltype()
-eltype(::HeatmapWrapper) = Bool
-length(H::HeatmapWrapper) = prod(size(H))
+IteratorSize(::Type{ArrayView}) = Base.HasShape{2}()
+IteratorEltype(::Type{ArrayView}) = HasEltype()
+eltype(::ArrayView) = Bool
+length(H::ArrayView) = prod(size(H))
 
-Base.size(H::HeatmapWrapper) = (length(H.pages), length(H.trace))
-Base.IndexStyle(::Type{HeatmapWrapper}) = Base.IndexCartesian()
+Base.size(H::ArrayView) = (length(H.pages), length(H.trace))
+Base.IndexStyle(::Type{ArrayView}) = Base.IndexCartesian()
 
-getindex(H::HeatmapWrapper, x, y) = isactive(H.trace[y], H.pages[x])
+getindex(H::ArrayView, x, y) = isactive(H.trace[y], H.pages[x])
+
+getpage(H::ArrayView, x) = H.pages[x]
+getvma(H::ArrayView, x, y) = getvma(H.trace[y], H.pages[x])

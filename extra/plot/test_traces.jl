@@ -15,8 +15,8 @@ for test in tests
 end
 
 # Function to generate the plots.
-function plot(trace::MemSnoop.Trace)
-    return heatmap(MemSnoop.HeatmapWrapper(trace))
+function plot(trace::Vector{MemSnoop.Sample})
+    return heatmap(MemSnoop.ArrayView(trace))
 end
 
 # Run and snoop the tests

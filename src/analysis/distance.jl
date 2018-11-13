@@ -123,7 +123,6 @@ function stackidle!(process, stack::BucketStack, tracker::DistanceTracker; buffe
     pushfirst!(stack)
 
     walkpagemap(process.pid, process.vmas) do pagemap_region
-
         vma = process.vmas[vma_index]
         # Iterate over the pagemap entries. If an entry is in memory and not idle,
         # get its virtual frame number and update the bucket stack

@@ -19,6 +19,7 @@ Increment `d[k]` by `v`. If `d[k]` does not exist, initialize it to `v`.
 """
 increment!(d::AbstractDict, k, v) = haskey(d, k) ? (d[k] += v) : (d[k] = v)
 
+
 """
     pfnmask(x::UInt) -> UInt
 
@@ -115,61 +116,6 @@ function cdf(x)
     return v
 end
 
-## Types
-############################################################################################
-
-
-## VMA ##
-# Representation of an OS level VMA. Each process consists of multiple VMAs
-
-"""
-Translated Virtual Memory Area (VMA) for a process.
-
-Fields
-------
-* `start::UInt64` - The starting virtual address for the VMA.
-* `stop::UInt64` - The last valid virtual address of the VMA.
-* `remainder::String` - The remainder of the entry in `/proc/pid/maps`.
-
-Methods
--------
-[`length`](@ref), [`translate`](@ref)
-"""
-struct VMA
-    start :: UInt64
-    stop :: UInt64
-    remainder :: String
-end
-
-getpage(vma::VMA, i) = vma.start + PAGESIZE * i
-
-
-"""
-    length(vma::VMA) -> Int
-
-Return the size of `vma` in bytes.
-"""
-length(vma::VMA) = vma.stop - vma.start + 1
-
-
-"""
-    translate(vma::VMA) -> Tuple{Int,Int}
-
-Return tuple of two integers containing the start and stop virtual page indices for `vma`.
-"""
-translate(vma::VMA; shift = (Int ∘ log2)(PAGESIZE)) = (vma.start, vma.stop) .>> shift
-
-# VMA Filters
-tautology(args...) = true
-heap(vma::VMA) = occursin("heap", vma.remainder)
-
-readable(vma::VMA) = vma.remainder[1] == 'r'
-writable(vma::VMA) = vma.remainder[2] == 'w'
-executable(vma::VMA) = vma.remainder[3] == 'x'
-flagset(vma::VMA) = readable(vma) || writable(vma) || executable(vma)
-
-longerthan(x, n::Integer) = length(x) > n
-longerthan(n::Integer) = x -> longerthan(x, n)
 
 
 """
@@ -207,8 +153,8 @@ function getvmas!(buffer::Vector{VMA}, pid, filter = tautology)
     try
         open("/proc/$pid/maps") do f
             while !eof(f)
-                start = parse(UInt, readuntil(f, '-'); base = 16)
-                stop = parse(UInt, readuntil(f, ' '); base = 16) - one(UInt)
+                start = parse(UInt, readuntil(f, '-'); base = 16) >> PAGESHIFT
+                stop = (parse(UInt, readuntil(f, ' '); base = 16) - one(UInt)) >> PAGESHIFT
 
                 # Wrap to the next line
                 remainder = readuntil(f, '\n')
@@ -245,16 +191,12 @@ function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt64} = UInt64[])
         open("/proc/$pid/pagemap") do pagemap
             for vma in vmas
 
-                start, stop = translate(vma)
-                nwords = stop - start + 1
-
                 # Seek to the start address.
-                seek(pagemap, start * sizeof(UInt64))
-
+                seek(pagemap, vma.start * sizeof(UInt64))
                 if eof(pagemap)
                     empty!(buffer)
                 else
-                    resize!(buffer, nwords)
+                    resize!(buffer, length(vma))
                     read!(pagemap, buffer)
                 end
 
