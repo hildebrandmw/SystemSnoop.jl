@@ -164,7 +164,6 @@ Return a set of all active pages in `sample`.
 """
 pages(sample::Sample) = Set(sample.pages)
 
-
 vmas(trace::Vector{Sample}) = mapreduce(vmas, (x,y) -> compact(union(x,y)), trace)
 
 """

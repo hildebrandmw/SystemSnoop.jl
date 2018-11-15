@@ -26,10 +26,18 @@ function check_hugepages()
     # where the brackets [] indicate which mode is selected.
     # The strategy is to just use a regex to get the option in the brackets and then check
     # if that is equal to "never"
-    str = read(HUGEPAGE_ENABLED, String)
+    if ispath(HUGEPAGE_ENABLED)
+        str = read(HUGEPAGE_ENABLED, String)
+    else
+        @warn """
+        File $HUGEPAGE_ENABLED not found. Aborting hugepage check.
+        """
+        return false
+    end
+
     selection = match(r"\[(.*)\]", str)
 
-    selection === nothing && return
+    selection === nothing && return false
     setting = first(selection.captures)
     if setting != "never"
         @warn """
