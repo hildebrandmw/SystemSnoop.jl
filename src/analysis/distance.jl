@@ -98,12 +98,6 @@ Base.@kwdef struct DistanceTracker
 end
 
 
-function transform(distances)
-    maxdepth = maximum(keys(distances))
-    v = [get(distances, k, 0) for k in 1:maxdepth]
-    push!(v, distances[-1])
-    v
-end
 
 
 function stackidle!(process, stack::BucketStack, tracker::DistanceTracker; buffer = process.bitmap)
@@ -180,7 +174,6 @@ Keyword Arguments
     sampling until monitored process terminates. Default: [`Forever()`](@ref)
 
 * `filter` : Filter to apply to process `VMAs` to reduce total amount of memory tracked.
-    Default: [`tautology`](@ref)
 """
 function track_distance(pid; sampletime = 2, iter = Forever(), filter = tautology)
     process = Process{SeekWrite}(pid)

@@ -49,7 +49,7 @@ stopaddress(vma::VMA) = PAGESIZE * vma.stop
 
 Return the size of `vma` in number of pages.
 """
-length(vma::VMA) = vma.stop - vma.start + 1
+length(vma::VMA) = Int(vma.stop - vma.start + 1)
 
 
 """

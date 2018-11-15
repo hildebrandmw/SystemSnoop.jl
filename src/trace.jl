@@ -209,10 +209,9 @@ Keyword Arguments
     activity. Default: `2`
 
 * `iter` : Iterator to control the number of samples to take. Default behavior is to keep
-    sampling until monitored process terminates. Default: [`Forever()`](@ref)
+    sampling until monitored process terminates. Default: Run until program terminates.
 
 * `filter` : Filter to apply to process `VMAs` to reduce total amount of memory tracked.
-    Default: [`tautology`](@ref)
 """
 function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
     trace = Sample[]

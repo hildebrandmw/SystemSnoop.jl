@@ -28,6 +28,7 @@ include("util.jl")
 include("process.jl")
 include("launch.jl")
 include("trace.jl")
+include("analysis.jl")
 
 #include("analysis/distance.jl")
 
