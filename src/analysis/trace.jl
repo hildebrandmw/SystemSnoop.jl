@@ -17,17 +17,22 @@ Constructor
 
 Construct a empty `RangeVector` with element type `T`.
 """
-struct RangeVector{T}
+struct RangeVector{T} <: AbstractVector{T}
     ranges::Vector{UnitRange{T}}
 end
 RangeVector{T}() where {T} = RangeVector{T}(UnitRange{T}[])
 
 # Convenience methods
-length(R::RangeVector) = isempty(R.ranges) ? 0 : sum(length, R.ranges)
+length(R::RangeVector) = length(R.ranges)
 eltype(R::RangeVector{T}) where {T} = T
 iterate(R::RangeVector, args...) = iterate(Iterators.flatten(R.ranges), args...)
 IteratorEltype(::Type{<:RangeVector}) = HasEltype()
 IteratorSize(::Type{<:RangeVector}) = HasLength()
+
+# Fordwarding methods
+getindex(R::RangeVector, inds...) = getindex(R.ranges, inds...)
+Base.searchsortedfirst(R::RangeVector, x; kw...) = searchsortedfirst(R.ranges, x; kw...)
+Base.size(R::RangeVector) = (length(R),)
 
 """
     lastelement(R::RangeVector{T}) -> T
@@ -57,15 +62,14 @@ end
 Perform an efficient search of `R` for item `x`, assuming the ranges in `R` are sorted and
 non-overlapping.
 """
-function insorted(R::RangeVector, x)
-    ranges = R.ranges
+function insorted(R, x)
     # Find the first range that can possibly contain "x". Since ranges are expected to be
     # sorted, this is the ONLY range that can container "x".
-    index = searchsortedfirst(ranges, x; lt = (y, x) -> (last(y) < x))
+    index = searchsortedfirst(R, x; lt = (y, x) -> (last(y) < x))
 
     # Make sure index is inbounds (if no range is found, index will be out of bounds), then
     # check if "x" is actually in the range.
-    return (index < length(ranges)) && in(x, ranges[index])
+    return (index < length(R)) && in(x, R[index])
 end
 
 ############################################################################################
@@ -133,16 +137,6 @@ vmas(S::Sample) = S.vmas
 IteratorSize(::Type{Sample}) = HasLength()
 IteratorEltype(::Type{Sample}) = HasEltype()
 
-
-function getvma(S::Sample, page)
-    index = searchsortedfirst(S.vmas, page; lt = (vma, page) -> (vma.stop < page))
-    if index < length(S) && S.vmas[index].start <= page
-        return S.vmas[index]
-    else
-        return nothing
-    end
-end
-
 """
     isactive(sample::Sample, page) -> Bool
 
@@ -153,8 +147,30 @@ isactive(sample::Sample, page) = insorted(sample.pages, page)
 
 # These could be implemented better.
 gettrace(sample::Sample, vma::VMA) = [isactive(sample, p) for p in vma.start:vma.stop]
-gettrace(samples::Vector{Sample}, vma::VMA) =
-    [isactive(s,p) for p in vma.start:vma.stop, s in samples]
+
+function gettrace(samples::Vector{Sample}, vma::VMA)
+    # Pre allocate the output array
+    map = Array{Bool}(undef, length(vma), length(samples))  
+
+    for (col, sample) in enumerate(samples)
+        # Construct a view of this sample for the vma
+        pages = sample.pages 
+        index = searchsortedfirst(pages, vma.start; lt = (x, y) -> (last(x) < y))
+        for (row, page) in enumerate(vma.start:vma.stop)
+            if index < length(pages)
+                if page > last(pages[index])
+                    index += 1
+                end
+
+                map[row, col] = in(page, pages[index])
+            else
+                map[row, col] = in(page, pages[end])
+            end
+        end
+    end
+
+    return map
+end
 
 
 """
@@ -163,7 +179,6 @@ gettrace(samples::Vector{Sample}, vma::VMA) =
 Return a set of all active pages in `sample`.
 """
 pages(sample::Sample) = Set(sample.pages)
-
 vmas(trace::Vector{Sample}) = mapreduce(vmas, (x,y) -> compact(union(x,y)), trace)
 
 """
@@ -234,36 +249,3 @@ function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
     end
     return trace
 end
-
-
-############################################################################################
-"""
-Wrapper for a [`Vector{Sample}`](@ref) that provides a lazy array behavior. Useful for
-generating heatmaps or bitmaps for pages that were hit or not.
-
-Constructor
------------
-
-    ArrayView(trace::Trace)
-
-Construct a `HeadmapWrapper` from `trace`.
-"""
-struct ArrayView <: AbstractArray{Bool, 2}
-    trace :: Vector{Sample}
-    pages :: Vector{UInt64}
-end
-
-ArrayView(trace::Vector{Sample}) = ArrayView(trace, pages(trace))
-
-IteratorSize(::Type{ArrayView}) = Base.HasShape{2}()
-IteratorEltype(::Type{ArrayView}) = HasEltype()
-eltype(::ArrayView) = Bool
-length(H::ArrayView) = prod(size(H))
-
-Base.size(H::ArrayView) = (length(H.pages), length(H.trace))
-Base.IndexStyle(::Type{ArrayView}) = Base.IndexCartesian()
-
-getindex(H::ArrayView, x, y) = isactive(H.trace[y], H.pages[x])
-
-getpage(H::ArrayView, x) = H.pages[x]
-getvma(H::ArrayView, x, y) = getvma(H.trace[y], H.pages[x])
