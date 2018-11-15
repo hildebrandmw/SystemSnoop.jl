@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "MemSnoop",
     "title": "MemSnoop",
     "category": "section",
-    "text": "Documentation goes here."
+    "text": "Idle page tracking for memory analysis."
 },
 
 {
@@ -61,23 +61,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Full Trace",
     "title": "MemSnoop.trace",
     "category": "function",
-    "text": "trace(pid; [sampletime], [iter], [filter]) -> Trace\n\nRecord the full trace of pages accessed by an application with pid. Function will  gracefully exit and return Trace if process pid no longer exists.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime.\nPause pid.\nGet the VMAs for pid, applying filter.\nRead all of the active pages.\nMark all pages as idle.\nResume `pid.\nRepeat for each element of iter.\n\nKeyword Arguments\n\nsampletime : Time between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Forever()\nfilter : Filter to apply to process VMAs to reduce total amount of memory tracked.   Default: tautology\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#MemSnoop.Trace",
-    "page": "Full Trace",
-    "title": "MemSnoop.Trace",
-    "category": "type",
-    "text": "Collection of Samples recorded by the trace function. Implements the  standard Array and iterator interface.\n\nFields\n\nsamples :: Vector{Sample} - The collection of samples.\n\nConstructor\n\nTrace()\n\nReturn an empty Trace object.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#MemSnoop.pages-Tuple{MemSnoop.Trace}",
-    "page": "Full Trace",
-    "title": "MemSnoop.pages",
-    "category": "method",
-    "text": "pages(trace::Trace) -> Vector{UInt64}\n\nReturn a sorted vector of all pages in trace that were marked as \"active\" at least once. Pages are encoded by virtual page number.\n\n\n\n\n\n"
+    "text": "trace(pid; [sampletime], [iter], [filter]) -> Vector{Sample}\n\nRecord the full trace of pages accessed by an application with pid. Function will gracefully exit and return Vector{Sample} if process pid no longer exists.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime.\nPause pid.\nGet the VMAs for pid, applying filter.\nRead all of the active pages.\nMark all pages as idle.\nResume `pid.\nRepeat for each element of iter.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Forever()\nfilter : Filter to apply to process VMAs to reduce total amount of memory tracked.   Default: tautology\n\n\n\n\n\n"
 },
 
 {
@@ -85,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Full Trace",
     "title": "Full Trace",
     "category": "section",
-    "text": "MemSnoop has the ability to record the full trace of pages accessed by an application. This is performed using [trace]MemSnoop.trace\nMemSnoop.Trace\nMemSnoop.pages(::MemSnoop.Trace)"
+    "text": "MemSnoop has the ability to record the full trace of pages accessed by an application. This is performed using [trace]MemSnoop.trace"
 },
 
 {
@@ -93,7 +77,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Full Trace",
     "title": "MemSnoop.RangeVector",
     "category": "type",
-    "text": "Compact representation of data of type T that is both sorted and usually occurs in  contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a RangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the RangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nRangeVector{T}() -> RangeVector{T}\n\nConstruct a empty RangeVector with element type T.\n\n\n\n\n\n"
+    "text": "Compact representation of data of type T that is both sorted and usually occurs in contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a RangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the RangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nRangeVector{T}() -> RangeVector{T}\n\nConstruct a empty RangeVector with element type T.\n\n\n\n\n\n"
 },
 
 {
@@ -145,11 +129,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace.html#MemSnoop.pages-Tuple{MemSnoop.Sample}",
+    "location": "trace.html#MemSnoop.pages",
     "page": "Full Trace",
     "title": "MemSnoop.pages",
-    "category": "method",
-    "text": "pages(sample::Sample) -> Set{UInt64}\n\nReturn a set of all active pages in sample.\n\n\n\n\n\n"
+    "category": "function",
+    "text": "pages(sample::Sample) -> Set{UInt64}\n\nReturn a set of all active pages in sample.\n\n\n\n\n\npages(trace::Vector{Sample}) -> Vector{UInt64}\n\nReturn a sorted vector of all pages in trace that were marked as \"active\" at least once. Pages are encoded by virtual page number.\n\n\n\n\n\n"
 },
 
 {
@@ -157,79 +141,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Full Trace",
     "title": "Implementation Details - Sample",
     "category": "section",
-    "text": "MemSnoop.Sample\nMemSnoop.isactive(::MemSnoop.Sample, ::Any)\nMemSnoop.pages(::MemSnoop.Sample)"
-},
-
-{
-    "location": "trace.html#MemSnoop.HeatmapWrapper",
-    "page": "Full Trace",
-    "title": "MemSnoop.HeatmapWrapper",
-    "category": "type",
-    "text": "Wrapper for a Trace that provides a lazy array behavior. Useful for generating heatmaps or bitmaps for pages that were hit or not.\n\nConstructor\n\nHeatmapWrapper(trace::Trace)\n\nConstruct a HeadmapWrapper from trace.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#Plotting-1",
-    "page": "Full Trace",
-    "title": "Plotting",
-    "category": "section",
-    "text": "For generating plots, the MemSnoop.HeatmapWrapper type is provided, which lazily  wraps the trace type and can produce a boolean map of addresses hit. General usage looks  something likeusing Plots\n\nheatmap(HeatmapWrapper(trace))MemSnoop.HeatmapWrapper"
-},
-
-{
-    "location": "distance.html#",
-    "page": "Distance / WSS",
-    "title": "Distance / WSS",
-    "category": "page",
-    "text": ""
-},
-
-{
-    "location": "distance.html#MemSnoop.track_distance",
-    "page": "Distance / WSS",
-    "title": "MemSnoop.track_distance",
-    "category": "function",
-    "text": "track_distance(pid; [sampletime], [iter], [filter]) -> DistanceTracker\n\nReturn a DistanceTracker with memory usage statistics for the system process with pid. Like Trace, this function will gracefully exit when pid no longer exists.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime.\nPause pid.\nGet the VMAs for pid, applying filter.\nRead all of the active pages.\nMark all pages as idle.\nResume `pid.\nRepeat for each element of iter.\n\nKeyword Arguments\n\nsampletime : Time between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Forever()\nfilter : Filter to apply to process VMAs to reduce total amount of memory tracked.   Default: tautology\n\n\n\n\n\n"
-},
-
-{
-    "location": "distance.html#MemSnoop.DistanceTracker",
-    "page": "Distance / WSS",
-    "title": "MemSnoop.DistanceTracker",
-    "category": "type",
-    "text": "Struct tracking various page use metrics for an application without keeping a whole trace of page activity.\n\nFields\n\ndistances::Dict{Int,Int} - Reuse distance count. Keys to the dictionary are (an upper    bound on) the number of unique pages accessed between subsequent accesses to an    individual page. Values of the dictionary are the count of that distance.\nThe distances (keys) are an upper bound because of the discrete sampletime.\nresident_pages::Vector{Int} - The number of resident pages. Accessing resident_pages[i]   gives the number of resident pages for sample window i.\nactive_pages::Vector{Int} - The number of active pages.\nvma_size::Vector{Int} - Collective size of all the monitored VMA regions.\nmax_depth::Vector{Int} - The maximum depth seen for a sample.\n\n\n\n\n\n"
-},
-
-{
-    "location": "distance.html#Distance-/-WSS-1",
-    "page": "Distance / WSS",
-    "title": "Distance / WSS",
-    "category": "section",
-    "text": "To perform an analysis to estimate the Working Set Size (WSS) of an application, as well as the Memory Reuse Distance of pages, use the MemSnoop.track_distance function.MemSnoop.track_distance\nMemSnoop.DistanceTracker"
-},
-
-{
-    "location": "distance.html#MemSnoop.BucketStack",
-    "page": "Distance / WSS",
-    "title": "MemSnoop.BucketStack",
-    "category": "type",
-    "text": "BucketStack{T}\n\nLike a stack, but entries in the stack are buckets of elements rather than single elements. This models the fact that we sample active pages over an interval and don\'t have an exact trace.\n\nFields\n\nbuckets::Vector{Set{T}}\n\nConstructor\n\nBucketStack{T}()\n\nConstruct an empty BucketStack with element types T.\n\n\n\n\n\n"
-},
-
-{
-    "location": "distance.html#MemSnoop.upstack!",
-    "page": "Distance / WSS",
-    "title": "MemSnoop.upstack!",
-    "category": "function",
-    "text": "upstack!(stack::BucketStack, item) -> Int\n\nAdd item to the first bucket of stack. Delete item from lower buckets in the stack and return the depth of the item. If item was not previously found in  stack, return -1.\n\n\n\n\n\n"
-},
-
-{
-    "location": "distance.html#BucketStack-1",
-    "page": "Distance / WSS",
-    "title": "BucketStack",
-    "category": "section",
-    "text": "A custom MemSnoop.BucketStack type is used to perform the stack analysis to estimate page Reuse Distance.MemSnoop.BucketStack\nMemSnoop.upstack!"
+    "text": "MemSnoop.Sample\nMemSnoop.isactive(::MemSnoop.Sample, ::Any)\nMemSnoop.pages"
 },
 
 ]}
