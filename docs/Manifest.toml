@@ -27,9 +27,9 @@ version = "0.5.0"
 
 [[Documenter]]
 deps = ["Compat", "DocStringExtensions", "Logging", "REPL"]
-git-tree-sha1 = "7534ff3c50333a69ae0778d4d869e6f5c9ec022a"
+git-tree-sha1 = "d7b6266f1f87a8c85ce4c1f9c0e9ba3b7831ce1d"
 uuid = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-version = "0.19.6"
+version = "0.19.7"
 
 [[InteractiveUtils]]
 deps = ["LinearAlgebra", "Markdown"]

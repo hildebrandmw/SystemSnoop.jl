@@ -7,10 +7,7 @@ makedocs(
     pages = Any[
         "index.md", 
         "proof-of-concept.md",
-        "Analyses" => Any[
-            "trace.md",
-            "distance.md",
-        ]
+        "trace.md",
     ]
 )
 

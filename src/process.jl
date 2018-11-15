@@ -16,8 +16,8 @@ end
 
 Process(pid::Integer) = Process{SeekWrite}(pid)
 
-function Process{W}(pid::Integer) where W
-    p = Process{SeekWrite}(Int64(pid), Vector{VMA}(), UInt64[])
+function Process{W}(pid::Integer) where {W <: IdleWriter}
+    p = Process{W}(Int64(pid), Vector{VMA}(), UInt64[])
     initbuffer!(p)
     return p
 end
@@ -76,12 +76,14 @@ function markidle(process::AbstractProcess{SeekWrite})
     return nothing
 end
 
+
 function markidle(process::AbstractProcess{AllWrite})
+    allones = Ref(typemax(UInt64))
     open(IDLE_BITMAP, "w") do bitmap
         for _ in 1:length(process.bitmap)
-            unsafe_write(bitmap, Ref(typemax(UInt64)), sizeof(UInt64))
+            unsafe_write(bitmap, allones, sizeof(UInt64))
         end
     end
-    nothing
+    return nothing
 end
 

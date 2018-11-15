@@ -17,22 +17,22 @@ Constructor
 
 Construct a empty `RangeVector` with element type `T`.
 """
-struct RangeVector{T} <: AbstractVector{T}
+struct RangeVector{T} <: AbstractVector{UnitRange{T}}
     ranges::Vector{UnitRange{T}}
 end
 RangeVector{T}() where {T} = RangeVector{T}(UnitRange{T}[])
 
 # Convenience methods
 length(R::RangeVector) = length(R.ranges)
-eltype(R::RangeVector{T}) where {T} = T
-iterate(R::RangeVector, args...) = iterate(Iterators.flatten(R.ranges), args...)
-IteratorEltype(::Type{<:RangeVector}) = HasEltype()
-IteratorSize(::Type{<:RangeVector}) = HasLength()
+iterate(R::RangeVector, args...) = iterate(R.ranges, args...)
+size(R::RangeVector) = (length(R),)
 
 # Fordwarding methods
 getindex(R::RangeVector, inds...) = getindex(R.ranges, inds...)
-Base.searchsortedfirst(R::RangeVector, x; kw...) = searchsortedfirst(R.ranges, x; kw...)
-Base.size(R::RangeVector) = (length(R),)
+
+searchsortedfirst(R::RangeVector{T}, x::T; lt = (x,y) -> (last(x) < y), kw...) where T = 
+    searchsortedfirst(R.ranges, x; lt = lt, kw...)
+
 
 """
     lastelement(R::RangeVector{T}) -> T
@@ -62,14 +62,14 @@ end
 Perform an efficient search of `R` for item `x`, assuming the ranges in `R` are sorted and
 non-overlapping.
 """
-function insorted(R, x)
+function insorted(R::RangeVector, x)
     # Find the first range that can possibly contain "x". Since ranges are expected to be
     # sorted, this is the ONLY range that can container "x".
-    index = searchsortedfirst(R, x; lt = (y, x) -> (last(y) < x))
+    index = searchsortedfirst(R, x)
 
     # Make sure index is inbounds (if no range is found, index will be out of bounds), then
     # check if "x" is actually in the range.
-    return (index < length(R)) && in(x, R[index])
+    return (index <= length(R)) && in(x, R[index])
 end
 
 ############################################################################################
@@ -90,7 +90,6 @@ function readidle(process::AbstractProcess)
     vma_index = 1
 
     walkpagemap(process.pid, process.vmas) do pagemap_region
-        active_indices = RangeVector{Int}()
         for (index, entry) in enumerate(pagemap_region)
             vma = process.vmas[vma_index]
             # Check if the active bit for this page is set. If so, add this frame's index
@@ -131,11 +130,8 @@ struct Sample
     # Recording page number ...
     pages :: RangeVector{UInt64}
 end
-
 vmas(S::Sample) = S.vmas
 
-IteratorSize(::Type{Sample}) = HasLength()
-IteratorEltype(::Type{Sample}) = HasEltype()
 
 """
     isactive(sample::Sample, page) -> Bool
@@ -143,7 +139,6 @@ IteratorEltype(::Type{Sample}) = HasEltype()
 Return `true` if `page` was active in `sample`.
 """
 isactive(sample::Sample, page) = insorted(sample.pages, page)
-
 
 # These could be implemented better.
 gettrace(sample::Sample, vma::VMA) = [isactive(sample, p) for p in vma.start:vma.stop]
@@ -153,9 +148,9 @@ function gettrace(samples::Vector{Sample}, vma::VMA)
     map = Array{Bool}(undef, length(vma), length(samples))  
 
     for (col, sample) in enumerate(samples)
-        # Construct a view of this sample for the vma
+        # Get the first index to start looking
         pages = sample.pages 
-        index = searchsortedfirst(pages, vma.start; lt = (x, y) -> (last(x) < y))
+        index = searchsortedfirst(pages, vma.start)
         for (row, page) in enumerate(vma.start:vma.stop)
             if index < length(pages)
                 if page > last(pages[index])
@@ -178,22 +173,16 @@ end
 
 Return a set of all active pages in `sample`.
 """
-pages(sample::Sample) = Set(sample.pages)
+pages(sample::Sample) = Set(flatten(sample.pages))
 vmas(trace::Vector{Sample}) = mapreduce(vmas, (x,y) -> compact(union(x,y)), trace)
 
 """
-    pages(trace::Trace) -> Vector{UInt64}
+    pages(trace::Vector{Sample}) -> Vector{UInt64}
 
 Return a sorted vector of all pages in `trace` that were marked as "active" at least
 once. Pages are encoded by virtual page number.
 """
-function pages(trace::Vector{Sample})
-    pgs = Set{UInt64}()
-    for (index, sample) in enumerate(trace)
-        union!(pgs, pages(sample))
-    end
-    return (sort ∘ collect)(pgs)
-end
+pages(trace::Vector{Sample}) = mapreduce(pages, union, trace) |> collect |> sort
 
 ############################################################################################
 # trace

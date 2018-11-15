@@ -1,3 +1,3 @@
 # MemSnoop
 
-*Documentation goes here.*
+Idle page tracking for memory analysis.

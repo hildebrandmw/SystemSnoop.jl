@@ -1,6 +1,7 @@
 using MemSnoop
 using Test
 using Combinatorics
+using BenchmarkTools
 
 MemSnoop.enable_hugepages(MemSnoop.Never)
 
@@ -15,6 +16,7 @@ include(joinpath(DEPSDIR, "build.jl"))
 include("vma.jl")
 include("util.jl")
 include("trace.jl")
+include("timing.jl")
 
 # Include tests
 include("programs.jl")

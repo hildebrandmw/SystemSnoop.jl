@@ -5,8 +5,6 @@ is performed using [`trace`]
 
 ```@docs
 MemSnoop.trace
-MemSnoop.Trace
-MemSnoop.pages(::MemSnoop.Trace)
 ```
 
 ## Implementation Details - RangeVector
@@ -28,21 +26,5 @@ MemSnoop.insorted
 ```@docs
 MemSnoop.Sample
 MemSnoop.isactive(::MemSnoop.Sample, ::Any)
-MemSnoop.pages(::MemSnoop.Sample)
-```
-
-## Plotting
-
-For generating plots, the [`MemSnoop.ArrayView`](@ref) type is provided, which lazily 
-wraps the `trace` type and can produce a boolean map of addresses hit. General usage looks 
-something like
-
-```julia
-using Plots
-
-heatmap(ArrayView(trace))
-```
-
-```@docs
-MemSnoop.ArrayView
+MemSnoop.pages
 ```
