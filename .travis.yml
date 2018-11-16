@@ -18,9 +18,10 @@ script:
     # Julia gets installed in ~/julia
     - sudo ~/julia/bin/julia --check-bounds=yes --color=yes -e "using Pkg; Pkg.test(coverage=true);"
 
+# Need to run these as sudo to get file permissions.
 after_success:
-  - julia --project=test/coverage -e 'using Pkg; Pkg.instantiate()'
-  - julia --project=test/coverage test/coverage/coverage.jl
+  - sudo ~/julia/bin/julia --project=test/coverage -e 'using Pkg; Pkg.instantiate()'
+  - sudo ~/julia/bin/julia --project=test/coverage test/coverage/coverage.jl
 
 
 # Deploy Documentation
