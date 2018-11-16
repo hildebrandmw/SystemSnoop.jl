@@ -50,71 +50,31 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "trace.html#",
-    "page": "Full Trace",
-    "title": "Full Trace",
+    "page": "Full Traces",
+    "title": "Full Traces",
     "category": "page",
     "text": ""
 },
 
 {
     "location": "trace.html#MemSnoop.trace",
-    "page": "Full Trace",
+    "page": "Full Traces",
     "title": "MemSnoop.trace",
     "category": "function",
     "text": "trace(pid; [sampletime], [iter], [filter]) -> Vector{Sample}\n\nRecord the full trace of pages accessed by an application with pid. Function will gracefully exit and return Vector{Sample} if process pid no longer exists.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime.\nPause pid.\nGet the VMAs for pid, applying filter.\nRead all of the active pages.\nMark all pages as idle.\nResume `pid.\nRepeat for each element of iter.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\nfilter : Filter to apply to process VMAs to reduce total amount of memory tracked.\n\n\n\n\n\n"
 },
 
 {
-    "location": "trace.html#Full-Trace-1",
-    "page": "Full Trace",
-    "title": "Full Trace",
+    "location": "trace.html#Full-Traces-1",
+    "page": "Full Traces",
+    "title": "Full Traces",
     "category": "section",
-    "text": "MemSnoop has the ability to record the full trace of pages accessed by an application. This is performed using [trace]MemSnoop.trace"
-},
-
-{
-    "location": "trace.html#MemSnoop.RangeVector",
-    "page": "Full Trace",
-    "title": "MemSnoop.RangeVector",
-    "category": "type",
-    "text": "Compact representation of data of type T that is both sorted and usually occurs in contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a RangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the RangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nRangeVector{T}() -> RangeVector{T}\n\nConstruct a empty RangeVector with element type T.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#MemSnoop.lastelement",
-    "page": "Full Trace",
-    "title": "MemSnoop.lastelement",
-    "category": "function",
-    "text": "lastelement(R::RangeVector{T}) -> T\n\nReturn the last element of the last range of R.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#Base.push!-Union{Tuple{T}, Tuple{RangeVector{T},T}} where T",
-    "page": "Full Trace",
-    "title": "Base.push!",
-    "category": "method",
-    "text": "push!(R::RangeVector{T}, x::T)\n\nAdd x to the end of R, merging x into the final range if appropriate.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#MemSnoop.insorted",
-    "page": "Full Trace",
-    "title": "MemSnoop.insorted",
-    "category": "function",
-    "text": "insorted(R::RangeVector, x) -> Bool\n\nPerform an efficient search of R for item x, assuming the ranges in R are sorted and non-overlapping.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#Implementation-Details-RangeVector-1",
-    "page": "Full Trace",
-    "title": "Implementation Details - RangeVector",
-    "category": "section",
-    "text": "Since pages are generally accessed sequentially, the record of active pages is encoded as a MemSnoop.RangeVector that compresses contiguous runs of accesses. Note that  there is an implicit assumption that the VMAs are ordered, which should be the case since  /prod/pid/maps orderes VMAs.MemSnoop.RangeVector\nMemSnoop.lastelement\npush!(::MemSnoop.RangeVector{T}, x::T) where T\nMemSnoop.insorted"
+    "text": "MemSnoop has the ability to record the full trace of pages accessed by an application. This is performed using traceMemSnoop.trace"
 },
 
 {
     "location": "trace.html#MemSnoop.Sample",
-    "page": "Full Trace",
+    "page": "Full Traces",
     "title": "MemSnoop.Sample",
     "category": "type",
     "text": "Simple container containing the list of VMAs analyzed for a sample as well as the individual pages accessed.\n\nFields\n\nvmas :: Vector{VMA} - The VMAs analyzed during this sample.\npages :: RangeVector{UInt64} - The pages that were active during this sample. Pages are   encoded by virtual page number. To get an address, multiply the page number by the   pagesize (generally 4096).\n\n\n\n\n\n"
@@ -122,7 +82,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "trace.html#MemSnoop.isactive-Tuple{MemSnoop.Sample,Any}",
-    "page": "Full Trace",
+    "page": "Full Traces",
     "title": "MemSnoop.isactive",
     "category": "method",
     "text": "isactive(sample::Sample, page) -> Bool\n\nReturn true if page was active in sample.\n\n\n\n\n\n"
@@ -130,7 +90,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "trace.html#MemSnoop.pages",
-    "page": "Full Trace",
+    "page": "Full Traces",
     "title": "MemSnoop.pages",
     "category": "function",
     "text": "pages(sample::Sample) -> Set{UInt64}\n\nReturn a set of all active pages in sample.\n\n\n\n\n\npages(trace::Vector{Sample}) -> Vector{UInt64}\n\nReturn a sorted vector of all pages in trace that were marked as \"active\" at least once. Pages are encoded by virtual page number.\n\n\n\n\n\n"
@@ -138,10 +98,50 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "trace.html#Implementation-Details-Sample-1",
-    "page": "Full Trace",
+    "page": "Full Traces",
     "title": "Implementation Details - Sample",
     "category": "section",
     "text": "MemSnoop.Sample\nMemSnoop.isactive(::MemSnoop.Sample, ::Any)\nMemSnoop.pages"
+},
+
+{
+    "location": "trace.html#MemSnoop.RangeVector",
+    "page": "Full Traces",
+    "title": "MemSnoop.RangeVector",
+    "category": "type",
+    "text": "Compact representation of data of type T that is both sorted and usually occurs in contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a RangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the RangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nRangeVector{T}() -> RangeVector{T}\n\nConstruct a empty RangeVector with element type T.\n\n\n\n\n\n"
+},
+
+{
+    "location": "trace.html#MemSnoop.lastelement",
+    "page": "Full Traces",
+    "title": "MemSnoop.lastelement",
+    "category": "function",
+    "text": "lastelement(R::RangeVector{T}) -> T\n\nReturn the last element of the last range of R.\n\n\n\n\n\n"
+},
+
+{
+    "location": "trace.html#Base.push!-Union{Tuple{T}, Tuple{RangeVector{T},T}} where T",
+    "page": "Full Traces",
+    "title": "Base.push!",
+    "category": "method",
+    "text": "push!(R::RangeVector{T}, x::T)\n\nAdd x to the end of R, merging x into the final range if appropriate.\n\n\n\n\n\n"
+},
+
+{
+    "location": "trace.html#MemSnoop.insorted",
+    "page": "Full Traces",
+    "title": "MemSnoop.insorted",
+    "category": "function",
+    "text": "insorted(R::RangeVector, x) -> Bool\n\nPerform an efficient search of R for item x, assuming the ranges in R are sorted and non-overlapping.\n\n\n\n\n\n"
+},
+
+{
+    "location": "trace.html#Implementation-Details-RangeVector-1",
+    "page": "Full Traces",
+    "title": "Implementation Details - RangeVector",
+    "category": "section",
+    "text": "Since pages are generally accessed sequentially, the record of active pages is encoded as a MemSnoop.RangeVector that compresses contiguous runs of accesses. Note that  there is an implicit assumption that the VMAs are ordered, which should be the case since  /prod/pid/maps orderes VMAs.MemSnoop.RangeVector\nMemSnoop.lastelement\npush!(::MemSnoop.RangeVector{T}, x::T) where T\nMemSnoop.insorted"
 },
 
 ]}
