@@ -37,7 +37,7 @@ function cleanup!(B::BucketStack)
     # Find all the empty indices
     inds = findall(isempty, B.buckets) 
     deleteat!(B.buckets, inds)
-    nothing
+    return nothing
 end
 
 

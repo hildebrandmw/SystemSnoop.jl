@@ -27,6 +27,9 @@ length(R::RangeVector) = length(R.ranges)
 iterate(R::RangeVector, args...) = iterate(R.ranges, args...)
 size(R::RangeVector) = (length(R),)
 
+sumall(R::RangeVector) = sum(length, R.ranges)
+
+
 # Fordwarding methods
 getindex(R::RangeVector, inds...) = getindex(R.ranges, inds...)
 
@@ -131,6 +134,13 @@ struct Sample
     pages :: RangeVector{UInt64}
 end
 vmas(S::Sample) = S.vmas
+
+"""
+    wss(S::Sample) -> Int
+
+Return the number of active pages for `S`.
+"""
+wss(S::Sample) = sumall(S.pages)
 
 
 """

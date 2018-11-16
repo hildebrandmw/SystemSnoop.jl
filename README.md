@@ -6,21 +6,13 @@
 
 Tool that uses [idle page tracking](https://www.kernel.org/doc/html/latest/admin-guide/mm/idle_page_tracking.html)
 to give insight in to the memory useage of arbitrary programs at the page level of 
-granularity. The main functions are
+granularity. The main function is
 
 ```julia
-trace(pid; [sampletime], [iter], [filter]) -> Trace
+trace(pid; [sampletime], [iter], [filter]) -> Vector{Sample}
 ```
 
 Which generates a full trace of virtual pages that were accessed with `sampletime` level
-granularity, and
-
-```
-track_distance(pid; [sampletime], [iter], [filter]) -> DistanceTracker
-```
-
-which can be used to estimate Working Set Size (WSS) and the Reuse Distance of pages 
-accesses within a program.  Note that the information provided by `track_distances` can be 
-obtained from `trace`, but that `track_distances` will generally consume less memory. 
+granularity.
 
 Refer to the documentation for more information on the technique and these functions.

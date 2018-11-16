@@ -2,21 +2,17 @@
 tests = ("single", "double")
 
 # Dependencies
-using Serialization, MemSnoop, Plots
+using MemSnoop, Plots
 pyplot()
 
-# Build the tests
-builddir = joinpath(@__DIR__, "build")
-ispath(builddir) || mkdir(builddir)
-
-# Compile the tests
-for test in tests
-    run(`c++ -std=c++1y -O2 src/$test.cpp -o build/$test`)
-end
+include("build.jl")
+builddir = build(tests)
 
 # Function to generate the plots.
 function plot(trace::Vector{MemSnoop.Sample})
-    return heatmap(MemSnoop.ArrayView(trace))
+    data = [MemSnoop.gettrace(trace, v) for v in MemSnoop.vmas(trace)]
+    alldata = vcat(data...)
+    return heatmap(alldata)
 end
 
 # Run and snoop the tests
@@ -24,7 +20,7 @@ for test in tests
     @info "Running workload: $test"
     fullpath = joinpath(builddir, test)
     pid, process, pipe = MemSnoop.launch(fullpath)
-    trace = MemSnoop.trace(pid)
+    trace = MemSnoop.trace(pid; sampletime = 1)
 
     # Save the trace.
     name, _ =  splitext(test)
@@ -34,5 +30,3 @@ for test in tests
     savefig("$test.png")
     MemSnoop.save("$name.trace", trace) 
 end
-
-

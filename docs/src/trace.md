@@ -1,10 +1,20 @@
-# Full Trace
+# Full Traces
 
 MemSnoop has the ability to record the full trace of pages accessed by an application. This
-is performed using [`trace`]
+is performed using [`trace`](@ref)
 
 ```@docs
 MemSnoop.trace
+```
+
+
+
+## Implementation Details - Sample
+
+```@docs
+MemSnoop.Sample
+MemSnoop.isactive(::MemSnoop.Sample, ::Any)
+MemSnoop.pages
 ```
 
 ## Implementation Details - RangeVector
@@ -21,10 +31,3 @@ push!(::MemSnoop.RangeVector{T}, x::T) where T
 MemSnoop.insorted
 ```
 
-## Implementation Details - Sample
-
-```@docs
-MemSnoop.Sample
-MemSnoop.isactive(::MemSnoop.Sample, ::Any)
-MemSnoop.pages
-```

@@ -14,9 +14,6 @@ function __init__()
     check_hugepages()
 end
 
-## Constants
-############################################################################################
-
 # Assumes all pages are 4kB. Deal with this later if it turns out that large pages are a
 # thing in what we're monitoring
 const PAGESIZE = 4096
@@ -29,10 +26,5 @@ include("process.jl")
 include("launch.jl")
 include("trace.jl")
 include("analysis.jl")
-
-#include("analysis/distance.jl")
-
-############################################################################################
-
 
 end # module

@@ -2,8 +2,10 @@
 *.jl.*.cov
 *.jl.mem
 *.out
+*.jls
 *.trace
 test/deps/build
-extra/plot
+extra/build
+extra/*.png
 docs/build
 deps/build.log
