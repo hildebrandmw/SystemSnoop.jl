@@ -8,6 +8,7 @@ makedocs(
         "index.md", 
         "proof-of-concept.md",
         "trace.md",
+        "thoughts.md",
     ]
 )
 

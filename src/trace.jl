@@ -151,13 +151,19 @@ Return `true` if `page` was active in `sample`.
 isactive(sample::Sample, page) = insorted(sample.pages, page)
 
 # These could be implemented better.
-gettrace(sample::Sample, vma::VMA) = [isactive(sample, p) for p in vma.start:vma.stop]
+bitmap(sample::Sample, vma::VMA) = [isactive(sample, p) for p in vma.start:vma.stop]
 
-function gettrace(samples::Vector{Sample}, vma::VMA)
+"""
+    bitmap(trace::Vector{Sample}, vma::VMA) -> Array{Bool, 2}
+
+Return a bitmap `B` of active pages in `trace` with virtual addresses from `vma`. 
+`B[i,j] == true` if the `i`th address in `vma` in `trace[j]` is active.
+"""
+function bitmap(trace::Vector{Sample}, vma::VMA)
     # Pre allocate the output array
-    map = Array{Bool}(undef, length(vma), length(samples))  
+    map = Array{Bool}(undef, length(vma), length(trace))  
 
-    for (col, sample) in enumerate(samples)
+    for (col, sample) in enumerate(trace)
         # Get the first index to start looking
         pages = sample.pages 
         index = searchsortedfirst(pages, vma.start)
@@ -184,7 +190,17 @@ end
 Return a set of all active pages in `sample`.
 """
 pages(sample::Sample) = Set(flatten(sample.pages))
+
+
+"""
+    vmas(trace::Vector{Sample}) -> Vector{VMA}
+
+Return the largest sorted collection ``V`` of `VMA`s with the property that for any sample
+``S \\in trace`` and for any `VMA` ``s \\in S``, ``s \\subset v`` for some ``v \\in V`` and
+``s \\cap u = \\emptyset`` for all ``u \\in V \\setminus v``.o
+"""
 vmas(trace::Vector{Sample}) = mapreduce(vmas, (x,y) -> compact(union(x,y)), trace)
+
 
 """
     pages(trace::Vector{Sample}) -> Vector{UInt64}
@@ -228,7 +244,7 @@ function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
     process = Process(pid)
 
     try
-        for _ in iter
+        for i in iter
             sleep(sampletime)
 
             pause(process)

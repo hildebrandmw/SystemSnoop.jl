@@ -1,10 +1,12 @@
-# Full Traces
+# Generating Traces
 
 MemSnoop has the ability to record the full trace of pages accessed by an application. This
 is performed using [`trace`](@ref)
 
 ```@docs
 MemSnoop.trace
+MemSnoop.pages(::Vector{MemSnoop.Sample})
+MemSnoop.vmas(::Vector{MemSnoop.Sample})
 ```
 
 
@@ -14,7 +16,8 @@ MemSnoop.trace
 ```@docs
 MemSnoop.Sample
 MemSnoop.isactive(::MemSnoop.Sample, ::Any)
-MemSnoop.pages
+MemSnoop.pages(::MemSnoop.Sample)
+MemSnoop.bitmap(::Vector{MemSnoop.Sample}, ::MemSnoop.VMA)
 ```
 
 ## Implementation Details - RangeVector
