@@ -92,7 +92,7 @@ end
     @test isactive(trace[1], UInt(9))  == false
 
     # Start extracting VMAs
-    sub = MemSnoop.gettrace(trace, VMA(UInt(0), UInt(1), ""))
+    sub = MemSnoop.bitmap(trace, VMA(UInt(0), UInt(1), ""))
     expected = 
         [ false false false;  # 0
           true  false false ] # 1     
@@ -100,7 +100,7 @@ end
     @test sub == expected
 
 
-    sub = MemSnoop.gettrace(trace, VMA(UInt(1), UInt(4), ""))
+    sub = MemSnoop.bitmap(trace, VMA(UInt(1), UInt(4), ""))
     expected = [ true  false false; # 1
                  true  true  false; # 2
                  true  false false; # 3
@@ -109,11 +109,11 @@ end
 
 
     # Make sure the size we get is what we expect for a large extraction
-    sub = MemSnoop.gettrace(trace, VMA(UInt(0), UInt(10), ""))
+    sub = MemSnoop.bitmap(trace, VMA(UInt(0), UInt(10), ""))
     @test size(sub) == (11, length(trace))
 
 
     # Get a VMA that is entirely out of range.
-    sub = MemSnoop.gettrace(trace, VMA(UInt(20), UInt(30), "")) 
+    sub = MemSnoop.bitmap(trace, VMA(UInt(20), UInt(30), "")) 
     @test all(isequal(false), sub)
 end
