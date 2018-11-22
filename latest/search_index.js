@@ -93,7 +93,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Generating Traces",
     "title": "MemSnoop.Sample",
     "category": "type",
-    "text": "Simple container containing the list of VMAs analyzed for a sample as well as the individual pages accessed.\n\nFields\n\nvmas :: Vector{VMA} - The VMAs analyzed during this sample.\npages :: RangeVector{UInt64} - The pages that were active during this sample. Pages are   encoded by virtual page number. To get an address, multiply the page number by the   pagesize (generally 4096).\n\n\n\n\n\n"
+    "text": "Simple container containing the list of VMAs analyzed for a sample as well as the individual pages accessed.\n\nFields\n\nvmas :: Vector{VMA} - The VMAs analyzed during this sample.\npages :: SortedRangeVector{UInt64} - The pages that were active during this sample. Pages are   encoded by virtual page number. To get an address, multiply the page number by the   pagesize (generally 4096).\n\n\n\n\n\n"
 },
 
 {
@@ -129,43 +129,179 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace.html#MemSnoop.RangeVector",
+    "location": "trace.html#Implementation-Details-SortedRangeVector-1",
     "page": "Generating Traces",
-    "title": "MemSnoop.RangeVector",
-    "category": "type",
-    "text": "Compact representation of data of type T that is both sorted and usually occurs in contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a RangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the RangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nRangeVector{T}() -> RangeVector{T}\n\nConstruct a empty RangeVector with element type T.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#MemSnoop.lastelement",
-    "page": "Generating Traces",
-    "title": "MemSnoop.lastelement",
-    "category": "function",
-    "text": "lastelement(R::RangeVector{T}) -> T\n\nReturn the last element of the last range of R.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#Base.push!-Union{Tuple{T}, Tuple{RangeVector{T},T}} where T",
-    "page": "Generating Traces",
-    "title": "Base.push!",
-    "category": "method",
-    "text": "push!(R::RangeVector{T}, x::T)\n\nAdd x to the end of R, merging x into the final range if appropriate.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#MemSnoop.insorted",
-    "page": "Generating Traces",
-    "title": "MemSnoop.insorted",
-    "category": "function",
-    "text": "insorted(R::RangeVector, x) -> Bool\n\nPerform an efficient search of R for item x, assuming the ranges in R are sorted and non-overlapping.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace.html#Implementation-Details-RangeVector-1",
-    "page": "Generating Traces",
-    "title": "Implementation Details - RangeVector",
+    "title": "Implementation Details - SortedRangeVector",
     "category": "section",
-    "text": "Since pages are generally accessed sequentially, the record of active pages is encoded as a MemSnoop.RangeVector that compresses contiguous runs of accesses. Note that  there is an implicit assumption that the VMAs are ordered, which should be the case since  /prod/pid/maps orderes VMAs.MemSnoop.RangeVector\nMemSnoop.lastelement\npush!(::MemSnoop.RangeVector{T}, x::T) where T\nMemSnoop.insorted"
+    "text": "Since pages are generally accessed sequentially, the record of active pages is encoded as a MemSnoop.SortedRangeVector that compresses contiguous runs of accesses. Note that  there is an implicit assumption that the VMAs are ordered, which should be the case since  /prod/pid/maps orderes VMAs.MemSnoop.SortedRangeVector\nMemSnoop.lastelement\npush!(::MemSnoop.SortedRangeVector{T}, x::T) where T\nMemSnoop.insorted"
+},
+
+{
+    "location": "vma.html#",
+    "page": "VMAs",
+    "title": "VMAs",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "vma.html#VMAs-1",
+    "page": "VMAs",
+    "title": "VMAs",
+    "category": "section",
+    "text": "Internally, MemSnoop works on VMA boundaries, allowing for filtering on VMAs, and for merging overlapping VMAs together. The latter is important when aggregating  data across multiple samples, as various VMAs may change in size from sample to sample."
+},
+
+{
+    "location": "vma.html#MemSnoop.VMA",
+    "page": "VMAs",
+    "title": "MemSnoop.VMA",
+    "category": "type",
+    "text": "Translated Virtual Memory Area (VMA) for a process.\n\nFields\n\nstart::UInt64 - The starting virtual page number for the VMA.\nstop::UInt64 - The last valid virtual page number for the VMA.\nremainder::String - The remainder of the entry in /proc/pid/maps.\n\nMethods\n\nlength, translate, startaddress, stopaddress\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#Type-1",
+    "page": "VMAs",
+    "title": "Type",
+    "category": "section",
+    "text": "MemSnoop.VMA"
+},
+
+{
+    "location": "vma.html#Methods-1",
+    "page": "VMAs",
+    "title": "Methods",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "vma.html#MemSnoop.startaddress-Tuple{MemSnoop.VMA}",
+    "page": "VMAs",
+    "title": "MemSnoop.startaddress",
+    "category": "method",
+    "text": "startaddress(vma::VMA) -> UInt\n\nReturn the first virtual addresses assigned to vma.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#MemSnoop.stopaddress-Tuple{MemSnoop.VMA}",
+    "page": "VMAs",
+    "title": "MemSnoop.stopaddress",
+    "category": "method",
+    "text": "stopaddres(vma::VMA) -> UInt\n\nReturn the last virtual addresses assigned to vma.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#Base.length-Tuple{MemSnoop.VMA}",
+    "page": "VMAs",
+    "title": "Base.length",
+    "category": "method",
+    "text": "length(vma::VMA) -> Int\n\nReturn the size of vma in number of pages.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#Basic-Functions-1",
+    "page": "VMAs",
+    "title": "Basic Functions",
+    "category": "section",
+    "text": "MemSnoop.startaddress(::MemSnoop.VMA)\nMemSnoop.stopaddress(::MemSnoop.VMA)\nMemSnoop.length(::MemSnoop.VMA)"
+},
+
+{
+    "location": "vma.html#MemSnoop.overlapping",
+    "page": "VMAs",
+    "title": "MemSnoop.overlapping",
+    "category": "function",
+    "text": "overlapping(a::VMA, b::VMA) -> Bool\n\nReturn true if VMA regions a and b overlap.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#Base.issubset-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
+    "page": "VMAs",
+    "title": "Base.issubset",
+    "category": "method",
+    "text": "issubset(a::VMA, b::VMA) -> Bool\n\nReturn true if VMA region a is a subset of b.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#Base.union-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
+    "page": "VMAs",
+    "title": "Base.union",
+    "category": "method",
+    "text": "union(a::VMA, b::VMA) -> VMA\n\nReturn a VMA that is the union of the regions covered by a and b. Assumes that a and b are overlapping.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#MemSnoop.compact",
+    "page": "VMAs",
+    "title": "MemSnoop.compact",
+    "category": "function",
+    "text": "compact(vmas::Vector{VMA}) -> Vector{VMA}\n\nGiven an unsorted collection vmas, return the smallest collection V such that\n\nFor any u in vmas, u subset v for some v in V.\nAll elements of V are disjoint.\nV is sorted by starting address.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#Set-like-Functions-1",
+    "page": "VMAs",
+    "title": "Set-like Functions",
+    "category": "section",
+    "text": "MemSnoop.overlapping\nissubset(::MemSnoop.VMA, ::MemSnoop.VMA)\nunion(::MemSnoop.VMA, ::MemSnoop.VMA)\nMemSnoop.compact"
+},
+
+{
+    "location": "vma.html#MemSnoop.heap",
+    "page": "VMAs",
+    "title": "MemSnoop.heap",
+    "category": "function",
+    "text": "Return true if vma is for the heap.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#MemSnoop.readable",
+    "page": "VMAs",
+    "title": "MemSnoop.readable",
+    "category": "function",
+    "text": "Return true if vma is readable.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#MemSnoop.writable",
+    "page": "VMAs",
+    "title": "MemSnoop.writable",
+    "category": "function",
+    "text": "Return true if vma is writable.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#MemSnoop.executable",
+    "page": "VMAs",
+    "title": "MemSnoop.executable",
+    "category": "function",
+    "text": "Return true if vma is executable.\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#MemSnoop.flagset",
+    "page": "VMAs",
+    "title": "MemSnoop.flagset",
+    "category": "function",
+    "text": "Return true if vma is either readable, writeable, or executable\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#MemSnoop.longerthan",
+    "page": "VMAs",
+    "title": "MemSnoop.longerthan",
+    "category": "function",
+    "text": "longerthan(x, n) -> Bool\n\nReturn true if length(x) > n\n\nlongerthan(n) -> Function\n\nReturn a function x -> longerthan(x, n)\n\n\n\n\n\n"
+},
+
+{
+    "location": "vma.html#Filters-1",
+    "page": "VMAs",
+    "title": "Filters",
+    "category": "section",
+    "text": "Filters can be applied to VMAs to prune cut down on the amount of data collected.  Built-in filters are described below.MemSnoop.heap\nMemSnoop.readable\nMemSnoop.writable\nMemSnoop.executable\nMemSnoop.flagset\nMemSnoop.longerthan"
 },
 
 {
