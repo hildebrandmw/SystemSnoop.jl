@@ -7,7 +7,7 @@ import Base: getindex, iterate, length, push!, pushfirst!, string, lastindex, el
 import Base: searchsortedfirst, size
 import Base: IteratorSize, HasLength, IteratorEltype, HasEltype
 
-using Serialization
+using Serialization, SparseArrays
 
 # Check if huge pages are enabled and display a warning if they are.
 function __init__()
@@ -21,6 +21,7 @@ const PAGESHIFT = (Int ∘ log2)(PAGESIZE)
 
 include("hugepages.jl")
 include("vma.jl")
+include("rangevector.jl")
 include("util.jl")
 include("process.jl")
 include("launch.jl")

@@ -1,5 +1,5 @@
-@testset "Testing RangeVector" begin
-    R = MemSnoop.RangeVector(UnitRange{Int}[])
+@testset "Testing SortedRangeVector" begin
+    R = MemSnoop.SortedRangeVector(UnitRange{Int}[])
 
     push!(R, 1)
     @test R.ranges == [1:1]
@@ -53,14 +53,14 @@
     @test X == [1, 2, 10, 12]
 
     # Test some searching
-    @test MemSnoop.insorted(R, 1) == true
-    @test MemSnoop.insorted(R, 2) == true
-    @test MemSnoop.insorted(R, 3) == false
-    @test MemSnoop.insorted(R, 0) == false
-    @test MemSnoop.insorted(R, 10) == true
-    @test MemSnoop.insorted(R, 11) == false
-    @test MemSnoop.insorted(R, 12) == true
-    @test MemSnoop.insorted(R, 13) == false
+    @test in(1, R) == true
+    @test in(2, R) == true
+    @test in(3, R) == false
+    @test in(0, R) == false
+    @test in(10, R) == true
+    @test in(11, R) == false
+    @test in(12, R) == true
+    @test in(13, R) == false
 
     @test MemSnoop.lastelement(R) == 12
 end
@@ -69,7 +69,7 @@ end
     # Strategy: construct a test collection and then run tests on that.
     # Note that the actual field in the "vmas" category of "Sample" doesn't matter for
     # trace extraction - it's just a bookkeeping strategy.
-    RangeVector = MemSnoop.RangeVector
+    SortedRangeVector = MemSnoop.SortedRangeVector
     Sample      = MemSnoop.Sample
     isactive    = MemSnoop.isactive
     VMA         = MemSnoop.VMA
@@ -77,9 +77,9 @@ end
 
     null = VMA[]
     
-    A = RangeVector([UInt(1):UInt(3), UInt(5):UInt(8)])
-    B = RangeVector([UInt(2):UInt(2)])
-    C = RangeVector([UInt(4):UInt(6)])
+    A = SortedRangeVector([UInt(1):UInt(3), UInt(5):UInt(8)])
+    B = SortedRangeVector([UInt(2):UInt(2)])
+    C = SortedRangeVector([UInt(4):UInt(6)])
 
     trace = Sample.(Ref(null), [A,B,C])
 

@@ -1,90 +1,14 @@
 
-"""
-Compact representation of data of type `T` that is both sorted and usually occurs in
-contiguous ranges. For example, since groups of virtual memory pages are usually accessed
-together, a `RangeVector` can encode those more compactly than a normal vector.
-
-Fields
-------
-
-* `ranges :: Vector{UnitRange{T}` - The elements of the `RangeVector`, compacted into
-    contiguous ranges.
-
-Constructor
------------
-
-    RangeVector{T}() -> RangeVector{T}
-
-Construct a empty `RangeVector` with element type `T`.
-"""
-struct RangeVector{T} <: AbstractVector{UnitRange{T}}
-    ranges::Vector{UnitRange{T}}
-end
-RangeVector{T}() where {T} = RangeVector{T}(UnitRange{T}[])
-
-# Convenience methods
-length(R::RangeVector) = length(R.ranges)
-iterate(R::RangeVector, args...) = iterate(R.ranges, args...)
-size(R::RangeVector) = (length(R),)
-
-sumall(R::RangeVector) = sum(length, R.ranges)
-
-
-# Fordwarding methods
-getindex(R::RangeVector, inds...) = getindex(R.ranges, inds...)
-
-searchsortedfirst(R::RangeVector{T}, x::T; lt = (x,y) -> (last(x) < y), kw...) where T = 
-    searchsortedfirst(R.ranges, x; lt = lt, kw...)
-
-
-"""
-    lastelement(R::RangeVector{T}) -> T
-
-Return the last element of the last range of `R`.
-"""
-lastelement(R::RangeVector) = (last ∘ last)(R.ranges)
-
-"""
-    push!(R::RangeVector{T}, x::T)
-
-Add `x` to the end of `R`, merging `x` into the final range if appropriate.
-"""
-function push!(R::RangeVector{T}, x::T) where T
-    # Check to see if `x` can be appended to the last element of `R`.
-    if !isempty(R.ranges) && (x - lastelement(R)) == one(T)
-        R.ranges[end] = (first ∘ last)(R.ranges):x
-    else
-        push!(R.ranges, x:x)
-    end
-    nothing
-end
-
-"""
-    insorted(R::RangeVector, x) -> Bool
-
-Perform an efficient search of `R` for item `x`, assuming the ranges in `R` are sorted and
-non-overlapping.
-"""
-function insorted(R::RangeVector, x)
-    # Find the first range that can possibly contain "x". Since ranges are expected to be
-    # sorted, this is the ONLY range that can container "x".
-    index = searchsortedfirst(R, x)
-
-    # Make sure index is inbounds (if no range is found, index will be out of bounds), then
-    # check if "x" is actually in the range.
-    return (index <= length(R)) && in(x, R[index])
-end
-
 ############################################################################################
 
 """
-    readidle(process::AbstractProcess) -> Vector{RangeVector{Int}}
+    readidle(process::AbstractProcess) -> Vector{SortedRangeVector{Int}}
 
 TODO
 """
 function readidle(process::AbstractProcess)
-    pages = RangeVector{UInt64}()
-    buffer = process.bitmap
+    pages = SortedRangeVector{UInt64}()
+    buffer = process.buffer
     # Read the whole idle bitmap buffer. This can take a while for systems with a large
     # amound of memory.
     read!(IDLE_BITMAP, buffer)
@@ -124,16 +48,25 @@ Fields
 
 * `vmas :: Vector{VMA}` - The VMAs analyzed during this sample.
 
-* `pages :: RangeVector{UInt64}` - The pages that were active during this sample. Pages are
+* `pages :: SortedRangeVector{UInt64}` - The pages that were active during this sample. Pages are
     encoded by virtual page number. To get an address, multiply the page number by the
     pagesize (generally 4096).
 """
 struct Sample
     vmas :: Vector{VMA}
     # Recording page number ...
-    pages :: RangeVector{UInt64}
+    pages :: SortedRangeVector{UInt64}
 end
 vmas(S::Sample) = S.vmas
+
+function Base.union(a::Sample, b::Sample)
+    # Merge the two VMA regions
+    vmas = compact(vcat(a.vmas, b.vmas)) 
+    pages = union(a.pages, b.pages)
+
+    return Sample(vmas, pages)
+end
+
 
 """
     wss(S::Sample) -> Int
@@ -148,7 +81,7 @@ wss(S::Sample) = sumall(S.pages)
 
 Return `true` if `page` was active in `sample`.
 """
-isactive(sample::Sample, page) = insorted(sample.pages, page)
+isactive(sample::Sample, page) = in(page, sample.pages)
 
 # These could be implemented better.
 bitmap(sample::Sample, vma::VMA) = [isactive(sample, p) for p in vma.start:vma.stop]

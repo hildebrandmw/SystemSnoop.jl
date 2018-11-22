@@ -4,7 +4,7 @@
 
     println()
     println("Testing Reads from the Idle Buffer")
-    @btime read!($(MemSnoop.IDLE_BITMAP), $(process.bitmap))
+    @btime read!($(MemSnoop.IDLE_BITMAP), $(process.buffer))
 
     println()
     println("Testing Time it takes to Seek Write Idle Pages") 
@@ -15,11 +15,4 @@
     println("Testing Time it takes to read idle pages")
     MemSnoop.getvmas!(process)
     @btime MemSnoop.readidle($(process))
-
-    # Use the "allwrite" process
-    process = MemSnoop.Process{MemSnoop.AllWrite}(getpid())
-    println()
-    println("Testing Time it takes to AllWrite Idle Pages")
-    MemSnoop.getvmas!(process)
-    @btime MemSnoop.markidle($(process))
 end

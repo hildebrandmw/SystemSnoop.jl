@@ -20,17 +20,17 @@ MemSnoop.pages(::MemSnoop.Sample)
 MemSnoop.bitmap(::Vector{MemSnoop.Sample}, ::MemSnoop.VMA)
 ```
 
-## Implementation Details - RangeVector
+## Implementation Details - SortedRangeVector
 
 Since pages are generally accessed sequentially, the record of active pages is encoded as
-a [`MemSnoop.RangeVector`](@ref) that compresses contiguous runs of accesses. Note that 
+a [`MemSnoop.SortedRangeVector`](@ref) that compresses contiguous runs of accesses. Note that 
 there is an implicit assumption that the VMAs are ordered, which should be the case since 
 `/prod/pid/maps` orderes VMAs.
 
 ```@docs
-MemSnoop.RangeVector
+MemSnoop.SortedRangeVector
 MemSnoop.lastelement
-push!(::MemSnoop.RangeVector{T}, x::T) where T
+push!(::MemSnoop.SortedRangeVector{T}, x::T) where T
 MemSnoop.insorted
 ```
 

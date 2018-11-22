@@ -38,9 +38,10 @@ inmemory(x) = isbitset(x, 63)
 
 
 """
-    isactive(x::Integer, buffer::Vector{UInt64})
+    isactive(x::Integer, buffer::Vector{UInt64}) -> Bool
 
-TODO
+Return `true` if bit `x` of `buffer` is set, intrerpreting `buffer` as a contiguous chunk 
+of memory.
 """
 @inline function isactive(x::Integer, buffer::Vector{UInt64})
     # Filter out frames that are not active in memory.
@@ -95,13 +96,9 @@ function resume(pid)
     return nothing
 end
 
+save(file::String, x) = open(f -> serialize(f, x), file, write = true)
+load(file::String) = open(deserialize, file)
 
-"""
-    save(file::String, x)
-
-Serialize `x` for `file`.
-"""
-save(file::String, x) = open(f -> serialize(f, x), file, "w")
 
 """
     cdf(x) -> Vector
@@ -115,67 +112,6 @@ function cdf(x)
     end
     return v
 end
-
-
-
-"""
-    getvmas!(buffer::Vector{VMA}, pid, [filter])
-
-Fill `buffer` with the Virtual Memory Areas associated with the process with `pid`. Can
-optinally supply a filter. VMAs in `buffer` will be sorted by virtual address.
-
-Filter
-------
-
-The filter must be of the form
-```julia
-f(vma::VMA) -> Bool
-```
-where `vma` is the parsed VMA region from a line of the process's `maps` file.
-
-For example, if an entry in the `maps` file is
-```
-0088f000-010fe000 rw-p 00000000 00:00 0
-```
-then `vma = VMA(0x0088f000,0x010fe000, rw-p 00000000 00:00 0)`
-"""
-function getvmas!(buffer::Vector{VMA}, pid, filter = tautology)
-    # maps/ entries look like this
-    #
-    # 0088f000-010fe000 rw-p 00000000 00:00 0
-    #
-    # Where the first pair of numbers is the range of addresses for this unit.
-    # The strategy here is to find up to the first "-", parse as an int, then parse to the
-    # next " "
-    #
-    # Ordering of VMAs comes from the ordering from /proc/pid/maps
-    empty!(buffer)
-    try
-        open("/proc/$pid/maps") do f
-            while !eof(f)
-                start = parse(UInt, readuntil(f, '-'); base = 16) >> PAGESHIFT
-                stop = (parse(UInt, readuntil(f, ' '); base = 16) - one(UInt)) >> PAGESHIFT
-
-                # Wrap to the next line
-                remainder = readuntil(f, '\n')
-                vma = VMA(start, stop, remainder)
-                filter(vma) || continue
-
-                push!(buffer, vma)
-            end
-        end
-    catch error
-        # Check the error, if it's a "file not found", throw a PID error to excape.
-        # otherwise, rethrow the error
-        if isa(error, SystemError) && error.errnum == 2
-            throw(PIDException())
-        else
-            rethrow(error)
-        end
-    end
-    return nothing
-end
-
 
 """
     walkpagemap(f::Function, pid, vmas; [buffer::Vector{UInt64}])

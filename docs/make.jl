@@ -8,6 +8,9 @@ makedocs(
         "index.md", 
         "proof-of-concept.md",
         "trace.md",
+        "Implementation" => Any[
+            "vma.md",
+        ],
         "thoughts.md",
     ]
 )

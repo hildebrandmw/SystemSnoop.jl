@@ -1,23 +1,16 @@
-abstract type IdleWriter end
-struct AllWrite <: IdleWriter end
-struct SeekWrite <: IdleWriter end
-
 ## AbstractProcess ##
-abstract type AbstractProcess{W <: IdleWriter} end
+abstract type AbstractProcess end
 pause(p::AbstractProcess) = pause(p.pid)
 resume(p::AbstractProcess) = resume(p.pid)
 
-
-struct Process{W <: IdleWriter} <: AbstractProcess{W}
+struct Process <: AbstractProcess
     pid :: Int64
     vmas :: Vector{VMA}
-    bitmap :: Vector{UInt64}
+    buffer :: Vector{UInt64}
 end
 
-Process(pid::Integer) = Process{SeekWrite}(pid)
-
-function Process{W}(pid::Integer) where {W <: IdleWriter}
-    p = Process{W}(Int64(pid), Vector{VMA}(), UInt64[])
+function Process(pid::Integer)
+    p = Process(Int64(pid), Vector{VMA}(), UInt64[])
     initbuffer!(p)
     return p
 end
@@ -39,7 +32,7 @@ function initbuffer!(p::AbstractProcess)
         buffer = reinterpret(UInt64, read(bitmap))
         return length(buffer)
     end
-    resize!(p.bitmap, nentries)
+    resize!(p.buffer, nentries)
     return nothing
 end
 
@@ -48,7 +41,7 @@ end
 
 TODO
 """
-function markidle(process::AbstractProcess{SeekWrite})
+function markidle(process::AbstractProcess)
     open(IDLE_BITMAP, "w") do bitmap
 
         # Keep track of positions in the bitmap file that have already been written to.
@@ -75,15 +68,3 @@ function markidle(process::AbstractProcess{SeekWrite})
     end
     return nothing
 end
-
-
-function markidle(process::AbstractProcess{AllWrite})
-    allones = Ref(typemax(UInt64))
-    open(IDLE_BITMAP, "w") do bitmap
-        for _ in 1:length(process.bitmap)
-            unsafe_write(bitmap, allones, sizeof(UInt64))
-        end
-    end
-    return nothing
-end
-
