@@ -61,11 +61,11 @@ var documenterSearchIndex = {"docs": [
     "page": "Generating Traces",
     "title": "MemSnoop.trace",
     "category": "function",
-    "text": "trace(pid; [sampletime], [iter], [filter]) -> Vector{Sample}\n\nRecord the full trace of pages accessed by an application with pid. Function will gracefully exit and return Vector{Sample} if process pid no longer exists.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime.\nPause pid.\nGet the VMAs for pid, applying filter.\nRead all of the active pages.\nMark all pages as idle.\nResume `pid.\nRepeat for each element of iter.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\nfilter : Filter to apply to process VMAs to reduce total amount of memory tracked.\n\n\n\n\n\n"
+    "text": "trace(pid; [sampletime], [iter], [filter], [callback]) -> Vector{Sample}\n\nRecord the full trace of pages accessed by an application with pid. Function will gracefully exit and return Vector{Sample} if process pid no longer exists.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime.\nPause pid.\nGet the VMAs for pid, applying filter.\nRead all of the active pages.\nMark all pages as idle.\nCall callback\nResume `pid.\nRepeat for each element of iter.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\nfilter : Filter to apply to process VMAs to reduce total amount of memory tracked.\ncallback : Optional callback for printing out status information (such as number    of iterations).\n\n\n\n\n\n"
 },
 
 {
-    "location": "trace.html#MemSnoop.pages-Tuple{Array{MemSnoop.Sample,1}}",
+    "location": "trace.html#MemSnoop.pages-Tuple{Array{Sample,1}}",
     "page": "Generating Traces",
     "title": "MemSnoop.pages",
     "category": "method",
@@ -73,7 +73,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace.html#MemSnoop.vmas-Tuple{Array{MemSnoop.Sample,1}}",
+    "location": "trace.html#MemSnoop.vmas-Tuple{Array{Sample,1}}",
     "page": "Generating Traces",
     "title": "MemSnoop.vmas",
     "category": "method",
@@ -97,7 +97,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace.html#MemSnoop.isactive-Tuple{MemSnoop.Sample,Any}",
+    "location": "trace.html#MemSnoop.isactive-Tuple{Sample,Any}",
     "page": "Generating Traces",
     "title": "MemSnoop.isactive",
     "category": "method",
@@ -105,7 +105,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace.html#MemSnoop.pages-Tuple{MemSnoop.Sample}",
+    "location": "trace.html#MemSnoop.pages-Tuple{Sample}",
     "page": "Generating Traces",
     "title": "MemSnoop.pages",
     "category": "method",
@@ -113,7 +113,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace.html#MemSnoop.bitmap-Tuple{Array{MemSnoop.Sample,1},MemSnoop.VMA}",
+    "location": "trace.html#MemSnoop.bitmap-Tuple{Array{Sample,1},VMA}",
     "page": "Generating Traces",
     "title": "MemSnoop.bitmap",
     "category": "method",
@@ -177,7 +177,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "vma.html#MemSnoop.startaddress-Tuple{MemSnoop.VMA}",
+    "location": "vma.html#MemSnoop.startaddress-Tuple{VMA}",
     "page": "VMAs",
     "title": "MemSnoop.startaddress",
     "category": "method",
@@ -185,7 +185,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "vma.html#MemSnoop.stopaddress-Tuple{MemSnoop.VMA}",
+    "location": "vma.html#MemSnoop.stopaddress-Tuple{VMA}",
     "page": "VMAs",
     "title": "MemSnoop.stopaddress",
     "category": "method",
@@ -193,7 +193,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "vma.html#Base.length-Tuple{MemSnoop.VMA}",
+    "location": "vma.html#Base.length-Tuple{VMA}",
     "page": "VMAs",
     "title": "Base.length",
     "category": "method",
@@ -217,7 +217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "vma.html#Base.issubset-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
+    "location": "vma.html#Base.issubset-Tuple{VMA,VMA}",
     "page": "VMAs",
     "title": "Base.issubset",
     "category": "method",
@@ -225,7 +225,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "vma.html#Base.union-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
+    "location": "vma.html#Base.union-Tuple{VMA,VMA}",
     "page": "VMAs",
     "title": "Base.union",
     "category": "method",
@@ -233,9 +233,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "vma.html#MemSnoop.compact",
+    "location": "vma.html#Base.compact",
     "page": "VMAs",
-    "title": "MemSnoop.compact",
+    "title": "Base.compact",
     "category": "function",
     "text": "compact(vmas::Vector{VMA}) -> Vector{VMA}\n\nGiven an unsorted collection vmas, return the smallest collection V such that\n\nFor any u in vmas, u subset v for some v in V.\nAll elements of V are disjoint.\nV is sorted by starting address.\n\n\n\n\n\n"
 },
