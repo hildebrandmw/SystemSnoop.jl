@@ -21,7 +21,7 @@
     pid, process, pipe = SnoopTest.pidlaunch("single")
 
     # Pass a single length range as the iterator so we only take one sample.
-    T = trace(pid; sampletime = 1)
+    T = trace(pid; sampletime = 6)
 
     # Read the start and end addresses from the pipe
     # Convert these addresses into pages.
