@@ -65,7 +65,7 @@ overlapping(a::VMA, b::VMA) = !((a.stop < b.start) || (b.stop < a.start))
 
 Return `true` if VMA region `a` is a subset of `b`.
 """
-Base.issubset(a::VMA, b::VMA) = (a.start >= b.start) && (a.stop <= b.stop)
+issubset(a::VMA, b::VMA) = (a.start >= b.start) && (a.stop <= b.stop)
 
 
 """
@@ -74,7 +74,7 @@ Base.issubset(a::VMA, b::VMA) = (a.start >= b.start) && (a.stop <= b.stop)
 Return a `VMA` that is the union of the regions covered by `a` and `b`. Assumes that `a`
 and `b` are [`overlapping`](@ref).
 """
-Base.union(a::VMA, b::VMA) = VMA(min(a.start, b.start), max(a.stop, b.stop), a.remainder)
+union(a::VMA, b::VMA) = VMA(min(a.start, b.start), max(a.stop, b.stop), a.remainder)
 
 
 """

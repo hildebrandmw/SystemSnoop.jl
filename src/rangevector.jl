@@ -72,7 +72,7 @@ end
 Perform an efficient search of `R` for item `x`, assuming the ranges in `R` are sorted and
 non-overlapping.
 """
-function Base.in(x, R::SortedRangeVector)
+function in(x, R::SortedRangeVector)
     # Find the first range that can possibly contain "x". Since ranges are expected to be
     # sorted, this is the ONLY range that can container "x".
     index = searchsortedfirst(R, x)
@@ -83,7 +83,7 @@ function Base.in(x, R::SortedRangeVector)
 end
 
 
-function Base.union(A::SortedRangeVector{T}, B::SortedRangeVector{T}) where T
+function union(A::SortedRangeVector{T}, B::SortedRangeVector{T}) where T
     U = SortedRangeVector{T}()
 
     ia = iterate(A)
@@ -121,3 +121,4 @@ function Base.union(A::SortedRangeVector{T}, B::SortedRangeVector{T}) where T
 
     return U
 end
+

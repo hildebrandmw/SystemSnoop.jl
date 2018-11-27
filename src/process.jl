@@ -7,12 +7,15 @@ struct Process <: AbstractProcess
     pid :: Int64
     vmas :: Vector{VMA}
     buffer :: Vector{UInt64}
-end
 
-function Process(pid::Integer)
-    p = Process(Int64(pid), Vector{VMA}(), UInt64[])
-    initbuffer!(p)
-    return p
+    function Process(pid::Integer)
+        # Create the object
+        p = new(Int64(pid), Vector{VMA}(), UInt64[])
+
+        # Initialize the buffer to be the correct size to hold the entire idle page bitmap
+        initbuffer!(p)
+        return p
+    end
 end
 
 getvmas!(process::AbstractProcess, args...) = getvmas!(process.vmas, process.pid, args...)
@@ -33,6 +36,48 @@ function initbuffer!(p::AbstractProcess)
         return length(buffer)
     end
     resize!(p.buffer, nentries)
+    return nothing
+end
+
+#####
+##### Page Walking Functions
+#####
+
+"""
+    walkpagemap(f::Function, pid, vmas; [buffer::Vector{UInt64}])
+
+For each [`VMA`](@ref) in iterator `vmas`, store the contents of `/proc/pid/pagemap` into
+`buffer` for this `VMA` and call `f(buffer)`.
+
+Note that it is possible for `buffer` to be empty.
+"""
+function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt64} = UInt64[])
+    # Open the pagemap file. Expect address ranges for the VMAs to be in order.
+    try 
+        open("/proc/$pid/pagemap") do pagemap
+            for vma in vmas
+
+                # Seek to the start address.
+                seek(pagemap, vma.start * sizeof(UInt64))
+                if eof(pagemap)
+                    empty!(buffer)
+                else
+                    resize!(buffer, length(vma))
+                    read!(pagemap, buffer)
+                end
+
+                # Call the passed function
+                f(buffer)
+            end
+        end
+    catch error
+        # Check the error, if it's a "file not found (errnum=2)", throw a PID error to escape,
+        if isa(error, SystemError) && error.errnum == 2
+            throw(PIDException(pid))
+        else
+            rethrow(error)
+        end
+    end
     return nothing
 end
 
@@ -67,4 +112,36 @@ function markidle(process::AbstractProcess)
         end
     end
     return nothing
+end
+
+"""
+    readidle(process::AbstractProcess) -> Vector{SortedRangeVector{Int}}
+
+TODO
+"""
+function readidle(process::AbstractProcess)
+    pages = SortedRangeVector{UInt64}()
+    buffer = process.buffer
+    # Read the whole idle bitmap buffer. This can take a while for systems with a large
+    # amound of memory.
+    read!(IDLE_BITMAP, buffer)
+
+    # Index of the VMA currently being accessed.
+    vma_index = 1
+
+    walkpagemap(process.pid, process.vmas) do pagemap_region
+        for (index, entry) in enumerate(pagemap_region)
+            vma = process.vmas[vma_index]
+            # Check if the active bit for this page is set. If so, add this frame's index
+            # to the collection of active indices.
+            if isactive(entry, buffer)
+                # Convert to page number and add to pages
+                pagenumber = (index - 1) + vma.start
+                push!(pages, pagenumber)
+            end
+        end
+        vma_index += 1
+    end
+
+    return pages
 end

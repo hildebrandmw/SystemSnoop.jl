@@ -1,5 +1,4 @@
 @testset "Testing VMAs" begin
-    VMA = MemSnoop.VMA
 
     a = VMA(UInt(0), UInt(10), "hello")
     @test MemSnoop.startaddress(a) == 0

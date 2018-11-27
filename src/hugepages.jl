@@ -1,5 +1,5 @@
 # Settings for huge pages
-const HUGEPAGE_ENABLED = "/sys/kernel/mm/transparent_hugepage/enabled"
+const HUGEPAGE_FILE = "/sys/kernel/mm/transparent_hugepage/enabled"
 abstract type TransparentHugePage end
 
 # Make these as types to avoid writing any random stuff to the "enabled" file.
@@ -26,11 +26,11 @@ function check_hugepages()
     # where the brackets [] indicate which mode is selected.
     # The strategy is to just use a regex to get the option in the brackets and then check
     # if that is equal to "never"
-    if ispath(HUGEPAGE_ENABLED)
-        str = read(HUGEPAGE_ENABLED, String)
+    if ispath(HUGEPAGE_FILE)
+        str = read(HUGEPAGE_FILE, String)
     else
         @warn """
-        File $HUGEPAGE_ENABLED not found. Aborting hugepage check.
+        File $HUGEPAGE_FILE not found. Aborting hugepage check.
         """
         return false
     end
@@ -64,4 +64,4 @@ end
 
 Set the status of Transparent Huge Pages to `T`.
 """
-enable_hugepages(::Type{T}) where {T <: TransparentHugePage} = write(HUGEPAGE_ENABLED, string(T))
+enable_hugepages(::Type{T}) where {T <: TransparentHugePage} = write(HUGEPAGE_FILE, string(T))

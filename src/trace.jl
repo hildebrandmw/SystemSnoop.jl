@@ -1,43 +1,6 @@
-
-############################################################################################
-
-"""
-    readidle(process::AbstractProcess) -> Vector{SortedRangeVector{Int}}
-
-TODO
-"""
-function readidle(process::AbstractProcess)
-    pages = SortedRangeVector{UInt64}()
-    buffer = process.buffer
-    # Read the whole idle bitmap buffer. This can take a while for systems with a large
-    # amound of memory.
-    read!(IDLE_BITMAP, buffer)
-
-    # Index of the VMA currently being accessed.
-    vma_index = 1
-
-    walkpagemap(process.pid, process.vmas) do pagemap_region
-        for (index, entry) in enumerate(pagemap_region)
-            vma = process.vmas[vma_index]
-            # Check if the active bit for this page is set. If so, add this frame's index
-            # to the collection of active indices.
-            if isactive(entry, buffer)
-                # Convert to page number and add to pages
-                pagenumber = (index - 1) + vma.start
-                push!(pages, pagenumber)
-            end
-        end
-        vma_index += 1
-    end
-
-    return pages
-end
-
-############################################################################################
-
-############
-## Sample ##
-############
+#####
+##### Sample
+#####
 
 """
 Simple container containing the list of VMAs analyzed for a sample as well as the individual
@@ -59,7 +22,7 @@ struct Sample
 end
 vmas(S::Sample) = S.vmas
 
-function Base.union(a::Sample, b::Sample)
+function union(a::Sample, b::Sample)
     # Merge the two VMA regions
     vmas = compact(vcat(a.vmas, b.vmas)) 
     pages = union(a.pages, b.pages)
@@ -67,14 +30,12 @@ function Base.union(a::Sample, b::Sample)
     return Sample(vmas, pages)
 end
 
-
 """
     wss(S::Sample) -> Int
 
 Return the number of active pages for `S`.
 """
 wss(S::Sample) = sumall(S.pages)
-
 
 """
     isactive(sample::Sample, page) -> Bool
@@ -147,7 +108,7 @@ pages(trace::Vector{Sample}) = mapreduce(pages, union, trace) |> collect |> sort
 # trace
 
 """
-    trace(pid; [sampletime], [iter], [filter]) -> Vector{Sample}
+    trace(pid; [sampletime], [iter], [filter], [callback]) -> Vector{Sample}
 
 Record the full trace of pages accessed by an application with `pid`. Function will
 gracefully exit and return `Vector{Sample}` if process `pid` no longer exists.
@@ -159,8 +120,9 @@ The general flow of this function is as follows:
 3. Get the VMAs for `pid`, applying `filter`.
 4. Read all of the active pages.
 5. Mark all pages as idle.
-6. Resume `pid.
-7. Repeat for each element of `iter`.
+6. Call `callback`
+7. Resume `pid.
+8. Repeat for each element of `iter`.
 
 Keyword Arguments
 -----------------
@@ -171,8 +133,16 @@ Keyword Arguments
     sampling until monitored process terminates. Default: Run until program terminates.
 
 * `filter` : Filter to apply to process `VMAs` to reduce total amount of memory tracked.
+
+* `callback` : Optional callback for printing out status information (such as number 
+    of iterations).
 """
-function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
+function trace(pid; 
+        sampletime = 2, 
+        iter = Forever(), 
+        filter = tautology, 
+        callback = () -> nothing
+    )
     trace = Sample[]
     process = Process(pid)
 
@@ -185,6 +155,7 @@ function trace(pid; sampletime = 2, iter = Forever(), filter = tautology)
             getvmas!(process, filter)
             pages = readidle(process)
             markidle(process)
+            callback()
             resume(process)
 
             # Construct a sample from the list of hit pages.

@@ -16,11 +16,9 @@
 # is correctly marked as idle
 @testset "Testing program `single`" begin
     pagesize = 4096
-    # Setup the path to the single test
-    path = joinpath(BUILDDIR, "single")
 
     # Launch the test program
-    pid, process, pipe = MemSnoop.launch(path)
+    pid, process, pipe = SnoopTest.pidlaunch("single")
 
     # Pass a single length range as the iterator so we only take one sample.
     trace = MemSnoop.trace(pid; sampletime = 6)
@@ -48,12 +46,10 @@
 
     ## Doing this Breaks CI ... I don't know if it has something to do with the 
     # the fact that Travis is using VMs or something ...
-    #=
+
     # Last sample should have no hits
-    # I think there's some cleanup code or something that runs near the end, so take the
-    # second to last record.
     sample = trace[end]
-    for frame in start_page:pagesize:end_page
+    for frame in start_page:end_page
         @test !MemSnoop.isactive(sample, frame)
         if MemSnoop.isactive(sample, frame)
             @show start_page
@@ -62,5 +58,4 @@
             break
         end
     end
-    =#
 end

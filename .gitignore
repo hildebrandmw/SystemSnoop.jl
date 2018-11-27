@@ -4,8 +4,6 @@
 *.out
 *.jls
 *.trace
-test/deps/build
-extra/build
+test/SnoopTest/deps/build
 extra/*.png
 docs/build
-deps/build.log
