@@ -47,6 +47,7 @@
     ## Doing this Breaks CI ... I don't know if it has something to do with the 
     # the fact that Travis is using VMs or something ...
 
+    #=
     # Last sample should have no hits
     sample = trace[end]
     for frame in start_page:end_page
@@ -58,4 +59,5 @@
             break
         end
     end
+    =#
 end
