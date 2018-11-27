@@ -25,10 +25,10 @@ SnoopTest.build()
 ##### Test Suits
 #####
 
-# include("vma.jl")
-# include("util.jl")
-# include("trace.jl")
-# include("timing.jl")
+include("vma.jl")
+include("util.jl")
+include("trace.jl")
+include("timing.jl")
 
 # Include tests
 include("programs.jl")
