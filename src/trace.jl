@@ -21,6 +21,7 @@ struct Sample
     pages :: SortedRangeVector{UInt64}
 end
 vmas(S::Sample) = S.vmas
+==(a::Sample, b::Sample) = (a.vmas == b.vmas) && (a.pages == b.pages)
 
 function union(a::Sample, b::Sample)
     # Merge the two VMA regions
@@ -29,6 +30,8 @@ function union(a::Sample, b::Sample)
 
     return Sample(vmas, pages)
 end
+
+union(a::Sample, b::Sample, c::Sample, args::Sample...) = foldl(union, (a, b, c, args...))
 
 """
     wss(S::Sample) -> Int
@@ -43,9 +46,6 @@ wss(S::Sample) = sumall(S.pages)
 Return `true` if `page` was active in `sample`.
 """
 isactive(sample::Sample, page) = in(page, sample.pages)
-
-# These could be implemented better.
-bitmap(sample::Sample, vma::VMA) = [isactive(sample, p) for p in vma.start:vma.stop]
 
 """
     bitmap(trace::Vector{Sample}, vma::VMA) -> Array{Bool, 2}
@@ -77,14 +77,12 @@ function bitmap(trace::Vector{Sample}, vma::VMA)
     return map
 end
 
-
 """
     pages(sample::Sample) -> Set{UInt64}
 
 Return a set of all active pages in `sample`.
 """
 pages(sample::Sample) = Set(flatten(sample.pages))
-
 
 """
     vmas(trace::Vector{Sample}) -> Vector{VMA}

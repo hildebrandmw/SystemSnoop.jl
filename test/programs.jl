@@ -21,7 +21,7 @@
     pid, process, pipe = SnoopTest.pidlaunch("single")
 
     # Pass a single length range as the iterator so we only take one sample.
-    trace = MemSnoop.trace(pid; sampletime = 6)
+    T = trace(pid; sampletime = 1)
 
     # Read the start and end addresses from the pipe
     # Convert these addresses into pages.
@@ -32,7 +32,7 @@
     end_page = div(end_address, pagesize)
 
     # First sample should have all the hits
-    sample = first(trace)
+    sample = first(T)
     for frame in start_page:end_page
         @test MemSnoop.isactive(sample, frame)
         if !MemSnoop.isactive(sample, frame)
@@ -43,7 +43,21 @@
         end
     end
 
+    ###
+    ### Benchmarking
+    ###
+    println("Benchmarking `pages(::Vector{Sample})`")
+    @btime pages($T)
 
+    v = vmas(T)
+    println("Benchmarking `vmas(::Vector{Sample})`")
+    @btime vmas($T)
+
+    println("Benchmarking `bitmap`")
+    _, ind = findmax(length.(v))
+    @btime bitmap($T, $(v[ind]))
+
+    # XXX
     ## Doing this Breaks CI ... I don't know if it has something to do with the 
     # the fact that Travis is using VMs or something ...
 

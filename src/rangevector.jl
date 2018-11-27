@@ -60,7 +60,7 @@ end
 
 function push!(A::SortedRangeVector{T}, x::UnitRange{T}) where T
     if !isempty(A) && first(x) <= lastelement(A) + one(T)
-        A.ranges[end] = first(last(A)):last(x)
+        A.ranges[end] = first(last(A)):max(last(x), lastelement(A))
     else
         push!(A.ranges, x)
     end
@@ -115,7 +115,7 @@ function union(A::SortedRangeVector{T}, B::SortedRangeVector{T}) where T
         ix === nothing && break 
         x, sx = ix
 
-        mergepush!(U, x)
+        push!(U, x)
         ix = iterate(X, sx)
     end
 

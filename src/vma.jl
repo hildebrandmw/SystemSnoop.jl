@@ -23,6 +23,9 @@ struct VMA
     start :: UInt64
     stop :: UInt64
     remainder :: String
+
+    # Innser constructor - auto convert and fill in remainder
+    VMA(start::Integer, stop::Integer, remainder = "") = new(UInt64(start), UInt64(stop), remainder)
 end
 
 Base.isless(a::VMA, b::VMA) = a.stop < b.start

@@ -1,87 +1,21 @@
-@testset "Testing SortedRangeVector" begin
-    R = MemSnoop.SortedRangeVector(UnitRange{Int}[])
-
-    push!(R, 1)
-    @test R.ranges == [1:1]
-    @test length(R) == 1
-    @test MemSnoop.lastelement(R) == 1
-
-    push!(R, 2)
-    @test R.ranges == [1:2]
-    @test length(R) == 1
-    @test MemSnoop.lastelement(R) == 2
-
-    push!(R, 10)
-    @test R.ranges == [1:2, 10:10]
-    @test length(R) == 2
-    @test MemSnoop.lastelement(R) == 10
-
-    push!(R, 12)
-    @test R.ranges == [1:2, 10:10, 12:12]
-    @test length(R) == 3
-    @test MemSnoop.lastelement(R) == 12
-
-    # Test "getindex"
-    @test R[1] == 1:2
-    @test R[2] == 10:10
-    @test R[3] == 12:12
-
-    # Test "size"
-    @test size(R) == (3,)
-
-    # ------------------------
-    # Test "searchsortedfirst"
-    
-    # Before the first element
-    @test searchsortedfirst(R, 0) == 1 
-
-    # Inside the range vector
-    @test searchsortedfirst(R, 1) == 1 
-    @test searchsortedfirst(R, 2) == 1
-    @test searchsortedfirst(R, 3) == 2
-    @test searchsortedfirst(R, 10) == 2
-    @test searchsortedfirst(R, 11) == 3
-
-    # After the last element
-    @test searchsortedfirst(R, 100) == 4
-
-
-    #-------------------------
-    # Iteration and collection
-    @test eltype(R) == UnitRange{Int64}
-    X = collect(Base.Iterators.flatten(R))
-    @test X == [1, 2, 10, 12]
-
-    # Test some searching
-    @test in(1, R) == true
-    @test in(2, R) == true
-    @test in(3, R) == false
-    @test in(0, R) == false
-    @test in(10, R) == true
-    @test in(11, R) == false
-    @test in(12, R) == true
-    @test in(13, R) == false
-
-    @test MemSnoop.lastelement(R) == 12
-end
 
 @testset "Testing Sample" begin
     # Strategy: construct a test collection and then run tests on that.
     # Note that the actual field in the "vmas" category of "Sample" doesn't matter for
     # trace extraction - it's just a bookkeeping strategy.
-    SortedRangeVector = MemSnoop.SortedRangeVector
-    Sample      = MemSnoop.Sample
     isactive    = MemSnoop.isactive
-    VMA         = MemSnoop.VMA
 
+    VMAs = [
+        [VMA(1, 10)],
+        [VMA(1, 11), VMA(20, 30)],
+        [VMA(0, 8)],
+    ]
 
-    null = VMA[]
-    
     A = SortedRangeVector([UInt(1):UInt(3), UInt(5):UInt(8)])
     B = SortedRangeVector([UInt(2):UInt(2)])
     C = SortedRangeVector([UInt(4):UInt(6)])
 
-    trace = Sample.(Ref(null), [A,B,C])
+    trace = Sample.(VMAs, [A,B,C])
 
     # Start testing!
     @test isactive(trace[1], UInt(0))  == false
@@ -91,16 +25,72 @@ end
     @test isactive(trace[1], UInt(8))  == true
     @test isactive(trace[1], UInt(9))  == false
 
-    # Start extracting VMAs
-    sub = MemSnoop.bitmap(trace, VMA(UInt(0), UInt(1), ""))
-    expected = 
+    @test MemSnoop.wss(trace[1]) == 7
+    @test MemSnoop.wss(trace[2]) == 1
+    @test MemSnoop.wss(trace[3]) == 3
+
+    @test MemSnoop.pages(trace[1]) == Set([1, 2, 3, 5, 6, 7, 8])
+    @test MemSnoop.pages(trace[2]) == Set([2])
+    @test MemSnoop.pages(trace[3]) == Set([4, 5, 6])
+
+    @test vmas(trace) == [VMA(0, 11), VMA(20, 30)]
+
+    @test pages(trace) == [1, 2, 3, 4, 5, 6, 7, 8]
+
+    #####
+    ##### Test Union
+    #####
+
+    # Trace 1 and 2
+    expected_12 = Sample(
+        [VMA(1, 11), VMA(20, 30)],
+        SortedRangeVector([UInt(1):UInt(3), UInt(5):UInt(8)]),
+    )
+    @test union(trace[1], trace[2]) == expected_12
+    @test union(trace[2], trace[1]) == expected_12
+
+    # Traces 2 and 3
+    expected_23 = Sample(
+        [VMA(0, 11), VMA(20, 30)],
+        SortedRangeVector([UInt(2):UInt(2), UInt(4):UInt(6)])
+    )
+    @test union(trace[2], trace[3]) == expected_23
+    @test union(trace[3], trace[2]) == expected_23
+
+    # Traces 1 and 3
+    expected_13 = Sample(
+        [VMA(0, 10)],
+        SortedRangeVector([UInt(1):UInt(8)])
+    )
+    @test union(trace[1], trace[3]) == expected_13
+    @test union(trace[3], trace[1]) == expected_13
+
+    # Traces 1, 2, and 3
+    expected = Sample(
+        [VMA(0, 11), VMA(20, 30)],
+        SortedRangeVector([UInt(1):UInt(8)])
+    )
+    @test union(trace[1], trace[2], trace[3]) == expected
+    @test union(trace[1], trace[3], trace[2]) == expected
+    @test union(trace[2], trace[1], trace[3]) == expected
+    @test union(trace[2], trace[3], trace[1]) == expected
+    @test union(trace[3], trace[1], trace[2]) == expected
+    @test union(trace[3], trace[2], trace[1]) == expected
+
+
+    #####
+    ##### Bitmap
+    #####
+
+    sub = MemSnoop.bitmap(trace, VMA(0, 1))
+    expected =
         [ false false false;  # 0
-          true  false false ] # 1     
+          true  false false ] # 1
 
     @test sub == expected
 
 
-    sub = MemSnoop.bitmap(trace, VMA(UInt(1), UInt(4), ""))
+    sub = MemSnoop.bitmap(trace, VMA(1, 4))
     expected = [ true  false false; # 1
                  true  true  false; # 2
                  true  false false; # 3
@@ -109,11 +99,11 @@ end
 
 
     # Make sure the size we get is what we expect for a large extraction
-    sub = MemSnoop.bitmap(trace, VMA(UInt(0), UInt(10), ""))
+    sub = MemSnoop.bitmap(trace, VMA(0, 10))
     @test size(sub) == (11, length(trace))
 
 
     # Get a VMA that is entirely out of range.
-    sub = MemSnoop.bitmap(trace, VMA(UInt(20), UInt(30), "")) 
+    sub = MemSnoop.bitmap(trace, VMA(20, 30))
     @test all(isequal(false), sub)
 end

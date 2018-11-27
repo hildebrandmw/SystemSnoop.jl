@@ -27,6 +27,7 @@ SnoopTest.build()
 
 include("vma.jl")
 include("util.jl")
+include("rangevector.jl")
 include("trace.jl")
 include("timing.jl")
 
