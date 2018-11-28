@@ -17,7 +17,7 @@ Fields
 
 Methods
 -------
-[`length`](@ref), [`translate`](@ref), [`startaddress`](@ref), [`stopaddress`](@ref)
+[`length`](@ref), [`startaddress`](@ref), [`stopaddress`](@ref)
 """
 struct VMA
     start :: UInt64

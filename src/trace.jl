@@ -9,11 +9,20 @@ pages accessed.
 Fields
 ------
 
-* `vmas :: Vector{VMA}` - The VMAs analyzed during this sample.
+* `vmas :: Vector{VMA}` - The [`VMA`](@ref)s analyzed during this sample.
 
 * `pages :: SortedRangeVector{UInt64}` - The pages that were active during this sample. Pages are
     encoded by virtual page number. To get an address, multiply the page number by the
     pagesize (generally 4096).
+
+Methods
+-------
+* [`vmas`](@ref) - [`VMA`](@ref)s of `Sample`.
+* [`pages`](@ref) - Active pages from `Sample` or `Vector{Sample}`.
+* [`wss`](@ref) - Working set size of `Sample`.
+* `union` - Merge two `Sample`s together.
+* [`isactive`](@ref) - Check if a page was active in `Sample`.
+* [`bitmap`](@ref) - Construct a bitmap of active pages for a `Vector{Sample}`.
 """
 struct Sample
     vmas :: Vector{VMA}

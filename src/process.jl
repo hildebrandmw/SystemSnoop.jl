@@ -3,6 +3,30 @@ abstract type AbstractProcess end
 pause(p::AbstractProcess) = pause(p.pid)
 resume(p::AbstractProcess) = resume(p.pid)
 
+"""
+Struct container a `pid` as well as auxiliary data structure to make the snooping process
+more efficient.
+
+Fields
+------
+* `pid::Int64` - The `pid` of the process.
+* `vmas::Vector{VMA}` - Buffer for storing the `VMA`s assigned to this process.
+* `buffer::Vector{UInt64}` - Auxiliary array used as a buffer for the idle page map.
+
+Constructor
+-----------
+    Process(pid) -> Process
+
+Construct a `Process` with the given `pid`.
+
+Methods
+-------
+* [`initbuffer!`](@ref)
+* `getvmas!`
+* [`walkpagemap`](@ref)
+* [`markidle`](@ref)
+* [`readidle`](@ref)
+"""
 struct Process <: AbstractProcess
     pid :: Int64
     vmas :: Vector{VMA}
@@ -53,7 +77,7 @@ Note that it is possible for `buffer` to be empty.
 """
 function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt64} = UInt64[])
     # Open the pagemap file. Expect address ranges for the VMAs to be in order.
-    try 
+    try
         open("/proc/$pid/pagemap") do pagemap
             for vma in vmas
 
@@ -84,7 +108,7 @@ end
 """
     markidle(process::AbstractProcess)
 
-TODO
+Mark all of the memory pages assigned to `process` as idle.
 """
 function markidle(process::AbstractProcess)
     open(IDLE_BITMAP, "w") do bitmap
@@ -94,6 +118,15 @@ function markidle(process::AbstractProcess)
         positions = Set{UInt64}()
 
         walkpagemap(process.pid, process.vmas) do pagemap_region
+            # Iterate through each virtual to physical page mapping. If the page is
+            # in memory, get the index of physical page and write 1's to it, marking it
+            # as idle.
+            #
+            # Since the idle page buffer operates on 64 bit chunks, write 1's to all
+            # 64 bits at a time - we don't really care about spilling into other processes.
+            #
+            # Also, keep a record of indices that have already been written to.
+            # This REALLY speeds up this operation.
             for entry in pagemap_region
                 if inmemory(entry)
                     pfn = pfnmask(entry)
@@ -115,9 +148,9 @@ function markidle(process::AbstractProcess)
 end
 
 """
-    readidle(process::AbstractProcess) -> Vector{SortedRangeVector{Int}}
+    readidle(process::AbstractProcess) -> SortedRangeVector{UInt}
 
-TODO
+Return the active pages of `process`.
 """
 function readidle(process::AbstractProcess)
     pages = SortedRangeVector{UInt64}()

@@ -6,11 +6,6 @@ import Base: isless, length, issubset, union, compact, ==
 import Base: iterate, size, getindex, searchsortedfirst, push!, in, IteratorSize, IteratorEltype
 import Base.Iterators: flatten
 
-# import Base: getindex, iterate, length, push!, pushfirst!, string, lastindex, eltype 
-# import Base.Iterators: repeated, drop, flatten
-# import Base: searchsortedfirst, size
-# import Base: IteratorSize, HasLength, IteratorEltype, HasEltype
-
 using Serialization
 
 export  VMA,

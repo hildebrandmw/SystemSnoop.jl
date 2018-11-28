@@ -6,11 +6,16 @@ makedocs(
     sitename = "MemSnoop.jl",
     pages = Any[
         "index.md", 
-        "proof-of-concept.md",
-        "trace.md",
         "Implementation" => Any[
+            "docstring_index.md",
+            "trace.md",
+            "process.md",
             "vma.md",
+            "rangevector.md",
+            "utils.md",
+            "hugepages.md",
         ],
+        "proof-of-concept.md",
         "thoughts.md",
     ]
 )

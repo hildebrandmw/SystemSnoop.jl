@@ -1,6 +1,6 @@
-# Traces
+# Process
 
 ```@autodocs
 Modules = [MemSnoop]
-Pages = ["trace.jl"]
+Pages = ["process.jl"]
 ```

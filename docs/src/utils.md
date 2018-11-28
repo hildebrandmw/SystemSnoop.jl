@@ -1,6 +1,6 @@
-# Traces
+# Utilities
 
 ```@autodocs
 Modules = [MemSnoop]
-Pages = ["trace.jl"]
+Pages = ["util.jl"]
 ```
