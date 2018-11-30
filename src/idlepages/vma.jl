@@ -18,6 +18,17 @@ Fields
 Methods
 -------
 [`length`](@ref), [`startaddress`](@ref), [`stopaddress`](@ref)
+
+Filter Functions
+----------------
+There are a handful of builtin filter functions to help get rid of unwanted VMAs.
+
+* [`heap`](@ref)
+* [`readable`](@ref)
+* [`writable`](@ref)
+* [`executable`](@ref)
+* [`flagset`](@ref)
+* [`longerthan`](@ref)
 """
 struct VMA
     start :: UInt64

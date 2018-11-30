@@ -2,5 +2,5 @@
 
 ```@autodocs
 Modules = [MemSnoop]
-Pages = ["vma.jl"]
+Pages = ["idlepages/vma.jl"]
 ```

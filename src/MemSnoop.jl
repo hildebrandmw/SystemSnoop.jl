@@ -2,11 +2,11 @@ module MemSnoop
 
 const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
 
-import Base: isless, length, issubset, union, compact, ==
+import Base: isless, length, issubset, union, compact, ==, tail
 import Base: iterate, size, getindex, searchsortedfirst, push!, in, IteratorSize, IteratorEltype
 import Base.Iterators: flatten
 
-using Serialization
+using Serialization, Dates
 
 export  VMA,
         # SortedRangeVector
@@ -46,10 +46,13 @@ load(file::String) = open(deserialize, file)
 #####
 
 include("hugepages.jl")
-include("vma.jl")
+#include("vma.jl")
 include("rangevector.jl")
 include("util.jl")
 include("process.jl")
 include("trace.jl")
+
+# Measurements
+include("idlepages/idlepages.jl")
 
 end # module

@@ -25,11 +25,17 @@ SnoopTest.build()
 ##### Test Suits
 #####
 
-include("vma.jl")
+# Core functionality
 include("util.jl")
 include("rangevector.jl")
-include("trace.jl")
-include("timing.jl")
 
-# Include tests
+# idle page tracking
+include("idlepages/vma.jl")
+include("idlepages/idlepages.jl")
+include("idlepages/timing.jl")
+
+# trace function
+include("trace.jl")
+
+# Larger tests
 include("programs.jl")

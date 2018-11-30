@@ -1,7 +1,11 @@
 ## AbstractProcess ##
 abstract type AbstractProcess end
-pause(p::AbstractProcess) = pause(p.pid)
-resume(p::AbstractProcess) = resume(p.pid)
+pause(P::AbstractProcess) = pause(getpid(P))
+resume(P::AbstractProcess) = resume(getpid(P))
+
+abstract type AbstractPausable end
+struct Unpausable <: AbstractPausable end
+struct Pausable <: AbstractPausable end
 
 """
 Struct container a `pid` as well as auxiliary data structure to make the snooping process
@@ -10,171 +14,41 @@ more efficient.
 Fields
 ------
 * `pid::Int64` - The `pid` of the process.
-* `vmas::Vector{VMA}` - Buffer for storing the `VMA`s assigned to this process.
-* `buffer::Vector{UInt64}` - Auxiliary array used as a buffer for the idle page map.
 
 Constructor
 -----------
-    Process(pid) -> Process
+    SnoopedProcess(pid) -> SnoopedProcess
 
 Construct a `Process` with the given `pid`.
 
 Methods
 -------
-* [`initbuffer!`](@ref)
-* `getvmas!`
-* [`walkpagemap`](@ref)
-* [`markidle`](@ref)
-* [`readidle`](@ref)
+* `getpid` - Get the PID of this process.
+* [`prehook`](@ref) - Method to call before measurements.
+* [`posthook`](@ref) - Method to call after measurements.
 """
-struct Process <: AbstractProcess
+struct SnoopedProcess{P <: AbstractPausable} <: AbstractProcess
     pid :: Int64
-    vmas :: Vector{VMA}
-    buffer :: Vector{UInt64}
-
-    function Process(pid::Integer)
-        # Create the object
-        p = new(Int64(pid), Vector{VMA}(), UInt64[])
-
-        # Initialize the buffer to be the correct size to hold the entire idle page bitmap
-        initbuffer!(p)
-        return p
-    end
 end
 
-getvmas!(process::AbstractProcess, args...) = getvmas!(process.vmas, process.pid, args...)
+Base.getpid(P::SnoopedProcess) = P.pid
+SnoopedProcess(pid::Integer) = SnoopedProcess{Unpausable}(pid)
 
+# Before measurements
 """
-    initbuffer!(p::AbstractProcess)
+    prehook(P::AbstractProcess)
 
-Read once from `page_idle/bitmap` to get the size of the bitmap. Set the `bitmap` in
-`p` to this size to avoid reallocation every time the bitmap is read.
+If `P` is a pausable process, pause `P`.
 """
-function initbuffer!(p::AbstractProcess)
-    # Get the number of bytes in the bitmap
-    # Since this isn't a normal file, normal methods like "filesize" or "seekend" don't
-    # work, so we actually have to buffer the whole array once to get the size. Since this
-    # only happens at the beginning of a trace, it's okay to pay this additional latency.
-    nentries = open(IDLE_BITMAP) do bitmap
-        buffer = reinterpret(UInt64, read(bitmap))
-        return length(buffer)
-    end
-    resize!(p.buffer, nentries)
-    return nothing
-end
+prehook(P::SnoopedProcess{Pausable}) = pause(P)
+prehook(P::SnoopedProcess{Unpausable}) = nothing
 
-#####
-##### Page Walking Functions
-#####
-
+# After measurements
 """
-    walkpagemap(f::Function, pid, vmas; [buffer::Vector{UInt64}])
+    posthook(P::AbstractProcess)
 
-For each [`VMA`](@ref) in iterator `vmas`, store the contents of `/proc/pid/pagemap` into
-`buffer` for this `VMA` and call `f(buffer)`.
-
-Note that it is possible for `buffer` to be empty.
+If `P` is a pausable process, unpause `P`.
 """
-function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt64} = UInt64[])
-    # Open the pagemap file. Expect address ranges for the VMAs to be in order.
-    try
-        open("/proc/$pid/pagemap") do pagemap
-            for vma in vmas
+posthook(P::SnoopedProcess{Pausable}) = resume(P)
+posthook(P::SnoopedProcess{Unpausable}) = nothing
 
-                # Seek to the start address.
-                seek(pagemap, vma.start * sizeof(UInt64))
-                if eof(pagemap)
-                    empty!(buffer)
-                else
-                    resize!(buffer, length(vma))
-                    read!(pagemap, buffer)
-                end
-
-                # Call the passed function
-                f(buffer)
-            end
-        end
-    catch error
-        # Check the error, if it's a "file not found (errnum=2)", throw a PID error to escape,
-        if isa(error, SystemError) && error.errnum == 2
-            throw(PIDException(pid))
-        else
-            rethrow(error)
-        end
-    end
-    return nothing
-end
-
-"""
-    markidle(process::AbstractProcess)
-
-Mark all of the memory pages assigned to `process` as idle.
-"""
-function markidle(process::AbstractProcess)
-    open(IDLE_BITMAP, "w") do bitmap
-
-        # Keep track of positions in the bitmap file that have already been written to.
-        # Avoids reseeking and rewriting of positions already marked as idle.
-        positions = Set{UInt64}()
-
-        walkpagemap(process.pid, process.vmas) do pagemap_region
-            # Iterate through each virtual to physical page mapping. If the page is
-            # in memory, get the index of physical page and write 1's to it, marking it
-            # as idle.
-            #
-            # Since the idle page buffer operates on 64 bit chunks, write 1's to all
-            # 64 bits at a time - we don't really care about spilling into other processes.
-            #
-            # Also, keep a record of indices that have already been written to.
-            # This REALLY speeds up this operation.
-            for entry in pagemap_region
-                if inmemory(entry)
-                    pfn = pfnmask(entry)
-                    pos = 8 * div64(pfn)
-
-                    if !in(pos, positions)
-                        # Mark this position as read
-                        push!(positions, pos)
-
-                        # Seek and write
-                        seek(bitmap, pos)
-                        write(bitmap, typemax(UInt64))
-                    end
-                end
-            end
-        end
-    end
-    return nothing
-end
-
-"""
-    readidle(process::AbstractProcess) -> SortedRangeVector{UInt}
-
-Return the active pages of `process`.
-"""
-function readidle(process::AbstractProcess)
-    pages = SortedRangeVector{UInt64}()
-    buffer = process.buffer
-    # Read the whole idle bitmap buffer. This can take a while for systems with a large
-    # amound of memory.
-    read!(IDLE_BITMAP, buffer)
-
-    # Index of the VMA currently being accessed.
-    vma_index = 1
-
-    walkpagemap(process.pid, process.vmas) do pagemap_region
-        for (index, entry) in enumerate(pagemap_region)
-            vma = process.vmas[vma_index]
-            # Check if the active bit for this page is set. If so, add this frame's index
-            # to the collection of active indices.
-            if isactive(entry, buffer)
-                # Convert to page number and add to pages
-                pagenumber = (index - 1) + vma.start
-                push!(pages, pagenumber)
-            end
-        end
-        vma_index += 1
-    end
-
-    return pages
-end

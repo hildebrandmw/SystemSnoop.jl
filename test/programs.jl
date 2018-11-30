@@ -22,6 +22,9 @@
 
     # Pass a single length range as the iterator so we only take one sample.
     T = trace(pid; sampletime = 6)
+    @test typeof(T) <: Tuple
+    # Unpack the tuple trace
+    T = first(T)
 
     # Read the start and end addresses from the pipe
     # Convert these addresses into pages.

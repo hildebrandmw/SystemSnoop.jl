@@ -4,17 +4,20 @@ makedocs(
     modules = [MemSnoop],
     format = :html,
     sitename = "MemSnoop.jl",
+    html_prettyurls = get(ENV, "CI", nothing) == "true",
     pages = Any[
         "index.md", 
-        "Implementation" => Any[
-            "docstring_index.md",
-            "trace.md",
-            "process.md",
-            "vma.md",
-            "rangevector.md",
-            "utils.md",
-            "hugepages.md",
+        "docstring_index.md",
+        "trace.md",
+        "process.md",
+        "rangevector.md",
+        "Idle Page Tracking" => [
+            "idlepages/idlepages.md",
+            "idlepages/sample.md",
+            "idlepages/vma.md",
         ],
+        "utils.md",
+        "hugepages.md",
         "proof-of-concept.md",
         "thoughts.md",
     ]
