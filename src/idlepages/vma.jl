@@ -211,7 +211,7 @@ function getvmas!(buffer::Vector{VMA}, pid, filter = tautology)
         # Check the error, if it's a "file not found", throw a PID error to excape.
         # otherwise, rethrow the error
         if isa(error, SystemError) && error.errnum == 2
-            throw(PIDException())
+            throw(PIDException(pid))
         else
             rethrow(error)
         end
