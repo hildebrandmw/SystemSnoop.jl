@@ -54,5 +54,6 @@ include("trace.jl")
 
 # Measurements
 include("idlepages/idlepages.jl")
+include("papi/papi.jl")
 
 end # module
