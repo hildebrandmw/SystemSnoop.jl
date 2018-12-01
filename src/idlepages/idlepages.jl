@@ -24,10 +24,9 @@ struct IdlePageTracker{T <: Function} <: AbstractMeasurement
 end
 IdlePageTracker(f::Function = tautology) = IdlePageTracker(f, VMA[], UInt64[])
 
-
 initialize!(I::IdlePageTracker, process) = initbuffer!(I)
-
 prepare(::IdlePageTracker) = Sample[]
+
 function measure(I::IdlePageTracker, process)
     # Get VMAs, read idle bits and set idle bits
     getvmas!(I.vmas, getpid(process), I.filter)
