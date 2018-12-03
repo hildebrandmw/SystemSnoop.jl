@@ -205,7 +205,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Sorted Range Vectors",
     "title": "Base.in",
     "category": "method",
-    "text": "in(x, V::SortedRangeVector) -> Bool\n\nPerform an efficient search in V for x.\n\n\n\n\n\n"
+    "text": "in(x, V::SortedRangeVector) -> Bool\n\nPerfor an efficient search in V for x.\n\n\n\n\n\n"
 },
 
 {
