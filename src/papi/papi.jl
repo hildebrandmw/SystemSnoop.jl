@@ -4,10 +4,11 @@ using PAPI
 # TODO: Right now, this only supports a single counter.
 # extending to multiple counters should be easy though.
 mutable struct PAPICounters <: AbstractMeasurement
-    code::Int32
+    codes::Vector{Int32}
     eventset::PAPI.EventSet
 
-    PAPICounters(code) = new(code)
+    PAPICounters(code::Int32) = new([code])
+    PAPICounters(codes::Vector{Int32}) = new(codes)
 end
 
 function initialize!(P::PAPICounters, process)
@@ -17,14 +18,16 @@ function initialize!(P::PAPICounters, process)
 
     # Attach to the PID
     PAPI.attach(P.eventset, getpid(process)) 
-    PAPI.addevent!(P.eventset, P.code)
+    for code in P.codes
+        PAPI.addevent!(P.eventset, code)
+    end
 
     return nothing
 end
 
 function prepare(P::PAPICounters)
     PAPI.start(P.eventset)
-    return Int[]
+    return Vector{Int64}[]
 end
 
 function measure(P::PAPICounters, process)
@@ -33,5 +36,5 @@ function measure(P::PAPICounters, process)
     PAPI.reset(P.eventset)
     counters = values(P.eventset)
     
-    return first(counters)
+    return counters
 end

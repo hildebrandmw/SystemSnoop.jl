@@ -39,7 +39,7 @@ size(V::SortedRangeVector) = (length(V),)
 
 Return the sum of lengths of each element of `V`.
 """
-sumall(V::SortedRangeVector{T}) where T = length(V) > 0 ? sum(length, V.ranges) : zero(T)
+sumall(V::SortedRangeVector{T}) where T = length(V) > 0 ? Int(sum(length, V.ranges)) : 0
 
 
 # Fordwarding methods
@@ -84,7 +84,7 @@ end
 
 function push!(V::SortedRangeVector{T}, x::UnitRange{T}) where {T}
     if !isempty(V) && first(x) <= lastelement(V) + one(T)
-        V.ranges[end] = first(last(V)):max(last(x), lastelement(V))
+        @inbounds V.ranges[end] = first(last(V)):max(last(x), lastelement(V))
     else
         push!(V.ranges, x)
     end
@@ -93,7 +93,7 @@ end
 """
     in(x, V::SortedRangeVector) -> Bool
 
-Perform an efficient search in `V` for `x`.
+Perfor an efficient search in `V` for `x`.
 """
 function in(x, V::SortedRangeVector)
     # Find the first range that can possibly contain "x". Since ranges are expected to be
