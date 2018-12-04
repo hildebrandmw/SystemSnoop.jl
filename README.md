@@ -2,7 +2,7 @@
 
 | **Documentation**                                                               | **Build Status**                                                                                |
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] | [![][travis-img]][travis-url] [![][lifecycle-img]] [![][codecov-img]][codecov-url] |
+| [![][docs-stable-img]][docs-stable-url] | [![][travis-img]][travis-url] ![][lifecycle-img] [![][codecov-img]][codecov-url] |
 
 Tool that uses [idle page tracking](https://www.kernel.org/doc/html/latest/admin-guide/mm/idle_page_tracking.html)
 to give insight in to the memory useage of arbitrary programs at the page level of 
