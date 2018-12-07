@@ -31,10 +31,11 @@ function prepare(P::PAPICounters)
 end
 
 function measure(P::PAPICounters, process)
-    # Read hardware counters
-    PAPI.read(P.eventset)
+    # Stop/Read hardware counters and reset the counters.
+    # calling "reset" automatically starts them counting again.
+    PAPI.stop(P.eventset)
     PAPI.reset(P.eventset)
     counters = values(P.eventset)
-    
+
     return counters
 end
