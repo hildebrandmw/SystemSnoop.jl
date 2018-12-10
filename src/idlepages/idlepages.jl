@@ -75,29 +75,20 @@ Note that it is possible for `buffer` to be empty.
 """
 function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt64} = UInt64[])
     # Open the pagemap file. Expect address ranges for the VMAs to be in order.
-    try
-        open("/proc/$pid/pagemap") do pagemap
-            for vma in vmas
+    pidsafeopen("/proc/$pid/pagemap", pid) do pagemap
+        for vma in vmas
 
-                # Seek to the start address.
-                seek(pagemap, vma.start * sizeof(UInt64))
-                if eof(pagemap)
-                    empty!(buffer)
-                else
-                    resize!(buffer, length(vma))
-                    read!(pagemap, buffer)
-                end
-
-                # Call the passed function
-                f(buffer)
+            # Seek to the start address.
+            seek(pagemap, vma.start * sizeof(UInt64))
+            if eof(pagemap)
+                empty!(buffer)
+            else
+                resize!(buffer, length(vma))
+                read!(pagemap, buffer)
             end
-        end
-    catch error
-        # Check the error, if it's a "file not found (errnum=2)", throw a PID error to escape,
-        if isa(error, SystemError) && error.errnum == 2
-            throw(PIDException(pid))
-        else
-            rethrow(error)
+
+            # Call the passed function
+            f(buffer)
         end
     end
     return nothing

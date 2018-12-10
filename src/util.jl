@@ -18,6 +18,7 @@ Exception indicating that process with `pid` no longer exists.
 struct PIDException <: Exception 
     pid::Int64
 end
+PIDException() = PIDException(0)
 
 div64(x::Integer) = x >> 6
 mod64(x::Integer) = x & 63
@@ -94,3 +95,20 @@ function resume(pid)
     return nothing
 end
 
+#####
+##### PIDsafe macro
+#####
+
+function pidsafeopen(f, file::String, pid)
+    try
+        open(file) do handle
+            f(handle)
+        end
+    catch error
+        if isa(error, SystemError) && error.errnum == 2
+            throw(PIDException(pid))
+        else
+            rethrow(error)
+        end
+    end
+end

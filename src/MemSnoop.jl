@@ -4,7 +4,7 @@ const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
 
 import Base: isless, length, issubset, union, compact, ==, tail
 import Base: iterate, size, getindex, searchsortedfirst, push!, in, IteratorSize, IteratorEltype
-import Base.Iterators: flatten
+import Base.Iterators: flatten, take, drop
 
 using Serialization, Dates
 
@@ -46,7 +46,6 @@ load(file::String) = open(deserialize, file)
 #####
 
 include("hugepages.jl")
-#include("vma.jl")
 include("rangevector.jl")
 include("util.jl")
 include("process.jl")
@@ -55,5 +54,6 @@ include("trace.jl")
 # Measurements
 include("idlepages/idlepages.jl")
 include("papi/papi.jl")
+include("diskio/diskio.jl")
 
 end # module
