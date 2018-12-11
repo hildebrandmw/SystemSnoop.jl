@@ -23,8 +23,7 @@
     # Pass a single length range as the iterator so we only take one sample.
     T = trace(
         MemSnoop.SnoopedProcess(pid),
-        (:idlepages,),
-        (MemSnoop.IdlePageTracker(),);
+        (idlepages = MemSnoop.IdlePageTracker(),);
         sampletime = 6
     )
 

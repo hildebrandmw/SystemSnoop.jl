@@ -91,16 +91,15 @@ Keyword Arguments
 """
 function trace(
         process::AbstractProcess,
-        names::Val = Val{(:idlepages,)},
-        measurements::Tuple = (IdlePageTracker(tautology),); 
+        measurements :: NamedTuple;
         sampletime = 2, 
         iter = Forever(), 
         callback = () -> nothing
     )
 
-    _initialize!(process, measurements...)
+    _initialize!(process, measurements)
     # Get a tuple of structs we are going to mutate
-    trace = _prepare(names, measurements)
+    trace = _prepare(measurements)
 
     try
         for i in iter
@@ -126,6 +125,7 @@ trace(process::AbstractProcess, names::Tuple, args...; kw...) = trace(process, V
 ##### Trace Kernel Functions
 #####
 
+_initialize!(process::AbstractProcess, measurements::NamedTuple) = _initialize!(process, Tuple(measurements)...)
 function _initialize!(process::AbstractProcess, m, args...) 
     # Initialize the first measurement
     initialize!(m, process)
@@ -139,11 +139,11 @@ _initialize!(process::AbstractProcess) = nothing
 _first(m, args...) = m
 _first() = ()
 
-_prepare(names::Val{T}, measurements) where {T} = NamedTuple{T}(_prepare(measurements...))
+_prepare(measurements::NamedTuple{N}) where {N} = NamedTuple{N}(_prepare(Tuple(measurements)...))
 _prepare(m, args...) = (prepare(m), _prepare(args...)...)
 _prepare() = ()
 
-_measure(process, trace::NamedTuple, measurements::Tuple) = _measure(process, Tuple(trace), measurements)
+_measure(process, trace::NamedTuple, measurements::NamedTuple) = _measure(process, Tuple(trace), Tuple(measurements))
 
 function _measure(process, trace::Tuple, measurements::Tuple)
     t = _first(trace...)
