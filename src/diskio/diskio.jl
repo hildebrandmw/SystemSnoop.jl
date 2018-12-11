@@ -18,16 +18,15 @@ write_bytes: 4096
 cancelled_write_bytes: 0
 ```
 
-Strategy: read form the file, skip ahead 4 lines, grab the reads and writes
+Strategy: just read the first two lines
 =#
-const _IO_DROP_LINES = 4
 
 _parseline(ln) = tryparse(Int, last(split(ln)))
 
 function measure(D::DiskIO, process)
     pid = getpid(process)
     bytesio = pidsafeopen("/proc/$pid/io", pid) do f
-        iterator = drop(eachline(f), _IO_DROP_LINES)
+        iterator = eachline(f)
 
         # First item from the iterator is the line for number of bytes read
         # TODO: Test for "nothing" to make the compiler happy.

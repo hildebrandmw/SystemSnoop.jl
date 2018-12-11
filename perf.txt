@@ -1,6 +1,0 @@
-# AMD Performance counter for L3 misses: r106
-
-# How to get what we want:
-stat -e r106 -I 2000 --pid 43200
-
-# Strategy: run this and correlate counters.

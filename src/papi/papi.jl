@@ -3,12 +3,17 @@ using PAPI
 
 # TODO: Right now, this only supports a single counter.
 # extending to multiple counters should be easy though.
-mutable struct PAPICounters <: AbstractMeasurement
-    codes::Vector{Int32}
+mutable struct PAPICounters{N} <: AbstractMeasurement
+    codes::NTuple{N,Int32}
+    names::NTuple{N,Symbol}
+
     eventset::PAPI.EventSet
 
-    PAPICounters(code::Int32) = new([code])
-    PAPICounters(codes::Vector{Int32}) = new(codes)
+
+    PAPICounters(name::Symbol, code::Int32) = new{1}((code,), (name,))
+    function PAPICounters(names::NTuple{N,Symbol}, codes::NTuple{N,<:Integer}) where {N}
+        new{N}(Int32.(codes), names)
+    end
 end
 
 function initialize!(P::PAPICounters, process)
@@ -25,9 +30,11 @@ function initialize!(P::PAPICounters, process)
     return nothing
 end
 
+_rettype(P::PAPICounters{N}) where {N} = NamedTuple{P.names, NTuple{N, Int64}}
+
 function prepare(P::PAPICounters)
     PAPI.start(P.eventset)
-    return Vector{Int64}[]
+    return Vector{_rettype(P)}()
 end
 
 function measure(P::PAPICounters, process)
@@ -36,6 +43,5 @@ function measure(P::PAPICounters, process)
     PAPI.stop(P.eventset)
     PAPI.reset(P.eventset)
     counters = values(P.eventset)
-
-    return counters
+    return (_rettype(P))(counters)
 end

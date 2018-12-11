@@ -21,10 +21,16 @@
     pid, process, pipe = SnoopTest.pidlaunch("single")
 
     # Pass a single length range as the iterator so we only take one sample.
-    T = trace(pid; sampletime = 6)
-    @test typeof(T) <: Tuple
+    T = trace(
+        MemSnoop.SnoopedProcess(pid),
+        (:idlepages,),
+        (MemSnoop.IdlePageTracker(),);
+        sampletime = 6
+    )
+
+    @test typeof(T) <: NamedTuple
     # Unpack the tuple trace
-    T = first(T)
+    T = T.idlepages
 
     # Read the start and end addresses from the pipe
     # Convert these addresses into pages.

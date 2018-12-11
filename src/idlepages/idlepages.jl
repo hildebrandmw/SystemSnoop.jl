@@ -59,8 +59,6 @@ function initbuffer!(I::IdlePageTracker)
     return nothing
 end
 
-
-
 #####
 ##### Page Walking Functions
 #####

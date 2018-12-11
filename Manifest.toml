@@ -38,7 +38,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[PAPI]]
 deps = ["BinaryProvider", "Libdl"]
-git-tree-sha1 = "75f9fc065fd38a94b2ffd751bf7d6efac69f21f7"
+git-tree-sha1 = "ccf049921649a8d0ad4784656fcea25311e0300f"
 repo-rev = "master"
 repo-url = "https://github.com/hildebrandmw/PAPI.jl"
 uuid = "25707955-362c-5858-b477-b2b4559b2019"

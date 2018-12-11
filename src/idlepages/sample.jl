@@ -48,6 +48,7 @@ union(a::Sample, b::Sample, c::Sample, args::Sample...) = foldl(union, (a, b, c,
 Return the number of active pages for `S`.
 """
 wss(S::Sample) = sumall(S.pages)
+wss(S::Vector{Sample}) = wss.(S)
 
 """
     isactive(sample::Sample, page) -> Bool

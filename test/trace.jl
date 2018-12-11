@@ -27,12 +27,13 @@ MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     MemSnoop._initialize!(process, measurements...)
     @test T.initialize == 1
 
-    trace = MemSnoop._prepare(measurements...)
-    @test trace == (Int[],)
+    names = Val((:test,))
+    trace = MemSnoop._prepare(names, measurements)
+    @test trace == (test = Int[],)
     @test T.prepare == 1
 
     MemSnoop._measure(process, trace, measurements)
-    @test trace == ([1],)
+    @test trace == (test = [1],)
     @test T.measure == 1
 
     #####
@@ -45,12 +46,13 @@ MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     MemSnoop._initialize!(process, measurements...)
     @test T.initialize == 2
 
-    trace = MemSnoop._prepare(measurements...)
-    @test trace == (Int[],Int[])
+    names = Val((:testA, :testB))
+    trace = MemSnoop._prepare(names, measurements)
+    @test trace == (testA = Int[], testB = Int[])
     @test T.prepare == 2
 
     MemSnoop._measure(process, trace, measurements)
-    @test trace == ([1],[2])
+    @test trace == (testA = [1],testB = [2])
     @test T.measure == 2
 
     ## Two DIFFERENT objects
@@ -61,18 +63,19 @@ MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     @test T.initialize == 1
     @test S.initialize == 1
 
-    trace = MemSnoop._prepare(measurements...)
-    @test trace == (Int[],Int[])
+    names = Val((:testT, :testS))
+    trace = MemSnoop._prepare(names, measurements)
+    @test trace == (testT = Int[], testS = Int[])
     @test T.prepare == 1
     @test S.prepare == 1
 
     MemSnoop._measure(process, trace, measurements)
-    @test trace == ([1],[1])
+    @test trace == (testT = [1], testS = [1])
     @test T.measure == 1
     @test S.measure == 1
 
     #####
-    ##### Testing 2 measurements
+    ##### Testing 3 measurements
     #####
     T = TestMeasure()
     measurements = (T,T,T)
@@ -80,12 +83,13 @@ MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     MemSnoop._initialize!(process, measurements...)
     @test T.initialize == 3
 
-    trace = MemSnoop._prepare(measurements...)
-    @test trace == (Int[], Int[], Int[])
+    names = Val((:A, :B, :C))
+    trace = MemSnoop._prepare(names, measurements)
+    @test trace == (A = Int[], B = Int[], C = Int[])
     @test T.prepare == 3
 
     MemSnoop._measure(process, trace, measurements)
-    @test trace == ([1], [2], [3])
+    @test trace == (A = [1], B = [2], C = [3])
     @test T.measure == 3
 end
 
@@ -95,8 +99,9 @@ end
     measurements = (T,T)
 
     # Trace for 2 iterations
-    data = trace(process, measurements; iter = 1:2)
-    @test data == ([1,3],[2,4])
+    names = Val((:A, :B))
+    data = trace(process, names, measurements; iter = 1:2)
+    @test data == (A = [1,3], B = [2,4])
     @test T.initialize == 2
     @test T.prepare == 2
     @test T.measure == 4
