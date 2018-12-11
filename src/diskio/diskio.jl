@@ -1,4 +1,8 @@
 # Measure the bytes read and written by a process
+
+"""
+Record the `rchar` and `wchar` fields of `/proc/pid/io`.
+"""
 struct DiskIO <: AbstractMeasurement end
 
 const BytesIO = NamedTuple{(:read, :write), Tuple{Int64, Int64}}

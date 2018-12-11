@@ -1,6 +1,6 @@
-# Utilities
+# Disk IO
 
 ```@autodocs
 Modules = [MemSnoop]
-Pages = ["src/util.jl"]
+Pages = ["diskio/diskio.jl"]
 ```

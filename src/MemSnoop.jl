@@ -46,7 +46,6 @@ load(file::String) = open(deserialize, file)
 #####
 
 include("hugepages.jl")
-include("rangevector.jl")
 include("util.jl")
 include("process.jl")
 include("trace.jl")

@@ -2,5 +2,5 @@
 
 ```@autodocs
 Modules = [MemSnoop]
-Pages = ["rangevector.jl"]
+Pages = ["idlepages/rangevector.jl"]
 ```

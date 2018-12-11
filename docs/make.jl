@@ -10,11 +10,15 @@ makedocs(
         "docstring_index.md",
         "trace.md",
         "process.md",
-        "rangevector.md",
-        "Idle Page Tracking" => [
-            "idlepages/idlepages.md",
-            "idlepages/sample.md",
-            "idlepages/vma.md",
+        "Analyses" => [
+            "Idle Page Tracking" => [
+                "idlepages/idlepages.md",
+                "idlepages/sample.md",
+                "idlepages/vma.md",
+                "idlepages/rangevector.md",
+                "idlepages/utils.md",
+            ],
+            "diskio/diskio.md",
         ],
         "utils.md",
         "hugepages.md",
