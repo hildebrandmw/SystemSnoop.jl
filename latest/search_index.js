@@ -29,7 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "MemSnoop",
     "title": "MemSnoop.trace",
     "category": "function",
-    "text": "trace(process::AbstractProcess, measurements::Tuple; kw...) -> Tuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. Return a tuple T where T[i] is the data for measurements[i].\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nPerform measurements\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasuremts::Tuple : A tuple where each element is some AbstractMeasurement.   By default, the only measurement performed is IdlePageTracker.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number    of iterations).\n\n\n\n\n\n"
+    "text": "trace(process::AbstractProcess, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. Return a NamedTupleTwith the same names asmeasurements` but whose values are the measurement data.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasuremts::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the julia process itself.\n\njulia> process = MemSnoop.SnoopedProcess(getpid())\nMemSnoop.SnoopedProcess{MemSnoop.Unpausable}(15703)\n\njulia> measurements = (\n    initial_timestamp = MemSnoop.Timestamp(),\n    idlepages = MemSnoop.IdlePageTracker(),\n    final_timestamp = MemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    process,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\n\n\n\n\n"
 },
 
 {
@@ -73,11 +73,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace/#MemSnoop.trace",
+    "location": "trace/#MemSnoop.trace-Union{Tuple{N}, Tuple{S}, Tuple{AbstractProcess,NamedTuple{S,#s39} where #s39<:Tuple{Vararg{AbstractMeasurement,N}}}} where N where S",
     "page": "Traces",
     "title": "MemSnoop.trace",
-    "category": "function",
-    "text": "trace(process::AbstractProcess, measurements::Tuple; kw...) -> Tuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. Return a tuple T where T[i] is the data for measurements[i].\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nPerform measurements\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasuremts::Tuple : A tuple where each element is some AbstractMeasurement.   By default, the only measurement performed is IdlePageTracker.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number    of iterations).\n\n\n\n\n\n"
+    "category": "method",
+    "text": "trace(process::AbstractProcess, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. Return a NamedTupleTwith the same names asmeasurements` but whose values are the measurement data.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasuremts::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the julia process itself.\n\njulia> process = MemSnoop.SnoopedProcess(getpid())\nMemSnoop.SnoopedProcess{MemSnoop.Unpausable}(15703)\n\njulia> measurements = (\n    initial_timestamp = MemSnoop.Timestamp(),\n    idlepages = MemSnoop.IdlePageTracker(),\n    final_timestamp = MemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    process,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\n\n\n\n\n"
 },
 
 {
@@ -166,70 +166,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Process",
     "category": "section",
     "text": "Modules = [MemSnoop]\nPages = [\"process.jl\"]"
-},
-
-{
-    "location": "rangevector/#",
-    "page": "Sorted Range Vectors",
-    "title": "Sorted Range Vectors",
-    "category": "page",
-    "text": ""
-},
-
-{
-    "location": "rangevector/#MemSnoop.SortedRangeVector",
-    "page": "Sorted Range Vectors",
-    "title": "MemSnoop.SortedRangeVector",
-    "category": "type",
-    "text": "Compact representation of data of type T that is both sorted and usually occurs in contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a SortedRangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the SortedRangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nSortedRangeVector{T}() -> SortedRangeVector{T}\n\nConstruct a empty SortedRangeVector with element type T.\n\nMethods\n\nsumall\nlastelement\npush!\nin\nunion\n\n\n\n\n\n"
-},
-
-{
-    "location": "rangevector/#MemSnoop.lastelement-Tuple{SortedRangeVector}",
-    "page": "Sorted Range Vectors",
-    "title": "MemSnoop.lastelement",
-    "category": "method",
-    "text": "lastelement(V::SortedRangeVector{T}) -> T\n\nReturn the last element of the last range of V.\n\n\n\n\n\n"
-},
-
-{
-    "location": "rangevector/#MemSnoop.sumall-Union{Tuple{SortedRangeVector{T}}, Tuple{T}} where T",
-    "page": "Sorted Range Vectors",
-    "title": "MemSnoop.sumall",
-    "category": "method",
-    "text": "sumall(V::SortedRangeVector)\n\nReturn the sum of lengths of each element of V.\n\n\n\n\n\n"
-},
-
-{
-    "location": "rangevector/#Base.in-Tuple{Any,SortedRangeVector}",
-    "page": "Sorted Range Vectors",
-    "title": "Base.in",
-    "category": "method",
-    "text": "in(x, V::SortedRangeVector) -> Bool\n\nPerfor an efficient search in V for x.\n\n\n\n\n\n"
-},
-
-{
-    "location": "rangevector/#Base.push!-Union{Tuple{T}, Tuple{SortedRangeVector{T},T}} where T",
-    "page": "Sorted Range Vectors",
-    "title": "Base.push!",
-    "category": "method",
-    "text": "push!(V::SortedRangeVector{T}, x::T) where {T}\n\nAdd x to the end of V, merging x into the final range if appropriate.\n\npush!(V::SortedRangeVector{T}, x::UnitRange{T}) where {T}\n\nMerge x with the final range in V if they overlap. Otherwise, append x to the end of V.\n\nNOTE: Assumes that first(x) >= first(last(V)) \n\n\n\n\n\n"
-},
-
-{
-    "location": "rangevector/#Base.union-Union{Tuple{T}, Tuple{SortedRangeVector{T},SortedRangeVector{T}}} where T",
-    "page": "Sorted Range Vectors",
-    "title": "Base.union",
-    "category": "method",
-    "text": "union(A::SortedRangeVector, B::SortedRangeVector)\n\nEfficiently union A and B together.\n\n\n\n\n\n"
-},
-
-{
-    "location": "rangevector/#Sorted-Range-Vectors-1",
-    "page": "Sorted Range Vectors",
-    "title": "Sorted Range Vectors",
-    "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"rangevector.jl\"]"
 },
 
 {
@@ -497,6 +433,142 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "idlepages/rangevector/#",
+    "page": "Sorted Range Vectors",
+    "title": "Sorted Range Vectors",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "idlepages/rangevector/#MemSnoop.SortedRangeVector",
+    "page": "Sorted Range Vectors",
+    "title": "MemSnoop.SortedRangeVector",
+    "category": "type",
+    "text": "Compact representation of data of type T that is both sorted and usually occurs in contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a SortedRangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the SortedRangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nSortedRangeVector{T}() -> SortedRangeVector{T}\n\nConstruct a empty SortedRangeVector with element type T.\n\nMethods\n\nsumall\nlastelement\npush!\nin\nunion\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/rangevector/#MemSnoop.lastelement-Tuple{SortedRangeVector}",
+    "page": "Sorted Range Vectors",
+    "title": "MemSnoop.lastelement",
+    "category": "method",
+    "text": "lastelement(V::SortedRangeVector{T}) -> T\n\nReturn the last element of the last range of V.\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/rangevector/#MemSnoop.sumall-Union{Tuple{SortedRangeVector{T}}, Tuple{T}} where T",
+    "page": "Sorted Range Vectors",
+    "title": "MemSnoop.sumall",
+    "category": "method",
+    "text": "sumall(V::SortedRangeVector)\n\nReturn the sum of lengths of each element of V.\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/rangevector/#Base.in-Tuple{Any,SortedRangeVector}",
+    "page": "Sorted Range Vectors",
+    "title": "Base.in",
+    "category": "method",
+    "text": "in(x, V::SortedRangeVector) -> Bool\n\nPerfor an efficient search in V for x.\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/rangevector/#Base.push!-Union{Tuple{T}, Tuple{SortedRangeVector{T},T}} where T",
+    "page": "Sorted Range Vectors",
+    "title": "Base.push!",
+    "category": "method",
+    "text": "push!(V::SortedRangeVector{T}, x::T) where {T}\n\nAdd x to the end of V, merging x into the final range if appropriate.\n\npush!(V::SortedRangeVector{T}, x::UnitRange{T}) where {T}\n\nMerge x with the final range in V if they overlap. Otherwise, append x to the end of V.\n\nNOTE: Assumes that first(x) >= first(last(V)) \n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/rangevector/#Base.union-Union{Tuple{T}, Tuple{SortedRangeVector{T},SortedRangeVector{T}}} where T",
+    "page": "Sorted Range Vectors",
+    "title": "Base.union",
+    "category": "method",
+    "text": "union(A::SortedRangeVector, B::SortedRangeVector)\n\nEfficiently union A and B together.\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/rangevector/#Sorted-Range-Vectors-1",
+    "page": "Sorted Range Vectors",
+    "title": "Sorted Range Vectors",
+    "category": "section",
+    "text": "Modules = [MemSnoop]\nPages = [\"idlepages/rangevector.jl\"]"
+},
+
+{
+    "location": "idlepages/utils/#",
+    "page": "Utility Functions",
+    "title": "Utility Functions",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "idlepages/utils/#MemSnoop.inmemory-Tuple{Any}",
+    "page": "Utility Functions",
+    "title": "MemSnoop.inmemory",
+    "category": "method",
+    "text": "inmemory(x::UInt) -> Bool\n\nReturn true if x (interpreted as an entry in Linux /pagemap) if located in memory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/utils/#MemSnoop.isactive-Tuple{Integer,Array{UInt64,1}}",
+    "page": "Utility Functions",
+    "title": "MemSnoop.isactive",
+    "category": "method",
+    "text": "isactive(x::Integer, buffer::Vector{UInt64}) -> Bool\n\nReturn true if bit x of buffer is set, intrerpreting buffer as a contiguous chunk  of memory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/utils/#MemSnoop.isbitset-Tuple{Integer,Any}",
+    "page": "Utility Functions",
+    "title": "MemSnoop.isbitset",
+    "category": "method",
+    "text": "isbitset(x::Integer, b::Integer) -> Bool\n\nReturn true if bit b of x is 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/utils/#MemSnoop.pfnmask-Tuple{Any}",
+    "page": "Utility Functions",
+    "title": "MemSnoop.pfnmask",
+    "category": "method",
+    "text": "pfnmask(x::UInt) -> UInt\n\nReturn the lower 55 bits of x. When applied to a /proc/pid/pagemap entry, returns the physical page number (pfn) of that entry.\n\n\n\n\n\n"
+},
+
+{
+    "location": "idlepages/utils/#Utility-Functions-1",
+    "page": "Utility Functions",
+    "title": "Utility Functions",
+    "category": "section",
+    "text": "Modules = [MemSnoop]\nPages = [\"idlepages/util.jl\"]"
+},
+
+{
+    "location": "diskio/diskio/#",
+    "page": "Disk IO",
+    "title": "Disk IO",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "diskio/diskio/#MemSnoop.DiskIO",
+    "page": "Disk IO",
+    "title": "MemSnoop.DiskIO",
+    "category": "type",
+    "text": "Record the rchar and wchar fields of /proc/pid/io.\n\n\n\n\n\n"
+},
+
+{
+    "location": "diskio/diskio/#Disk-IO-1",
+    "page": "Disk IO",
+    "title": "Disk IO",
+    "category": "section",
+    "text": "Modules = [MemSnoop]\nPages = [\"diskio/diskio.jl\"]"
+},
+
+{
     "location": "utils/#",
     "page": "Utilities",
     "title": "Utilities",
@@ -521,30 +593,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "utils/#MemSnoop.inmemory-Tuple{Any}",
-    "page": "Utilities",
-    "title": "MemSnoop.inmemory",
-    "category": "method",
-    "text": "inmemory(x::UInt) -> Bool\n\nReturn true if x (interpreted as an entry in Linux /pagemap) if located in memory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#MemSnoop.isactive-Tuple{Integer,Array{UInt64,1}}",
-    "page": "Utilities",
-    "title": "MemSnoop.isactive",
-    "category": "method",
-    "text": "isactive(x::Integer, buffer::Vector{UInt64}) -> Bool\n\nReturn true if bit x of buffer is set, intrerpreting buffer as a contiguous chunk  of memory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#MemSnoop.isbitset-Tuple{Integer,Any}",
-    "page": "Utilities",
-    "title": "MemSnoop.isbitset",
-    "category": "method",
-    "text": "isbitset(x::Integer, b::Integer) -> Bool\n\nReturn true if bit b of x is 1.\n\n\n\n\n\n"
-},
-
-{
     "location": "utils/#MemSnoop.pause-Tuple{Any}",
     "page": "Utilities",
     "title": "MemSnoop.pause",
@@ -553,11 +601,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "utils/#MemSnoop.pfnmask-Tuple{Any}",
+    "location": "utils/#MemSnoop.pidsafeopen-Tuple{Function,String,Any,Vararg{Any,N} where N}",
     "page": "Utilities",
-    "title": "MemSnoop.pfnmask",
+    "title": "MemSnoop.pidsafeopen",
     "category": "method",
-    "text": "pfnmask(x::UInt) -> UInt\n\nReturn the lower 55 bits of x. When applied to a /proc/pid/pagemap entry, returns the physical page number (pfn) of that entry.\n\n\n\n\n\n"
+    "text": "pidfraceopen(f::Function, file::String, pid, args...; kw...)\n\nOpen system pseudo file file for process with pid and pass the handle to f. If a  File does not exist error is thown, throws a PIDException instead.\n\nArguments args and kw are forwarded to the call to open.\n\n\n\n\n\n"
 },
 
 {
@@ -573,7 +621,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Utilities",
     "title": "Utilities",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"util.jl\"]"
+    "text": "Modules = [MemSnoop]\nPages = [\"src/util.jl\"]"
 },
 
 {
