@@ -21,47 +21,23 @@ var documenterSearchIndex = {"docs": [
     "page": "MemSnoop",
     "title": "Security Warning",
     "category": "section",
-    "text": "This package requires running julia as root because it needs access to several protected kernel files. To minimize your risk, this package\'s only dependency is the Serialization standard library. However, use this package at your own risk."
+    "text": "This package requires running julia as root because it needs access to several protected kernel files. To minimize your risk, I tried minimize the number of third party non-stdlib  dependencies. The only third party non-test dependency of this package is  PAPI, which I also developed. That package  depends on Binary Provider, but only for building. Use this package at your own risk."
 },
 
 {
-    "location": "#MemSnoop.trace",
+    "location": "#Usage-1",
     "page": "MemSnoop",
-    "title": "MemSnoop.trace",
-    "category": "function",
-    "text": "trace(process::AbstractProcess, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. Return a NamedTupleTwith the same names asmeasurements` but whose values are the measurement data.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasuremts::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the julia process itself.\n\njulia> process = MemSnoop.SnoopedProcess(getpid())\nMemSnoop.SnoopedProcess{MemSnoop.Unpausable}(15703)\n\njulia> measurements = (\n    initial_timestamp = MemSnoop.Timestamp(),\n    idlepages = MemSnoop.IdlePageTracker(),\n    final_timestamp = MemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    process,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\n\n\n\n\n"
+    "title": "Usage",
+    "category": "section",
+    "text": "The bread and buffer of this package is the trace function. This function takes  a SnoopedProcess and a NamedTuple of AbstractMeasurements. For example, suppose we wanted to measure some metrics about the current Julia process. We would then do something like this:julia> using MemSnoop\n\n# Get an unpauseable process. If we made a pausable process, then we would pause\n# the system that\'s doing the measuring, and that would be a problem.\njulia> process = SnoopedProcess{Unpausable}(getpid())\n\n# Get a list of measurements we want to take. In this example, for each measurement we \n# perform an initial timestamp, monitor disk io, read the assigned and resident memory, \n# and take a final measurement\njulia> measurements = (\n    initial = MemSnoop.Timestamp(),\n    disk = MemSnoop.DiskIO(),\n    memory = MemSnoop.Statm(),\n    final = MemSnoop.Timestamp(),\n)\n\n# Then, we perform a series of measurements.\njulia> data = trace(process, measurements; sampletime = 1, iter = 1:3);\n\n# The resulting `data` is a named tuple with the same names as `measurements`. The values\n# themselves are the corresponding measurements.\njulia> data.initial\n3-element Array{Dates.DateTime,1}:\n 2018-12-13T15:58:19.872\n 2018-12-13T15:58:20.874\n 2018-12-13T15:58:21.876\n\njulia> data.disk\n3-element Array{NamedTuple{(:rchar, :wchar, :readbytes, :writebytes),NTuple{4,Int64}},1}:\n (rchar = 11241089, wchar = 3461495, readbytes = 0, writebytes = 1085440)\n (rchar = 11241236, wchar = 3461495, readbytes = 0, writebytes = 1085440)\n (rchar = 11241383, wchar = 3461495, readbytes = 0, writebytes = 1085440)\n\njulia> data.memory\n3-element Array{NamedTuple{(:size, :resident),Tuple{Int64,Int64}},1}:\n (size = 318312, resident = 72959)\n (size = 318312, resident = 72959)\n (size = 318312, resident = 72959)\n\njulia> data.final\n3-element Array{Dates.DateTime,1}:\n 2018-12-13T15:58:19.872\n 2018-12-13T15:58:20.874\n 2018-12-13T15:58:21.876One of the most powerful measurement types is Idle Page Tracking, though this  measurement requires Julia to be run as sudo to work."
 },
 
 {
-    "location": "#Generating-a-Trace-1",
+    "location": "#Obtaining-Process-PIDs-1",
     "page": "MemSnoop",
-    "title": "Generating a Trace",
+    "title": "Obtaining Process PIDs",
     "category": "section",
-    "text": "Tracking a process is easy, simply call traceMemSnoop.traceThe trace function returns a Vector{Sample}. Each  Sample contains The VMAs assigned to the process for that sample interval.\nThe virtual page numbers of pages that were active during that sample interval.    Internally, these are stored as a SortedRangeVector for compression."
-},
-
-{
-    "location": "#Performing-Analysis-1",
-    "page": "MemSnoop",
-    "title": "Performing Analysis",
-    "category": "section",
-    "text": "Because of the dependency restriction, only basic functionality is provided in the MemSnoop package itself. For more detailed analyses that can be performed after a trace is generated, use the package SnoopAnalyzer.  Eventually, this package will also be documented here."
-},
-
-{
-    "location": "docstring_index/#",
-    "page": "Docstring Index",
-    "title": "Docstring Index",
-    "category": "page",
-    "text": ""
-},
-
-{
-    "location": "docstring_index/#Docstring-Index-1",
-    "page": "Docstring Index",
-    "title": "Docstring Index",
-    "category": "section",
-    "text": "Modules = [MemSnoop]"
+    "text": "Currently, you have to obtain the pid for a process manually. However, in Julia 1.1, you will be able to obtain the pid of a process launched by Julia. This feature will be incorporated into this package once Julia 1.1 is released."
 },
 
 {
@@ -77,7 +53,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Traces",
     "title": "MemSnoop.trace",
     "category": "method",
-    "text": "trace(process::AbstractProcess, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. Return a NamedTupleTwith the same names asmeasurements` but whose values are the measurement data.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasuremts::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the julia process itself.\n\njulia> process = MemSnoop.SnoopedProcess(getpid())\nMemSnoop.SnoopedProcess{MemSnoop.Unpausable}(15703)\n\njulia> measurements = (\n    initial_timestamp = MemSnoop.Timestamp(),\n    idlepages = MemSnoop.IdlePageTracker(),\n    final_timestamp = MemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    process,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\n\n\n\n\n"
+    "text": "trace(process::AbstractProcess, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. The values of this tuple are AbstractMeasurements.\n\nReturn a NamedTuple T with the same names as measurements but whose values are the measurement data.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasurements::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the julia process itself.\n\njulia> process = MemSnoop.SnoopedProcess(getpid())\nMemSnoop.SnoopedProcess{MemSnoop.Unpausable}(15703)\n\njulia> measurements = (\n    initial_timestamp = MemSnoop.Timestamp(),\n    idlepages = MemSnoop.IdlePageTracker(),\n    final_timestamp = MemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    process,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\nSee also: AbstractMeasurement, SnoopedProcess\n\n\n\n\n\n"
 },
 
 {
@@ -85,7 +61,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Traces",
     "title": "MemSnoop.AbstractMeasurement",
     "category": "type",
-    "text": "Abstract supertype for process measurements.\n\nRequired API\n\nprepare\nmeasure\n\nOptional API\n\ninitialize!\n\nConcrete Implementations\n\nTimestamp\nIdlePageTracker\n\n\n\n\n\n"
+    "text": "Abstract supertype for process measurements.\n\nRequired API\n\nprepare\nmeasure\n\nConcrete Implementations\n\nTimestamp\nIdlePageTracker\nDiskIO\nStatm\n\n\n\n\n\n"
 },
 
 {
@@ -97,27 +73,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace/#MemSnoop.initialize!-Tuple{MemSnoop.AbstractMeasurement,Vararg{Any,N} where N}",
-    "page": "Traces",
-    "title": "MemSnoop.initialize!",
-    "category": "method",
-    "text": "initialize!(M::AbstractMeasurement, process::AbstractProcess)\n\nPerform any initialization required for measurement M. This method is optional and defaults to a no-op.\n\n\n\n\n\n"
-},
-
-{
     "location": "trace/#MemSnoop.measure-Union{Tuple{T}, Tuple{T,Vararg{Any,N} where N}} where T<:MemSnoop.AbstractMeasurement",
     "page": "Traces",
     "title": "MemSnoop.measure",
     "category": "method",
-    "text": "measure(M::AbstractMeasurement, process::AbstractProcess) -> T\n\nReturn data of type T.\n\n\n\n\n\n"
+    "text": "measure(M::AbstractMeasurement, P::AbstractProcess) -> T\n\nReturn data of type T.\n\n\n\n\n\n"
 },
 
 {
-    "location": "trace/#MemSnoop.prepare-Union{Tuple{T}, Tuple{T}} where T<:MemSnoop.AbstractMeasurement",
+    "location": "trace/#MemSnoop.prepare-Union{Tuple{T}, Tuple{T,Vararg{Any,N} where N}} where T<:MemSnoop.AbstractMeasurement",
     "page": "Traces",
     "title": "MemSnoop.prepare",
     "category": "method",
-    "text": "prepare(M::AbstractMeasurement) -> Vector{T}\n\nReturn an empty vector to hold measurement data of type T for measurement M.\n\n\n\n\n\n"
+    "text": "prepare(M::AbstractMeasurement, P::AbstractProcess) -> Vector{T}\n\nReturn an empty vector to hold measurement data of type T for measurement M. Any  initialization required M should happen here.\n\n\n\n\n\n"
 },
 
 {
@@ -141,11 +109,11 @@ var documenterSearchIndex = {"docs": [
     "page": "Process",
     "title": "MemSnoop.SnoopedProcess",
     "category": "type",
-    "text": "Struct container a pid as well as auxiliary data structure to make the snooping process more efficient.\n\nFields\n\npid::Int64 - The pid of the process.\n\nConstructor\n\nSnoopedProcess(pid) -> SnoopedProcess\n\nConstruct a Process with the given pid.\n\nMethods\n\ngetpid - Get the PID of this process.\nprehook - Method to call before measurements.\nposthook - Method to call after measurements.\n\n\n\n\n\n"
+    "text": "Struct container a pid as well as auxiliary data structure to make the snooping process more efficient. SnoopedProcesses come in two variants, Pausable and Unpausable. \n\nPausable processes will be paused before a set of measurements are taken by calling kill -STOP and resumed after afterwards by calling kill -CONT. Unpausable processes will not be touched.\n\nTo construct a Pausable process with pid, call\n\nps = SnoopedProcess{Pausable}(pid)\n\nTo construct an Unpausable process, call\n\nps = SnoopedProcess{Unpausable}(pid)\n\nFields\n\npid::Int64 - The pid of the process.\n\nMethods\n\ngetpid - Get the PID of this process.\nisrunning - Return true if process is running.\nprehook - Method to call before measurements.\nposthook - Method to call after measurements.\n\n\n\n\n\n"
 },
 
 {
-    "location": "process/#MemSnoop.posthook-Tuple{MemSnoop.SnoopedProcess{MemSnoop.Pausable}}",
+    "location": "process/#MemSnoop.posthook-Tuple{SnoopedProcess{Pausable}}",
     "page": "Process",
     "title": "MemSnoop.posthook",
     "category": "method",
@@ -153,7 +121,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "process/#MemSnoop.prehook-Tuple{MemSnoop.SnoopedProcess{MemSnoop.Pausable}}",
+    "location": "process/#MemSnoop.prehook-Tuple{SnoopedProcess{Pausable}}",
     "page": "Process",
     "title": "MemSnoop.prehook",
     "category": "method",
@@ -169,7 +137,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/idlepages/#",
+    "location": "measurements/idlepages/idlepages/#",
     "page": "Idle Page Tracking",
     "title": "Idle Page Tracking",
     "category": "page",
@@ -177,15 +145,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/idlepages/#MemSnoop.IdlePageTracker",
+    "location": "measurements/idlepages/idlepages/#MemSnoop.IdlePageTracker",
     "page": "Idle Page Tracking",
     "title": "MemSnoop.IdlePageTracker",
     "category": "type",
-    "text": "Measurement type for performing Idle Page Tracking on a process. To filter process VMAs, construct as\n\n    IdlePageTracker(filter)\n\nwhere filter is a VMA filter function.\n\nImplementation Details\n\nfilter - The VMA filter to apply.\nvmas::Vector{VMA} - Buffer for storing VMAs.\nbuffer::Vector{UInt64} - Buffer to store the idle page bitmap.\n\n\n\n\n\n"
+    "text": "Measurement type for performing Idle Page Tracking on a process. To filter process VMAs, construct as\n\nIdlePageTracker([filter])\n\nwhere filter is a VMA filter function.\n\nImplementation Details\n\nfilter - The VMA filter to apply. Defaults to all VMAs.\nvmas::Vector{VMA} - Buffer for storing VMAs.\nbuffer::Vector{UInt64} - Buffer to store the idle page bitmap.\n\n\n\n\n\n"
 },
 
 {
-    "location": "idlepages/idlepages/#MemSnoop.initbuffer!-Tuple{MemSnoop.IdlePageTracker}",
+    "location": "measurements/idlepages/idlepages/#MemSnoop.initbuffer!-Tuple{MemSnoop.IdlePageTracker}",
     "page": "Idle Page Tracking",
     "title": "MemSnoop.initbuffer!",
     "category": "method",
@@ -193,7 +161,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/idlepages/#MemSnoop.markidle-Tuple{Any,Any}",
+    "location": "measurements/idlepages/idlepages/#MemSnoop.markidle-Tuple{Any,Any}",
     "page": "Idle Page Tracking",
     "title": "MemSnoop.markidle",
     "category": "method",
@@ -201,7 +169,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/idlepages/#MemSnoop.readidle-Tuple{Any,Any,Any}",
+    "location": "measurements/idlepages/idlepages/#MemSnoop.readidle-Tuple{Any,Any,Any}",
     "page": "Idle Page Tracking",
     "title": "MemSnoop.readidle",
     "category": "method",
@@ -209,7 +177,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/idlepages/#MemSnoop.walkpagemap-Tuple{Function,Any,Any}",
+    "location": "measurements/idlepages/idlepages/#MemSnoop.walkpagemap-Tuple{Function,Any,Any}",
     "page": "Idle Page Tracking",
     "title": "MemSnoop.walkpagemap",
     "category": "method",
@@ -217,7 +185,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/idlepages/#Idle-Page-Tracking-1",
+    "location": "measurements/idlepages/idlepages/#Idle-Page-Tracking-1",
     "page": "Idle Page Tracking",
     "title": "Idle Page Tracking",
     "category": "section",
@@ -225,7 +193,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/sample/#",
+    "location": "measurements/idlepages/sample/#",
     "page": "Sample",
     "title": "Sample",
     "category": "page",
@@ -233,7 +201,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/sample/#MemSnoop.Sample",
+    "location": "measurements/idlepages/sample/#MemSnoop.Sample",
     "page": "Sample",
     "title": "MemSnoop.Sample",
     "category": "type",
@@ -241,7 +209,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/sample/#MemSnoop.bitmap-Tuple{Array{Sample,1},VMA}",
+    "location": "measurements/idlepages/sample/#MemSnoop.bitmap-Tuple{Array{MemSnoop.Sample,1},MemSnoop.VMA}",
     "page": "Sample",
     "title": "MemSnoop.bitmap",
     "category": "method",
@@ -249,31 +217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/sample/#MemSnoop.pages-Tuple{Array{Sample,1}}",
-    "page": "Sample",
-    "title": "MemSnoop.pages",
-    "category": "method",
-    "text": "pages(trace::Vector{Sample}) -> Vector{UInt64}\n\nReturn a sorted vector of all pages in trace that were marked as \"active\" at least once. Pages are encoded by virtual page number.\n\n\n\n\n\n"
-},
-
-{
-    "location": "idlepages/sample/#MemSnoop.pages-Tuple{Sample}",
-    "page": "Sample",
-    "title": "MemSnoop.pages",
-    "category": "method",
-    "text": "pages(sample::Sample) -> Set{UInt64}\n\nReturn a set of all active pages in sample.\n\n\n\n\n\n"
-},
-
-{
-    "location": "idlepages/sample/#MemSnoop.vmas-Tuple{Array{Sample,1}}",
-    "page": "Sample",
-    "title": "MemSnoop.vmas",
-    "category": "method",
-    "text": "vmas(trace::Vector{Sample}) -> Vector{VMA}\n\nReturn the largest sorted collection V of VMAs with the property that for any sample S in trace and for any VMA s in S, s subset v for some v in V and s cap u = emptyset for all u in V setminus v.o\n\n\n\n\n\n"
-},
-
-{
-    "location": "idlepages/sample/#MemSnoop.isactive-Tuple{Sample,Any}",
+    "location": "measurements/idlepages/sample/#MemSnoop.isactive-Tuple{MemSnoop.Sample,Any}",
     "page": "Sample",
     "title": "MemSnoop.isactive",
     "category": "method",
@@ -281,7 +225,31 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/sample/#MemSnoop.wss-Tuple{Sample}",
+    "location": "measurements/idlepages/sample/#MemSnoop.pages-Tuple{Array{MemSnoop.Sample,1}}",
+    "page": "Sample",
+    "title": "MemSnoop.pages",
+    "category": "method",
+    "text": "pages(trace::Vector{Sample}) -> Vector{UInt64}\n\nReturn a sorted vector of all pages in trace that were marked as \"active\" at least once. Pages are encoded by virtual page number.\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/idlepages/sample/#MemSnoop.pages-Tuple{MemSnoop.Sample}",
+    "page": "Sample",
+    "title": "MemSnoop.pages",
+    "category": "method",
+    "text": "pages(sample::Sample) -> Set{UInt64}\n\nReturn a set of all active pages in sample.\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/idlepages/sample/#MemSnoop.vmas-Tuple{Array{MemSnoop.Sample,1}}",
+    "page": "Sample",
+    "title": "MemSnoop.vmas",
+    "category": "method",
+    "text": "vmas(trace::Vector{Sample}) -> Vector{VMA}\n\nReturn the largest sorted collection V of VMAs with the property that for any sample S in trace and for any VMA s in S, s subset v for some v in V and s cap u = emptyset for all u in V setminus v.o\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/idlepages/sample/#MemSnoop.wss-Tuple{MemSnoop.Sample}",
     "page": "Sample",
     "title": "MemSnoop.wss",
     "category": "method",
@@ -289,7 +257,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/sample/#Sample-1",
+    "location": "measurements/idlepages/sample/#Sample-1",
     "page": "Sample",
     "title": "Sample",
     "category": "section",
@@ -297,7 +265,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#",
+    "location": "measurements/idlepages/vma/#",
     "page": "VMAs",
     "title": "VMAs",
     "category": "page",
@@ -305,7 +273,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.VMA",
+    "location": "measurements/idlepages/vma/#MemSnoop.VMA",
     "page": "VMAs",
     "title": "MemSnoop.VMA",
     "category": "type",
@@ -313,7 +281,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#Base.compact-Tuple{Any}",
+    "location": "measurements/idlepages/vma/#Base.compact-Tuple{Any}",
     "page": "VMAs",
     "title": "Base.compact",
     "category": "method",
@@ -321,7 +289,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#Base.issubset-Tuple{VMA,VMA}",
+    "location": "measurements/idlepages/vma/#Base.issubset-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
     "page": "VMAs",
     "title": "Base.issubset",
     "category": "method",
@@ -329,7 +297,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#Base.length-Tuple{VMA}",
+    "location": "measurements/idlepages/vma/#Base.length-Tuple{MemSnoop.VMA}",
     "page": "VMAs",
     "title": "Base.length",
     "category": "method",
@@ -337,7 +305,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#Base.union-Tuple{VMA,VMA}",
+    "location": "measurements/idlepages/vma/#Base.union-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
     "page": "VMAs",
     "title": "Base.union",
     "category": "method",
@@ -345,7 +313,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.executable-Tuple{VMA}",
+    "location": "measurements/idlepages/vma/#MemSnoop.executable-Tuple{MemSnoop.VMA}",
     "page": "VMAs",
     "title": "MemSnoop.executable",
     "category": "method",
@@ -353,7 +321,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.flagset-Tuple{VMA}",
+    "location": "measurements/idlepages/vma/#MemSnoop.flagset-Tuple{MemSnoop.VMA}",
     "page": "VMAs",
     "title": "MemSnoop.flagset",
     "category": "method",
@@ -361,7 +329,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.getvmas!",
+    "location": "measurements/idlepages/vma/#MemSnoop.getvmas!",
     "page": "VMAs",
     "title": "MemSnoop.getvmas!",
     "category": "function",
@@ -369,7 +337,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.heap-Tuple{VMA}",
+    "location": "measurements/idlepages/vma/#MemSnoop.heap-Tuple{MemSnoop.VMA}",
     "page": "VMAs",
     "title": "MemSnoop.heap",
     "category": "method",
@@ -377,7 +345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.longerthan-Tuple{Any,Integer}",
+    "location": "measurements/idlepages/vma/#MemSnoop.longerthan-Tuple{Any,Integer}",
     "page": "VMAs",
     "title": "MemSnoop.longerthan",
     "category": "method",
@@ -385,7 +353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.overlapping-Tuple{VMA,VMA}",
+    "location": "measurements/idlepages/vma/#MemSnoop.overlapping-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
     "page": "VMAs",
     "title": "MemSnoop.overlapping",
     "category": "method",
@@ -393,7 +361,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.readable-Tuple{VMA}",
+    "location": "measurements/idlepages/vma/#MemSnoop.readable-Tuple{MemSnoop.VMA}",
     "page": "VMAs",
     "title": "MemSnoop.readable",
     "category": "method",
@@ -401,7 +369,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.startaddress-Tuple{VMA}",
+    "location": "measurements/idlepages/vma/#MemSnoop.startaddress-Tuple{MemSnoop.VMA}",
     "page": "VMAs",
     "title": "MemSnoop.startaddress",
     "category": "method",
@@ -409,7 +377,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.stopaddress-Tuple{VMA}",
+    "location": "measurements/idlepages/vma/#MemSnoop.stopaddress-Tuple{MemSnoop.VMA}",
     "page": "VMAs",
     "title": "MemSnoop.stopaddress",
     "category": "method",
@@ -417,7 +385,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#MemSnoop.writable-Tuple{VMA}",
+    "location": "measurements/idlepages/vma/#MemSnoop.writable-Tuple{MemSnoop.VMA}",
     "page": "VMAs",
     "title": "MemSnoop.writable",
     "category": "method",
@@ -425,7 +393,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/vma/#VMAs-1",
+    "location": "measurements/idlepages/vma/#VMAs-1",
     "page": "VMAs",
     "title": "VMAs",
     "category": "section",
@@ -433,7 +401,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/rangevector/#",
+    "location": "measurements/idlepages/rangevector/#",
     "page": "Sorted Range Vectors",
     "title": "Sorted Range Vectors",
     "category": "page",
@@ -441,7 +409,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/rangevector/#MemSnoop.SortedRangeVector",
+    "location": "measurements/idlepages/rangevector/#MemSnoop.SortedRangeVector",
     "page": "Sorted Range Vectors",
     "title": "MemSnoop.SortedRangeVector",
     "category": "type",
@@ -449,23 +417,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/rangevector/#MemSnoop.lastelement-Tuple{SortedRangeVector}",
-    "page": "Sorted Range Vectors",
-    "title": "MemSnoop.lastelement",
-    "category": "method",
-    "text": "lastelement(V::SortedRangeVector{T}) -> T\n\nReturn the last element of the last range of V.\n\n\n\n\n\n"
-},
-
-{
-    "location": "idlepages/rangevector/#MemSnoop.sumall-Union{Tuple{SortedRangeVector{T}}, Tuple{T}} where T",
-    "page": "Sorted Range Vectors",
-    "title": "MemSnoop.sumall",
-    "category": "method",
-    "text": "sumall(V::SortedRangeVector)\n\nReturn the sum of lengths of each element of V.\n\n\n\n\n\n"
-},
-
-{
-    "location": "idlepages/rangevector/#Base.in-Tuple{Any,SortedRangeVector}",
+    "location": "measurements/idlepages/rangevector/#Base.in-Tuple{Any,MemSnoop.SortedRangeVector}",
     "page": "Sorted Range Vectors",
     "title": "Base.in",
     "category": "method",
@@ -473,7 +425,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/rangevector/#Base.push!-Union{Tuple{T}, Tuple{SortedRangeVector{T},T}} where T",
+    "location": "measurements/idlepages/rangevector/#Base.push!-Union{Tuple{T}, Tuple{SortedRangeVector{T},T}} where T",
     "page": "Sorted Range Vectors",
     "title": "Base.push!",
     "category": "method",
@@ -481,7 +433,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/rangevector/#Base.union-Union{Tuple{T}, Tuple{SortedRangeVector{T},SortedRangeVector{T}}} where T",
+    "location": "measurements/idlepages/rangevector/#Base.union-Union{Tuple{T}, Tuple{SortedRangeVector{T},SortedRangeVector{T}}} where T",
     "page": "Sorted Range Vectors",
     "title": "Base.union",
     "category": "method",
@@ -489,7 +441,23 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/rangevector/#Sorted-Range-Vectors-1",
+    "location": "measurements/idlepages/rangevector/#MemSnoop.lastelement-Tuple{MemSnoop.SortedRangeVector}",
+    "page": "Sorted Range Vectors",
+    "title": "MemSnoop.lastelement",
+    "category": "method",
+    "text": "lastelement(V::SortedRangeVector{T}) -> T\n\nReturn the last element of the last range of V.\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/idlepages/rangevector/#MemSnoop.sumall-Union{Tuple{SortedRangeVector{T}}, Tuple{T}} where T",
+    "page": "Sorted Range Vectors",
+    "title": "MemSnoop.sumall",
+    "category": "method",
+    "text": "sumall(V::SortedRangeVector)\n\nReturn the sum of lengths of each element of V.\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/idlepages/rangevector/#Sorted-Range-Vectors-1",
     "page": "Sorted Range Vectors",
     "title": "Sorted Range Vectors",
     "category": "section",
@@ -497,7 +465,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/utils/#",
+    "location": "measurements/idlepages/utils/#",
     "page": "Utility Functions",
     "title": "Utility Functions",
     "category": "page",
@@ -505,7 +473,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/utils/#MemSnoop.inmemory-Tuple{Any}",
+    "location": "measurements/idlepages/utils/#MemSnoop.inmemory-Tuple{Any}",
     "page": "Utility Functions",
     "title": "MemSnoop.inmemory",
     "category": "method",
@@ -513,7 +481,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/utils/#MemSnoop.isactive-Tuple{Integer,Array{UInt64,1}}",
+    "location": "measurements/idlepages/utils/#MemSnoop.isactive-Tuple{Integer,Array{UInt64,1}}",
     "page": "Utility Functions",
     "title": "MemSnoop.isactive",
     "category": "method",
@@ -521,7 +489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/utils/#MemSnoop.isbitset-Tuple{Integer,Any}",
+    "location": "measurements/idlepages/utils/#MemSnoop.isbitset-Tuple{Integer,Any}",
     "page": "Utility Functions",
     "title": "MemSnoop.isbitset",
     "category": "method",
@@ -529,7 +497,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/utils/#MemSnoop.pfnmask-Tuple{Any}",
+    "location": "measurements/idlepages/utils/#MemSnoop.pfnmask-Tuple{Any}",
     "page": "Utility Functions",
     "title": "MemSnoop.pfnmask",
     "category": "method",
@@ -537,7 +505,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "idlepages/utils/#Utility-Functions-1",
+    "location": "measurements/idlepages/utils/#Utility-Functions-1",
     "page": "Utility Functions",
     "title": "Utility Functions",
     "category": "section",
@@ -545,7 +513,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "diskio/diskio/#",
+    "location": "measurements/diskio/#",
     "page": "Disk IO",
     "title": "Disk IO",
     "category": "page",
@@ -553,19 +521,43 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "diskio/diskio/#MemSnoop.DiskIO",
+    "location": "measurements/diskio/#MemSnoop.DiskIO",
     "page": "Disk IO",
     "title": "MemSnoop.DiskIO",
     "category": "type",
-    "text": "Record the rchar and wchar fields of /proc/pid/io.\n\n\n\n\n\n"
+    "text": "Record the rchar, wchar, read_bytes, and write_bytes fields of /proc/pid/io.\n\nEach measurement returns a NamedTuple with names rchar, wchar, readbytes, and writebytes.\n\nExample read from /proc/pid/io:\n\nrchar: 3089822\nwchar: 139463\nsyscr: 159\nsyscw: 178\nread_bytes: 0\nwrite_bytes: 4096\ncancelled_write_bytes: 0\n\nbecomes\n\n(rchar = 3089822, wchar = 139463, readbytes = 0, writebytes = 4096)\n\n\n\n\n\n"
 },
 
 {
-    "location": "diskio/diskio/#Disk-IO-1",
+    "location": "measurements/diskio/#Disk-IO-1",
     "page": "Disk IO",
     "title": "Disk IO",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"diskio/diskio.jl\"]"
+    "text": "Modules = [MemSnoop]\nPages = [\"diskio.jl\"]"
+},
+
+{
+    "location": "measurements/statm/#",
+    "page": "Statm",
+    "title": "Statm",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "measurements/statm/#MemSnoop.Statm",
+    "page": "Statm",
+    "title": "MemSnoop.Statm",
+    "category": "type",
+    "text": "Record the size and resident fields of /proc/[pid]/statm.\n\nEach measurement returns a NamedTuple with names size and resident.\n\nFrom the man page:\n\n/proc/[pid]/statm\n      Provides information about memory usage, measured in pages.  The columns are:\n\n          size       (1) total program size\n                     (same as VmSize in /proc/[pid]/status)\n          resident   (2) resident set size\n                     (same as VmRSS in /proc/[pid]/status)\n          shared     (3) number of resident shared pages (i.e., backed by a file)\n                     (same as RssFile+RssShmem in /proc/[pid]/status)\n          text       (4) text (code)\n          lib        (5) library (unused since Linux 2.6; always 0)\n          data       (6) data + stack\n          dt         (7) dirty pages (unused since Linux 2.6; always 0)            \n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/statm/#Statm-1",
+    "page": "Statm",
+    "title": "Statm",
+    "category": "section",
+    "text": "Modules = [MemSnoop]\nPages = [\"statm.jl\"]"
 },
 
 {
@@ -593,6 +585,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "utils/#MemSnoop.increment!-Tuple{AbstractDict,Any,Any}",
+    "page": "Utilities",
+    "title": "MemSnoop.increment!",
+    "category": "method",
+    "text": "increment!(d::AbstractDict, k, v)\n\nIncrement d[k] by v. If d[k] does not exist, initialize it to v.\n\n\n\n\n\n"
+},
+
+{
+    "location": "utils/#MemSnoop.isrunning-Tuple{Any}",
+    "page": "Utilities",
+    "title": "MemSnoop.isrunning",
+    "category": "method",
+    "text": "isrunning(pid) -> Bool\n\nReturn true is a process with pid is running.\n\n\n\n\n\n"
+},
+
+{
     "location": "utils/#MemSnoop.pause-Tuple{Any}",
     "page": "Utilities",
     "title": "MemSnoop.pause",
@@ -614,6 +622,14 @@ var documenterSearchIndex = {"docs": [
     "title": "MemSnoop.resume",
     "category": "method",
     "text": "resume(pid)\n\nResume process with pid. If process does not exist, throw a PIDException\n\n\n\n\n\n"
+},
+
+{
+    "location": "utils/#MemSnoop.safeparse-Union{Tuple{T}, Tuple{Type{T},Any}} where T",
+    "page": "Utilities",
+    "title": "MemSnoop.safeparse",
+    "category": "method",
+    "text": "safeparse(::Type{T}, str; base = 10) -> T\n\nTry to parse str to type T. If that fails, return zero(T).\n\n\n\n\n\n"
 },
 
 {
@@ -726,6 +742,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Idea",
     "category": "section",
     "text": "We can actually generate a lower bound AND an upper bound for reuse distance via sampling."
+},
+
+{
+    "location": "docstring_index/#",
+    "page": "Docstring Index",
+    "title": "Docstring Index",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "docstring_index/#Docstring-Index-1",
+    "page": "Docstring Index",
+    "title": "Docstring Index",
+    "category": "section",
+    "text": "Modules = [MemSnoop]"
 },
 
 ]}
