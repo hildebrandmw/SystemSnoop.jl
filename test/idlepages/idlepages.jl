@@ -2,7 +2,10 @@
     # Strategy: construct a test collection and then run tests on that.
     # Note that the actual field in the "vmas" category of "Sample" doesn't matter for
     # trace extraction - it's just a bookkeeping strategy.
-    isactive    = MemSnoop.isactive
+    isactive = MemSnoop.isactive
+    VMA = MemSnoop.VMA
+    SortedRangeVector = MemSnoop.SortedRangeVector
+    Sample = MemSnoop.Sample
 
     VMAs = [
         [VMA(1, 10)],
@@ -32,9 +35,9 @@
     @test MemSnoop.pages(trace[2]) == Set([2])
     @test MemSnoop.pages(trace[3]) == Set([4, 5, 6])
 
-    @test vmas(trace) == [VMA(0, 11), VMA(20, 30)]
+    @test MemSnoop.vmas(trace) == [VMA(0, 11), VMA(20, 30)]
 
-    @test pages(trace) == [1, 2, 3, 4, 5, 6, 7, 8]
+    @test MemSnoop.pages(trace) == [1, 2, 3, 4, 5, 6, 7, 8]
 
     #####
     ##### Test Union
@@ -111,7 +114,7 @@ end
     # Create a process based on the Julia instance we are using.
     process = MemSnoop.SnoopedProcess(getpid())
     tracker = MemSnoop.IdlePageTracker()
-    MemSnoop.initialize!(tracker, process)
+    MemSnoop.prepare(tracker, process)
 
     println()
     println("Testing Reads from the Idle Buffer")

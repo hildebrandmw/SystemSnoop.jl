@@ -9,13 +9,13 @@ include("sample.jl")
 Measurement type for performing Idle Page Tracking on a process. To filter process VMAs,
 construct as
 ```julia
-    IdlePageTracker(filter)
+IdlePageTracker([filter])
 ```
 where `filter` is a [`VMA`](@ref) filter function.
 
 Implementation Details
 ----------------------
-* `filter` - The VMA filter to apply.
+* `filter` - The VMA filter to apply. Defaults to all VMAs.
 * `vmas::Vector{VMA}` - Buffer for storing VMAs.
 * `buffer::Vector{UInt64}` - Buffer to store the idle page bitmap.
 """
@@ -26,8 +26,7 @@ struct IdlePageTracker{T <: Function} <: AbstractMeasurement
 end
 IdlePageTracker(f::Function = tautology) = IdlePageTracker(f, VMA[], UInt64[])
 
-initialize!(I::IdlePageTracker, process) = initbuffer!(I)
-prepare(::IdlePageTracker) = Sample[]
+prepare(I::IdlePageTracker, process::AbstractProcess) = (initbuffer!(I); return Sample[])
 
 function measure(I::IdlePageTracker, process)
     # Get VMAs, read idle bits and set idle bits

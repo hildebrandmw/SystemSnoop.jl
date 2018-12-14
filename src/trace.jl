@@ -10,34 +10,25 @@ Required API
 * [`prepare`](@ref)
 * [`measure`](@ref)
 
-Optional API
-------------
-* [`initialize!`](@ref)
-
 Concrete Implementations
 ------------------------
 * [`Timestamp`](@ref)
 * [`IdlePageTracker`](@ref)
+* [`DiskIO`](@ref)
+* [`Statm`](@ref)
 """
 abstract type AbstractMeasurement end
 
 """
-    initialize!(M::AbstractMeasurement, process::AbstractProcess)
+    prepare(M::AbstractMeasurement, P::AbstractProcess) -> Vector{T}
 
-Perform any initialization required for measurement `M`. This method is optional and
-defaults to a no-op.
+Return an empty vector to hold measurement data of type `T` for measurement `M`. Any 
+initialization required `M` should happen here.
 """
-initialize!(::AbstractMeasurement, args...) = nothing
-
-"""
-    prepare(M::AbstractMeasurement) -> Vector{T}
-
-Return an empty vector to hold measurement data of type `T` for measurement `M`.
-"""
-prepare(::T) where {T <: AbstractMeasurement} = error("Implement `prepare` for $T")
+prepare(::T, args...) where {T <: AbstractMeasurement} = error("Implement `prepare` for $T")
 
 """
-    measure(M::AbstractMeasurement, process::AbstractProcess) -> T
+    measure(M::AbstractMeasurement, P::AbstractProcess) -> T
 
 Return data of type `T`.
 """
@@ -49,7 +40,7 @@ measure(::T, args...) where {T <: AbstractMeasurement} = error("Implement `measu
 Collect timestamps.
 """
 struct Timestamp <: AbstractMeasurement end
-prepare(::Timestamp) = DateTime[]
+prepare(::Timestamp, args...) = DateTime[]
 measure(::Timestamp, args...) = now()
 
 #####
@@ -60,7 +51,9 @@ measure(::Timestamp, args...) = now()
     trace(process::AbstractProcess, measurements::NamedTuple; kw...) -> NamedTuple
 
 Perform a measurement trace on `process`. The measurements to be performed are specified
-by the `measurements` argument. Return a `NamedTuple `T` with the same names as
+by the `measurements` argument. The values of this tuple are [`AbstractMeasurement`](@ref)s.
+
+Return a `NamedTuple` `T` with the same names as
 `measurements` but whose values are the measurement data.
 
 The general flow of this function is as follows:
@@ -74,7 +67,7 @@ The general flow of this function is as follows:
 
 Measurements
 ------------
-* `measuremts::NamedTuple` : A `NamedTuple` where each element is some
+* `measurements::NamedTuple` : A `NamedTuple` where each element is some
     [`AbstractMeasurement`](@ref).
 
 Keyword Arguments
@@ -92,7 +85,7 @@ Example
 -------
 Do five measurements of idle page tracking on the julia process itself.
 
-```julia
+```
 julia> process = MemSnoop.SnoopedProcess(getpid())
 MemSnoop.SnoopedProcess{MemSnoop.Unpausable}(15703)
 
@@ -113,6 +106,8 @@ julia> data = trace(
 julia> typeof(data)
 NamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}
 ```
+
+See also: [`AbstractMeasurement`](@ref), [`SnoopedProcess`](@ref)
 """
 function trace(
         process::AbstractProcess,
@@ -122,13 +117,12 @@ function trace(
         callback = () -> nothing
     ) where {S,N}
 
-    _initialize!(process, measurements)
     # Get a tuple of structs we are going to mutate
-    trace = _prepare(measurements)
-
+    trace = _prepare(process, measurements)
     try
         for i in iter
-            sampletime
+            # Abort if process is no longer running
+            isrunning(process) || break
             sleep(sampletime)
 
             ## Prep for taking measurements
@@ -144,7 +138,8 @@ function trace(
     end
     return trace
 end
-trace(process::AbstractProcess, names::Tuple, args...; kw...) = trace(process, Val(names), args...; kw...)
+
+trace(pid::Integer, args...; kw...) = trace(SnoopedProcess(pid), args...; kw...)
 
 #####
 ##### Trace Kernel Functions
@@ -152,7 +147,6 @@ trace(process::AbstractProcess, names::Tuple, args...; kw...) = trace(process, V
 
 # Tuple Magic
 _first(m, args...) = m
-_first() = ()
 
 #=
 The general strategy to these function is to leverage julia's type inference and
@@ -160,21 +154,20 @@ specialization to statically resolve all of the funtions calls instead of needin
 dynamic dispatch. That is why some of these function calls look unnecessarily complicated -
 it's because Julia's compilier is good at figuring this stuff out.
 =#
-_initialize!(process::AbstractProcess, measurements::NamedTuple) = _initialize!(process, Tuple(measurements)...)
-function _initialize!(process::AbstractProcess, m, args...)
-    # Initialize the first measurement
-    initialize!(m, process)
-    # Recurse
-    _initialize!(process, args...)
+
+## _prepare
+function _prepare(process::AbstractProcess, measurements::NamedTuple{names}) where {names} 
+    return NamedTuple{names}(_prepare(process, Tuple(measurements)...))
+end
+_prepare(process::AbstractProcess, m, args...) = (prepare(m, process), _prepare(process, args...)...)
+_prepare(::AbstractProcess) = ()
+
+## _measure
+function _measure(process::AbstractProcess, trace::NamedTuple, measurements::NamedTuple) 
+    _measure(process, Tuple(trace), Tuple(measurements))
     return nothing
 end
-_initialize!(process::AbstractProcess) = nothing
 
-_prepare(measurements::NamedTuple{names}) where {names} = NamedTuple{names}(_prepare(Tuple(measurements)...))
-_prepare(m, args...) = (prepare(m), _prepare(args...)...)
-_prepare() = ()
-
-_measure(process, trace::NamedTuple, measurements::NamedTuple) = _measure(process, Tuple(trace), Tuple(measurements))
 function _measure(process, trace::Tuple, measurements::Tuple)
     t = _first(trace...)
     m = _first(measurements...)
@@ -184,5 +177,5 @@ function _measure(process, trace::Tuple, measurements::Tuple)
     _measure(process, tail(trace), tail(measurements))
     return nothing
 end
-_measure(process, trace::Tuple{}, measurements::Tuple{}) = nothing
+_measure(process, ::Tuple{}, ::Tuple{}) = nothing
 

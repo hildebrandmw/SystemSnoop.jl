@@ -9,21 +9,29 @@ struct Pausable <: AbstractPausable end
 
 """
 Struct container a `pid` as well as auxiliary data structure to make the snooping process
-more efficient.
+more efficient. `SnoopedProcess`es come in two variants, `Pausable` and `Unpausable`. 
+
+`Pausable` processes will be paused before a set of measurements are taken by calling
+`kill -STOP` and resumed after afterwards by calling `kill -CONT`.
+`Unpausable` processes will not be touched.
+
+To construct a `Pausable` process with `pid`, call
+```
+ps = SnoopedProcess{Pausable}(pid)
+```
+To construct an `Unpausable` process, call
+```
+ps = SnoopedProcess{Unpausable}(pid)
+```
 
 Fields
 ------
 * `pid::Int64` - The `pid` of the process.
 
-Constructor
------------
-    SnoopedProcess(pid) -> SnoopedProcess
-
-Construct a `Process` with the given `pid`.
-
 Methods
 -------
 * `getpid` - Get the PID of this process.
+* `isrunning` - Return `true` if process is running.
 * [`prehook`](@ref) - Method to call before measurements.
 * [`posthook`](@ref) - Method to call after measurements.
 """
@@ -32,6 +40,7 @@ struct SnoopedProcess{P <: AbstractPausable} <: AbstractProcess
 end
 
 Base.getpid(P::SnoopedProcess) = P.pid
+isrunning(P::SnoopedProcess) = isrunning(getpid(P))
 SnoopedProcess(pid::Integer) = SnoopedProcess{Unpausable}(pid)
 
 # Before measurements

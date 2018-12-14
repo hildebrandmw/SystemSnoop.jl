@@ -1,16 +1,13 @@
 # The strategy here is to create a custom subtype of AbstractMeasurement
 # to test that the internal functions of the "trace" function are being used.
 mutable struct TestMeasure <: MemSnoop.AbstractMeasurement
-    initialize::Int64
     prepare::Int64
     measure::Int64
 
-    TestMeasure() = new(0,0,0)
+    TestMeasure() = new(0,0)
 end
 
-
-MemSnoop.initialize!(T::TestMeasure, args...) = (T.initialize += 1; nothing)
-MemSnoop.prepare(T::TestMeasure) = (T.prepare += 1; Int[])
+MemSnoop.prepare(T::TestMeasure, args...) = (T.prepare += 1; Int[])
 MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
 
 @testset "Testing Trace Kernel Functions" begin
@@ -24,10 +21,7 @@ MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     T = TestMeasure()
     measurements = (test = T,)
 
-    MemSnoop._initialize!(process, measurements)
-    @test T.initialize == 1
-
-    trace = MemSnoop._prepare(measurements)
+    trace = MemSnoop._prepare(process, measurements)
     @test trace == (test = Int[],)
     @test T.prepare == 1
 
@@ -42,10 +36,7 @@ MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     T = TestMeasure()
     measurements = (testA = T ,testB = T)
 
-    MemSnoop._initialize!(process, measurements)
-    @test T.initialize == 2
-
-    trace = MemSnoop._prepare(measurements)
+    trace = MemSnoop._prepare(process, measurements)
     @test trace == (testA = Int[], testB = Int[])
     @test T.prepare == 2
 
@@ -57,11 +48,8 @@ MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     T = TestMeasure()
     S = TestMeasure()
     measurements = (testT = T, testS = S)
-    MemSnoop._initialize!(process, measurements)
-    @test T.initialize == 1
-    @test S.initialize == 1
 
-    trace = MemSnoop._prepare(measurements)
+    trace = MemSnoop._prepare(process, measurements)
     @test trace == (testT = Int[], testS = Int[])
     @test T.prepare == 1
     @test S.prepare == 1
@@ -77,10 +65,7 @@ MemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     T = TestMeasure()
     measurements = (A = T, B = T, C = T)
 
-    MemSnoop._initialize!(process, measurements)
-    @test T.initialize == 3
-
-    trace = MemSnoop._prepare(measurements)
+    trace = MemSnoop._prepare(process, measurements)
     @test trace == (A = Int[], B = Int[], C = Int[])
     @test T.prepare == 3
 
@@ -97,7 +82,6 @@ end
     # Trace for 2 iterations
     data = trace(process, measurements; iter = 1:2)
     @test data == (A = [1,3], B = [2,4])
-    @test T.initialize == 2
     @test T.prepare == 2
     @test T.measure == 4
 end

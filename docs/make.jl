@@ -7,23 +7,24 @@ makedocs(
     html_prettyurls = get(ENV, "CI", nothing) == "true",
     pages = Any[
         "index.md", 
-        "docstring_index.md",
         "trace.md",
         "process.md",
-        "Analyses" => [
+        "Measurements" => [
             "Idle Page Tracking" => [
-                "idlepages/idlepages.md",
-                "idlepages/sample.md",
-                "idlepages/vma.md",
-                "idlepages/rangevector.md",
-                "idlepages/utils.md",
+                "measurements/idlepages/idlepages.md",
+                "measurements/idlepages/sample.md",
+                "measurements/idlepages/vma.md",
+                "measurements/idlepages/rangevector.md",
+                "measurements/idlepages/utils.md",
             ],
-            "diskio/diskio.md",
+            "measurements/diskio.md",
+            "measurements/statm.md",
         ],
         "utils.md",
         "hugepages.md",
         "proof-of-concept.md",
         "thoughts.md",
+        "docstring_index.md",
     ]
 )
 

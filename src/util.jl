@@ -8,6 +8,13 @@ struct Forever end
 iterate(Forever, args...) = (nothing, nothing)
 IteratorSize(::Forever) = IsInfinite()
 
+"""
+    increment!(d::AbstractDict, k, v)
+
+Increment `d[k]` by `v`. If `d[k]` does not exist, initialize it to `v`.
+"""
+increment!(d::AbstractDict, k, v) = haskey(d, k) ? (d[k] += v) : (d[k] = v)
+
 #####
 ##### Pagemap Utilities
 #####
@@ -77,3 +84,20 @@ function pidsafeopen(f::Function, file::String, pid, args...; kw...)
         end
     end
 end
+
+"""
+    safeparse(::Type{T}, str; base = 10) -> T
+
+Try to parse `str` to type `T`. If that fails, return `zero(T)`.
+"""
+function safeparse(::Type{T}, str; kw...) where {T}
+    x = tryparse(T, str; kw...)
+    return x === nothing ? zero(T) : x
+end
+
+"""
+    isrunning(pid) -> Bool
+
+Return `true` is a process with `pid` is running.
+"""
+isrunning(pid) = isdir("/proc/$pid")

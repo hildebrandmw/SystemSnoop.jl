@@ -1,6 +1,6 @@
-# Disk IO
+# Statm
 
 ```@autodocs
 Modules = [MemSnoop]
-Pages = ["diskio/diskio.jl"]
+Pages = ["statm.jl"]
 ```

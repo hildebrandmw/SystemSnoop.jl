@@ -20,10 +20,17 @@
     # Launch the test program
     pid, process, pipe = SnoopTest.pidlaunch("single")
 
+    measurements() = (
+        idlepages = MemSnoop.IdlePageTracker(),
+        diskio = MemSnoop.DiskIO(),
+        statm = MemSnoop.Statm(),
+        timestamp = MemSnoop.Timestamp(),
+    )
+
     # Pass a single length range as the iterator so we only take one sample.
     T = trace(
-        MemSnoop.SnoopedProcess(pid),
-        (idlepages = MemSnoop.IdlePageTracker(),);
+        MemSnoop.SnoopedProcess{MemSnoop.Pausable}(pid),
+        measurements();
         sampletime = 6
     )
 
@@ -55,15 +62,15 @@
     ### Benchmarking
     ###
     println("Benchmarking `pages(::Vector{Sample})`")
-    @btime pages($T)
+    @btime MemSnoop.pages($T)
 
-    v = vmas(T)
+    v = MemSnoop.vmas(T)
     println("Benchmarking `vmas(::Vector{Sample})`")
-    @btime vmas($T)
+    @btime MemSnoop.vmas($T)
 
     println("Benchmarking `bitmap`")
     _, ind = findmax(length.(v))
-    @btime bitmap($T, $(v[ind]))
+    @btime MemSnoop.bitmap($T, $(v[ind]))
 
     # XXX
     ## Doing this Breaks CI ... I don't know if it has something to do with the 

@@ -9,13 +9,46 @@ to give insight in to the memory useage of arbitrary programs at the page level 
 granularity. The main function is
 
 ```julia
-trace(pid; [sampletime], [iter], [filter]) -> Vector{Sample}
+trace(pid, measurements; [sampletime], [iter], [filter]) -> Vector{Sample}
 ```
 
 Which generates a full trace of virtual pages that were accessed with `sampletime` level
 granularity.
 
 Refer to the documentation for more information on the technique and these functions.
+
+## Installation
+
+### Basic Installation
+
+From inside the Julia REPL, press `]` to enter `pkg` mode, then type the following:
+```julia
+# Install PAPI
+pkg> add https://github.com/hildebrandmw/PAPI.jl
+
+# Install MemSnoop
+pkg. add https://github.com/hildebrandmw/MemSnoop.jl
+```
+
+### Development Installation
+
+If you want to develop the code, you can either replace the `add` commands above with `dev`,
+in which case Julia's package manager will download the repos into `~/.julia/dev`.
+
+Alternatively, if you want to clone the git repos manually, you can run
+```sh
+git clone https://github.com/hildebrandmw/PAPI.jl PAPI
+git clone https://github.com/hildebrandmw/MemSnoop.jl MemSnoop
+```
+Then start Julia and do
+```julia
+julia> ]
+
+pkg> dev ./PAPI
+
+pkg> dev ./MemSnoop
+```
+
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://hildebrandmw.github.io/MemSnoop.jl/latest

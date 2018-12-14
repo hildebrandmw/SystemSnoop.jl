@@ -39,3 +39,6 @@ include("trace.jl")
 
 # Larger tests
 include("programs.jl")
+
+# Test analysis
+include("analysis/reusedistance.jl")

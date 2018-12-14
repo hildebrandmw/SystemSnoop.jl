@@ -8,13 +8,10 @@ import Base.Iterators: flatten, take, drop
 
 using Serialization, Dates
 
-export  VMA,
-        # SortedRangeVector
-        SortedRangeVector,
-        sumall, lastelement,
-        # Trace
-        trace,
-        Sample, bitmap, pages, vmas
+export  trace, 
+        # process traits
+        SnoopedProcess, Pausable, Unpausable
+
 
 #####
 ##### Constants
@@ -38,6 +35,7 @@ end
 ##### Extend "serialize" and "deserialize"
 #####
 
+###TODO: Future Julia release will not need these definitions
 save(file::String, x) = open(f -> serialize(f, x), file, write = true)
 load(file::String) = open(deserialize, file)
 
@@ -51,8 +49,7 @@ include("process.jl")
 include("trace.jl")
 
 # Measurements
-include("idlepages/idlepages.jl")
-include("papi/papi.jl")
-include("diskio/diskio.jl")
+include("measurements/measurements.jl")
+include("analysis/analysis.jl")
 
 end # module
