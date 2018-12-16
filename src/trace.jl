@@ -130,7 +130,7 @@ function trace(
             data = _measure(process, trace, measurements)
 
             ## Cleanup after measurements
-            callback()
+            callback(process, trace, measurements)
             posthook(process)
         end
     catch error
