@@ -114,20 +114,20 @@ function trace(
         measurements::NamedTuple{S,<:NTuple{N,AbstractMeasurement}};
         sampletime = 2,
         iter = Forever(),
-        callback = () -> nothing
+        callback = (args...) -> nothing
     ) where {S,N}
 
     # Get a tuple of structs we are going to mutate
     trace = _prepare(process, measurements)
     try
-        for i in iter
+        for _ in iter
             # Abort if process is no longer running
             isrunning(process) || break
             sleep(sampletime)
 
             ## Prep for taking measurements
             prehook(process)
-            data = _measure(process, trace, measurements)
+            _measure(process, trace, measurements)
 
             ## Cleanup after measurements
             callback(process, trace, measurements)
