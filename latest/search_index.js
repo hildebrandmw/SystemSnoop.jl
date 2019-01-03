@@ -477,7 +477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Utility Functions",
     "title": "MemSnoop.inmemory",
     "category": "method",
-    "text": "inmemory(x::UInt) -> Bool\n\nReturn true if x (interpreted as an entry in Linux /pagemap) if located in memory.\n\n\n\n\n\n"
+    "text": "inmemory(x::UInt) -> Bool\n\nReturn true if x (interpreted as an entry in Linux /prop/[pid]/pagemap) is  located in memory.\n\n\n\n\n\n"
 },
 
 {
@@ -494,6 +494,14 @@ var documenterSearchIndex = {"docs": [
     "title": "MemSnoop.isbitset",
     "category": "method",
     "text": "isbitset(x::Integer, b::Integer) -> Bool\n\nReturn true if bit b of x is 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/idlepages/utils/#MemSnoop.isdirty-Tuple{Any}",
+    "page": "Utility Functions",
+    "title": "MemSnoop.isdirty",
+    "category": "method",
+    "text": "isbitset(x::UInt) -> Bool\n\nReturn true if the dirty bit of x (interpreted as an entry in Linux /proc/kpagecount) is set.\n\n\n\n\n\n"
 },
 
 {
