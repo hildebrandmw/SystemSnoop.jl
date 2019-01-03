@@ -93,6 +93,38 @@ function walkpagemap(f::Function, pid, vmas; buffer::Vector{UInt64} = UInt64[])
     return nothing
 end
 
+function getdirty(pid, pages)
+    dirtypages = SortedRangeVector{UInt64}()
+
+    # Use the virtual page number to navigate to an entry in "pagemap".
+    # This will give a physical page number.
+    #
+    # From the physical page number, navigate to the appropriate position in "kpageflags"
+    # Determine if a page is dirty.
+    pidsafeopen("/proc/$pid/pagemap", pid) do pagemap
+        open("/proc/kpageflags") do pageflags
+            for page in flatten(pages)
+                # Find this entry in the pagemap
+                seek(pagemap, sizeof(UInt64) * page) 
+                pagemap_entry = read(pagemap, UInt64)
+                if inmemory(pagemap_entry)
+                    pfn = pfnmask(entry)
+                    pos = sizeof(UInt64) * div64(pfn)
+
+                    # Seek to the entry in kpageflags
+                    seek(pageflags, pos) 
+                    flags = read(pagemap, UInt64)
+                    if isdirty(flags)
+                        push!(dirtypages, page)
+                    end
+                end
+            end
+        end
+    end
+
+    return dirtypages
+end
+
 """
     markidle(pid, vmas)
 

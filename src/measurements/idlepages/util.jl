@@ -19,9 +19,18 @@ pfnmask(x) = x & (~(UInt(0x1ff) << 55))
 """
     inmemory(x::UInt) -> Bool
 
-Return `true` if `x` (interpreted as an entry in Linux `/pagemap`) if located in memory.
+Return `true` if `x` (interpreted as an entry in Linux `/prop/[pid]/pagemap`) is 
+located in memory.
 """
 inmemory(x) = isbitset(x, 63)
+
+"""
+    isbitset(x::UInt) -> Bool
+
+Return `true` if the dirty bit of `x` (interpreted as an entry in Linux `/proc/kpagecount`)
+is set.
+"""
+isdirty(x) = isbitset(x, 4)
 
 """
     isactive(x::Integer, buffer::Vector{UInt64}) -> Bool

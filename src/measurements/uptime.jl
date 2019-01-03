@@ -1,3 +1,8 @@
+"""
+Record the uptime metrics of a process.
+
+TODO: Document
+"""
 struct Uptime <: AbstractMeasurement end
 
 const UptimeTuple = NamedTuple{
