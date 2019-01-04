@@ -48,13 +48,21 @@ measure(::Timestamp, args...) = now()
 #####
 
 """
-    trace(process::AbstractProcess, measurements::NamedTuple; kw...) -> NamedTuple
+    trace(process, measurements::NamedTuple; kw...) -> NamedTuple
 
 Perform a measurement trace on `process`. The measurements to be performed are specified
 by the `measurements` argument. The values of this tuple are [`AbstractMeasurement`](@ref)s.
 
 Return a `NamedTuple` `T` with the same names as
 `measurements` but whose values are the measurement data.
+
+Argument `process` can be:
+
+* A [`SnoopedProcess`](@ref)
+* An integer representing a process PID
+* A `Base.Process` spawned by Julia
+* A `Cmd` that will launch a process
+
 
 The general flow of this function is as follows:
 
@@ -83,12 +91,9 @@ Keyword Arguments
 
 Example
 -------
-Do five measurements of idle page tracking on the julia process itself.
+Do five measurements of idle page tracking on the `top` command.
 
 ```
-julia> process = MemSnoop.SnoopedProcess(getpid())
-MemSnoop.SnoopedProcess{MemSnoop.Unpausable}(15703)
-
 julia> measurements = (
     initial_timestamp = MemSnoop.Timestamp(),
     idlepages = MemSnoop.IdlePageTracker(),
@@ -96,7 +101,7 @@ julia> measurements = (
 );
 
 julia> data = trace(
-    process,
+    `top`,
     measurements;
     sampletime = 1,
     iter = 1:5
@@ -140,6 +145,11 @@ function trace(
 end
 
 trace(pid::Integer, args...; kw...) = trace(SnoopedProcess(pid), args...; kw...)
+trace(process::Base.Process, args...; kw...) = trace(getpid(process), args...; kw...)
+function trace(cmd::Base.AbstractCmd, args...; kw...)
+    process = run(cmd; wait = false)
+    return trace(process, args...; kw...)
+end
 
 #####
 ##### Trace Kernel Functions
