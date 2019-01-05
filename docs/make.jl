@@ -34,7 +34,7 @@ makedocs(
 deploydocs(
     repo = "github.com/hildebrandmw/MemSnoop.jl.git",
     target = "build",
-    julia = "1.0",
+    julia = "1.1",
     deps = nothing,
     make = nothing,
 )
