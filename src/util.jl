@@ -9,6 +9,31 @@ iterate(Forever, args...) = (nothing, nothing)
 IteratorSize(::Forever) = IsInfinite()
 
 """
+An iterator that stops iterating at a certain time.
+
+**Example**
+```
+julia> using Dates
+
+julia> y = MemSnoop.Timeout(Second(10))
+MemSnoop.Timeout(2019-01-04T11:51:09.262)
+
+julia> now()
+2019-01-04T11:50:59.274
+
+julia> for i in y; end
+
+julia> now()
+2019-01-04T11:51:09.275
+```
+"""
+struct Timeout
+    endtime::DateTime
+end
+Timeout(p::TimePeriod) = Timeout(now() + p)
+iterate(T::Timeout, args...) = (now() >= T.endtime) ? nothing : (nothing, nothing)
+
+"""
     increment!(d::AbstractDict, k, v)
 
 Increment `d[k]` by `v`. If `d[k]` does not exist, initialize it to `v`.

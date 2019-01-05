@@ -5,14 +5,21 @@ TODO: Document
 """
 struct Uptime <: AbstractMeasurement end
 
-const UptimeTuple = NamedTuple{
-    (:system_uptime, :minflt, :majflt, :utime, :stime, :cutime, :cstime, :starttime),
-    Tuple{Float64, Int64, Int64, Int64, Int64, Int64, Int64, Int64}
-}
+struct UptimeStruct
+    system_uptime::Float64
+    minflt::Int64
+    majflt::Int64
+    utime::Int64
+    stime::Int64
+    cutime::Int64
+    cstime::Int64
+    starttime::Int64
+    blkio_ticks::Int64
+end
 
-prepare(U::Uptime, args...) = Vector{UptimeTuple}()
+prepare(U::Uptime, args...) = Vector{UptimeStruct}()
 
-function measure(U::Uptime, process)::UptimeTuple
+function measure(U::Uptime, process)::UptimeStruct
     # Get the utime from /proc/uptime
     system_uptime = open("/proc/uptime") do f
         safeparse(Float64, readuntil(f, ' '))
@@ -24,18 +31,9 @@ function measure(U::Uptime, process)::UptimeTuple
         vals = split(read(f, String))
 
         # Pick out the fields we want
-        parsed_vals = safeparse.(Int64, getindex.(Ref(vals), (10, 12, 14, 15, 16, 17, 22)))
+        parsed_vals = safeparse.(Int64, getindex.(Ref(vals), (10, 12, 14, 15, 16, 17, 22, 42)))
 
-        return (
-            system_uptime = system_uptime,
-            minflt = parsed_vals[1],
-            majflt = parsed_vals[2],
-            utime = parsed_vals[3],
-            stime = parsed_vals[4],
-            cutime = parsed_vals[5],
-            cstime = parsed_vals[6],
-            starttime = parsed_vals[7]
-        )
+        return UptimeStruct(system_uptime, parsed_vals...)
     end
 
     return stats

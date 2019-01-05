@@ -81,7 +81,8 @@ Measurements
 Keyword Arguments
 -----------------
 * `sampletime` : Seconds between reading and reseting the idle page flags to determine page
-    activity. Default: `2`
+    activity. Can also pass a [`SmartSample`](@ref) for better control of sample times. 
+    Default: `2`
 
 * `iter` : Iterator to control the number of samples to take. Default behavior is to keep
     sampling until monitored process terminates. Default: Run until program terminates.
@@ -112,7 +113,7 @@ julia> typeof(data)
 NamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}
 ```
 
-See also: [`AbstractMeasurement`](@ref), [`SnoopedProcess`](@ref)
+See also: [`AbstractMeasurement`](@ref), [`SnoopedProcess`](@ref), [`SmartSample`](@ref)
 """
 function trace(
         process::AbstractProcess,
@@ -126,9 +127,11 @@ function trace(
     trace = _prepare(process, measurements)
     try
         for _ in iter
+            ## Wait for next iteration
+            _sleep(sampletime)
+
             # Abort if process is no longer running
             isrunning(process) || break
-            sleep(sampletime)
 
             ## Prep for taking measurements
             prehook(process)
@@ -149,6 +152,46 @@ trace(process::Base.Process, args...; kw...) = trace(getpid(process), args...; k
 function trace(cmd::Base.AbstractCmd, args...; kw...)
     process = run(cmd; wait = false)
     return trace(process, args...; kw...)
+end
+
+#####
+##### _sleep
+#####
+
+_sleep(x::Number) = sleep(x)
+
+"""
+    MemSnoop.SmartSample(t::TimePeriod) -> SmartSample
+
+Smart Sampler to ensure measurements happen every `t` time units. Samples will happen at
+multiples of `t` from the first measurement. If a sample period is missed, the sampler will
+wait until the next appropriate multiple of `t`.
+"""
+mutable struct SmartSample{T <: TimePeriod}
+    initial::DateTime
+    increment::T
+    iteration::Int64
+end
+
+SmartSample(s::TimePeriod) = SmartSample(now(), s, 0)
+function _sleep(s::SmartSample)
+    # Initialize the sampler
+    if s.iteration == 0
+        s.initial = now()
+        s.iteration = 1
+    end
+
+    # Compute the amount of time we need to sleep
+    sleeptime = s.initial + (s.iteration * s.increment) - now()
+
+    # Just incase measurements took longer than anticipated
+    while sleeptime < zero(sleeptime)
+        s.iteration += 1
+        sleeptime = s.initial + (s.iteration * s.increment) - now()
+    end
+    sleep(sleeptime)
+    s.iteration += 1
+    return nothing
 end
 
 #####
@@ -188,4 +231,3 @@ function _measure(process, trace::Tuple, measurements::Tuple)
     return nothing
 end
 _measure(process, ::Tuple{}, ::Tuple{}) = nothing
-

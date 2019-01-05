@@ -1,3 +1,13 @@
+"""
+Return the amount of swap used by a process.
+
+This is performed by reading from `/proc/[pid]/smaps` and accumulating all of the swap
+values.
+
+TODO
+----
+The implementation of this is not terribly well optimized.
+"""
 struct Smaps <: AbstractMeasurement end
 
 prepare(S::Smaps, args...) = Vector{Int64}()

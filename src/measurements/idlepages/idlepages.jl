@@ -31,8 +31,16 @@ prepare(I::IdlePageTracker, process::AbstractProcess) = (initbuffer!(I); return 
 function measure(I::IdlePageTracker, process)
     # Get VMAs, read idle bits and set idle bits
     getvmas!(I.vmas, getpid(process), I.filter)
-    pages = readidle(getpid(process), I.vmas, I.buffer)
+
+    # Copy the idle bitmap buffer and then immediately mark everything as idle again.
+    # Only after that do the post processing to find the active pages.
+    #
+    # This reduces the time spent between a read and subsequent clear of the idle bits
+    # in the case where a program in not paused.
+    read!(IDLE_BITMAP, I.buffer)
     markidle(getpid(process), I.vmas)
+
+    pages = readidle(getpid(process), I.vmas, I.buffer)
 
     return Sample(copy(I.vmas), pages)
 end
@@ -168,17 +176,19 @@ function markidle(pid, vmas)
 end
 
 """
-    readidle(pid, vmas, buffer) -> SortedRangeVector{UInt}
+    readidle(pid, vmas, bitmap) -> SortedRangeVector{UInt}
 
-Return the active pages within `vmas` of process with `pid`. Use `buffer` as storage for
-the idle bitmap to avoid allocations
+Return the active pages within `vmas` of process with `pid`. Use `bitmap` as the bitmap for
+the idle page buffer.
+
+To initialize bitmap, call:
+
+```
+read!(MemSnoop.IDLE_BITMAP, bitmap)
+```
 """
 function readidle(pid, vmas, buffer)
     pages = SortedRangeVector{UInt64}()
-    # Read the whole idle bitmap buffer. This can take a while for systems with a large
-    # amound of memory.
-    read!(IDLE_BITMAP, buffer)
-
     # Index of the VMA currently being accessed.
     vma_index = 1
 
