@@ -1,22 +1,20 @@
 # And now we have a dependency on PAPI ...
 using PAPI
 
-# TODO: Right now, this only supports a single counter.
-# extending to multiple counters should be easy though.
-mutable struct PAPICounters{N} <: AbstractMeasurement
+mutable struct PAPICounters{N, names} <: AbstractMeasurement
     codes::NTuple{N,Int32}
-    names::NTuple{N,Symbol}
-
     eventset::PAPI.EventSet
 
+    # Constructers
+    PAPICounters(name::Symbol, code::Int32) = new{1, (name,)}((code,))
 
-    PAPICounters(name::Symbol, code::Int32) = new{1}((code,), (name,))
     function PAPICounters(names::NTuple{N,Symbol}, codes::NTuple{N,<:Integer}) where {N}
-        new{N}(Int32.(codes), names)
+        new{N, names}(Int32.(codes))
     end
 end
 
-function initialize!(P::PAPICounters, process)
+_rettype(::PAPICounters{N,names}) where {N,names} = NamedTuple{names, NTuple{N, Int64}}
+function prepare(P::PAPICounters, process)
     # Create a new eventset so we can run these back to back
     P.eventset = PAPI.EventSet()     
     PAPI.component!(P.eventset)
@@ -27,17 +25,11 @@ function initialize!(P::PAPICounters, process)
         PAPI.addevent!(P.eventset, code)
     end
 
-    return nothing
-end
-
-_rettype(P::PAPICounters{N}) where {N} = NamedTuple{P.names, NTuple{N, Int64}}
-
-function prepare(P::PAPICounters)
     PAPI.start(P.eventset)
     return Vector{_rettype(P)}()
 end
 
-function measure(P::PAPICounters, process)
+function measure(P::PAPICounters, args...)
     # Stop/Read hardware counters and reset the counters.
     # calling "reset" automatically starts them counting again.
     PAPI.stop(P.eventset)
