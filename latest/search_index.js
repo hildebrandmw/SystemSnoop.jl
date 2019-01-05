@@ -29,15 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "MemSnoop",
     "title": "Usage",
     "category": "section",
-    "text": "The bread and buffer of this package is the trace function. This function takes  a SnoopedProcess and a NamedTuple of AbstractMeasurements. For example, suppose we wanted to measure some metrics about the current Julia process. We would then do something like this:julia> using MemSnoop\n\n# Get an unpauseable process. If we made a pausable process, then we would pause\n# the system that\'s doing the measuring, and that would be a problem.\njulia> process = SnoopedProcess{Unpausable}(getpid())\n\n# Get a list of measurements we want to take. In this example, for each measurement we \n# perform an initial timestamp, monitor disk io, read the assigned and resident memory, \n# and take a final measurement\njulia> measurements = (\n    initial = MemSnoop.Timestamp(),\n    disk = MemSnoop.DiskIO(),\n    memory = MemSnoop.Statm(),\n    final = MemSnoop.Timestamp(),\n)\n\n# Then, we perform a series of measurements.\njulia> data = trace(process, measurements; sampletime = 1, iter = 1:3);\n\n# The resulting `data` is a named tuple with the same names as `measurements`. The values\n# themselves are the corresponding measurements.\njulia> data.initial\n3-element Array{Dates.DateTime,1}:\n 2018-12-13T15:58:19.872\n 2018-12-13T15:58:20.874\n 2018-12-13T15:58:21.876\n\njulia> data.disk\n3-element Array{NamedTuple{(:rchar, :wchar, :readbytes, :writebytes),NTuple{4,Int64}},1}:\n (rchar = 11241089, wchar = 3461495, readbytes = 0, writebytes = 1085440)\n (rchar = 11241236, wchar = 3461495, readbytes = 0, writebytes = 1085440)\n (rchar = 11241383, wchar = 3461495, readbytes = 0, writebytes = 1085440)\n\njulia> data.memory\n3-element Array{NamedTuple{(:size, :resident),Tuple{Int64,Int64}},1}:\n (size = 318312, resident = 72959)\n (size = 318312, resident = 72959)\n (size = 318312, resident = 72959)\n\njulia> data.final\n3-element Array{Dates.DateTime,1}:\n 2018-12-13T15:58:19.872\n 2018-12-13T15:58:20.874\n 2018-12-13T15:58:21.876One of the most powerful measurement types is Idle Page Tracking, though this  measurement requires Julia to be run as sudo to work."
-},
-
-{
-    "location": "#Obtaining-Process-PIDs-1",
-    "page": "MemSnoop",
-    "title": "Obtaining Process PIDs",
-    "category": "section",
-    "text": "Currently, you have to obtain the pid for a process manually. However, in Julia 1.1, you will be able to obtain the pid of a process launched by Julia. This feature will be incorporated into this package once Julia 1.1 is released."
+    "text": "The bread and buffer of this package is the trace function. This function takes  a SnoopedProcess and a NamedTuple of AbstractMeasurements. For example, suppose we wanted to measure some metrics about the current Julia process. We would then do something like this:julia> using MemSnoop\n\n# Procide the command we would like to run\njulia> process = `top`\n\n# Get a list of measurements we want to take. In this example, for each measurement we \n# perform an initial timestamp, monitor disk io, read the assigned and resident memory, \n# and take a final measurement\njulia> measurements = (\n    initial = MemSnoop.Timestamp(),\n    disk = MemSnoop.DiskIO(),\n    memory = MemSnoop.Statm(),\n    final = MemSnoop.Timestamp(),\n)\n\n# Then, we perform a series of measurements.\njulia> data = trace(command, measurements; sampletime = 1, iter = 1:3);\n\n# The resulting `data` is a named tuple with the same names as `measurements`. The values\n# themselves are the corresponding measurements.\njulia> data.initial\n3-element Array{Dates.DateTime,1}:\n 2019-01-03T16:57:39.064\n 2019-01-03T16:57:40.067\n 2019-01-03T16:57:41.069\n\njulia> data.disk\n3-element Array{NamedTuple{(:rchar, :wchar, :readbytes, :writebytes),NTuple{4,Int64}},1}:\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n\njulia> data.memory\n3-element Array{NamedTuple{(:size, :resident),Tuple{Int64,Int64}},1}:\n (size = 1544, resident = 191)\n (size = 1544, resident = 191)\n (size = 1544, resident = 191)\n\njulia> data.final\n3-element Array{Dates.DateTime,1}:\n 2019-01-03T16:57:39.065\n 2019-01-03T16:57:40.067\n 2019-01-03T16:57:41.069One of the most powerful measurement types is Idle Page Tracking, though this  measurement requires Julia to be run as sudo to work."
 },
 
 {
@@ -53,7 +45,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Traces",
     "title": "MemSnoop.trace",
     "category": "method",
-    "text": "trace(process::AbstractProcess, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. The values of this tuple are AbstractMeasurements.\n\nReturn a NamedTuple T with the same names as measurements but whose values are the measurement data.\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasurements::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the julia process itself.\n\njulia> process = MemSnoop.SnoopedProcess(getpid())\nMemSnoop.SnoopedProcess{MemSnoop.Unpausable}(15703)\n\njulia> measurements = (\n    initial_timestamp = MemSnoop.Timestamp(),\n    idlepages = MemSnoop.IdlePageTracker(),\n    final_timestamp = MemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    process,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\nSee also: AbstractMeasurement, SnoopedProcess\n\n\n\n\n\n"
+    "text": "trace(process, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. The values of this tuple are AbstractMeasurements.\n\nReturn a NamedTuple T with the same names as measurements but whose values are the measurement data.\n\nArgument process can be:\n\nA SnoopedProcess\nAn integer representing a process PID\nA Base.Process spawned by Julia\nA Cmd that will launch a process\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasurements::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Can also pass a SmartSample for better control of sample times.    Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the top command.\n\njulia> measurements = (\n    initial_timestamp = MemSnoop.Timestamp(),\n    idlepages = MemSnoop.IdlePageTracker(),\n    final_timestamp = MemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    `top`,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\nSee also: AbstractMeasurement, SnoopedProcess, SmartSample\n\n\n\n\n\n"
 },
 
 {
@@ -62,6 +54,14 @@ var documenterSearchIndex = {"docs": [
     "title": "MemSnoop.AbstractMeasurement",
     "category": "type",
     "text": "Abstract supertype for process measurements.\n\nRequired API\n\nprepare\nmeasure\n\nConcrete Implementations\n\nTimestamp\nIdlePageTracker\nDiskIO\nStatm\n\n\n\n\n\n"
+},
+
+{
+    "location": "trace/#MemSnoop.SmartSample",
+    "page": "Traces",
+    "title": "MemSnoop.SmartSample",
+    "category": "type",
+    "text": "MemSnoop.SmartSample(t::TimePeriod) -> SmartSample\n\nSmart Sampler to ensure measurements happen every t time units. Samples will happen at multiples of t from the first measurement. If a sample period is missed, the sampler will wait until the next appropriate multiple of t.\n\n\n\n\n\n"
 },
 
 {
@@ -173,7 +173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Idle Page Tracking",
     "title": "MemSnoop.readidle",
     "category": "method",
-    "text": "readidle(pid, vmas, buffer) -> SortedRangeVector{UInt}\n\nReturn the active pages within vmas of process with pid. Use buffer as storage for the idle bitmap to avoid allocations\n\n\n\n\n\n"
+    "text": "readidle(pid, vmas, bitmap) -> SortedRangeVector{UInt}\n\nReturn the active pages within vmas of process with pid. Use bitmap as the bitmap for the idle page buffer.\n\nTo initialize bitmap, call:\n\nread!(MemSnoop.IDLE_BITMAP, bitmap)\n\n\n\n\n\n"
 },
 
 {
@@ -533,7 +533,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Disk IO",
     "title": "MemSnoop.DiskIO",
     "category": "type",
-    "text": "Record the rchar, wchar, read_bytes, and write_bytes fields of /proc/pid/io.\n\nEach measurement returns a NamedTuple with names rchar, wchar, readbytes, and writebytes.\n\nExample read from /proc/pid/io:\n\nrchar: 3089822\nwchar: 139463\nsyscr: 159\nsyscw: 178\nread_bytes: 0\nwrite_bytes: 4096\ncancelled_write_bytes: 0\n\nbecomes\n\n(rchar = 3089822, wchar = 139463, readbytes = 0, writebytes = 4096)\n\n\n\n\n\n"
+    "text": "Read from /proc/diskstats for a set of devices.  Return a Dict{Symbol,DiskStats} where the keys are the devices being measured and the values are DiskStats for each device.\n\nFields\n\ndevices::Vector{String} - Names of devices for which to take measurements.\n\nConstructor\n\nMemSnoop.DiskIO(devices) -> DiskIO\n\nDocumentation on /proc/diskstats\n\nThe /proc/diskstats file displays the I/O statistics of block devices. Each line contains the following 14 fields:\n\n 1 - major number\n 2 - minor mumber\n 3 - device name\n 4 - reads completed successfully\n 5 - reads merged\n 6 - sectors read\n 7 - time spent reading (ms)\n 8 - writes completed\n 9 - writes merged\n10 - sectors written\n11 - time spent writing (ms)\n12 - I/Os currently in progress\n13 - time spent doing I/Os (ms)\n14 - weighted time spent doing I/Os (ms)\n\nKernel 4.18+ appends four more fields for discard tracking putting the total at 18:\n\n15 - discards completed successfully\n16 - discards merged\n17 - sectors discarded\n18 - time spent discarding\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/diskio/#MemSnoop.DiskStats",
+    "page": "Disk IO",
+    "title": "MemSnoop.DiskStats",
+    "category": "type",
+    "text": "Storate for DiskIO.\n\nFields\n\nreads_completed - Reads successfully completed\nreads_merged\nsectors_read\ntime_reading (units: ms). Note that this field is for all pending operations, and will   add time for multiple read requests.\nwrites_completed\nwrites_merged\nsectors_written\ntime_writing (units: ms). Note that this field is for all pending operations, and will   add time for multiple read requests.\ntime_io (units: ms). Note, this is wall for the total time this disk was busy.\n\n\n\n\n\n"
 },
 
 {
@@ -542,6 +550,62 @@ var documenterSearchIndex = {"docs": [
     "title": "Disk IO",
     "category": "section",
     "text": "Modules = [MemSnoop]\nPages = [\"diskio.jl\"]"
+},
+
+{
+    "location": "measurements/processio/#",
+    "page": "Process IO",
+    "title": "Process IO",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "measurements/processio/#MemSnoop.BytesIO",
+    "page": "Process IO",
+    "title": "MemSnoop.BytesIO",
+    "category": "type",
+    "text": "Struct representing measurements for ProcessIO\n\nFields\n\nrchar - Characters Read.  The number of bytes which this task has caused to be read    from storage.  This is simply the sum of bytes which this process passed  to  read(2)     and  similar  system calls. It  includes  things such as terminal I/O and is unaffected    by whether or not actual physical disk I/O was required (the read might have been    satisfied from pagecache).\nwchar - Characters Written. The number of bytes which this task has caused, or shall    cause to be written to disk.  Similar caveats apply here as with rchar.\nread_bytes - Attempt to count the number of bytes which this process really did cause to    be fetched from the storage layer.  This is accurate for block-backed filesystems.\nwrite_bytes - Attempt to count the number of bytes which this process caused to be sent    to the storage layer.\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/processio/#MemSnoop.ProcessIO",
+    "page": "Process IO",
+    "title": "MemSnoop.ProcessIO",
+    "category": "type",
+    "text": "Record the rchar, wchar, read_bytes, and write_bytes fields of /proc/pid/io.\n\nEach measurement returns a BytesIO object.\n\nExample read from /proc/pid/io:\n\nrchar: 3089822\nwchar: 139463\nsyscr: 159\nsyscw: 178\nread_bytes: 0\nwrite_bytes: 4096\ncancelled_write_bytes: 0\n\nbecomes\n\nBytesIO(3089822, 139463, 0, 4096)\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/processio/#Process-IO-1",
+    "page": "Process IO",
+    "title": "Process IO",
+    "category": "section",
+    "text": "Modules = [MemSnoop]\nPages = [\"processio.jl\"]"
+},
+
+{
+    "location": "measurements/smaps/#",
+    "page": "Smaps",
+    "title": "Smaps",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "measurements/smaps/#MemSnoop.Smaps",
+    "page": "Smaps",
+    "title": "MemSnoop.Smaps",
+    "category": "type",
+    "text": "Return the amount of swap used by a process.\n\nThis is performed by reading from /proc/[pid]/smaps and accumulating all of the swap values.\n\nTODO\n\nThe implementation of this is not terribly well optimized.\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/smaps/#Smaps-1",
+    "page": "Smaps",
+    "title": "Smaps",
+    "category": "section",
+    "text": "Modules = [MemSnoop]\nPages = [\"smaps.jl\"]"
 },
 
 {
@@ -569,6 +633,30 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "measurements/uptime/#",
+    "page": "Uptime",
+    "title": "Uptime",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "measurements/uptime/#MemSnoop.Uptime",
+    "page": "Uptime",
+    "title": "MemSnoop.Uptime",
+    "category": "type",
+    "text": "Record the uptime metrics of a process.\n\nTODO: Document\n\n\n\n\n\n"
+},
+
+{
+    "location": "measurements/uptime/#Uptime-1",
+    "page": "Uptime",
+    "title": "Uptime",
+    "category": "section",
+    "text": "Modules = [MemSnoop]\nPages = [\"uptime.jl\"]"
+},
+
+{
     "location": "utils/#",
     "page": "Utilities",
     "title": "Utilities",
@@ -590,6 +678,14 @@ var documenterSearchIndex = {"docs": [
     "title": "MemSnoop.PIDException",
     "category": "type",
     "text": "Exception indicating that process with pid no longer exists.\n\n\n\n\n\n"
+},
+
+{
+    "location": "utils/#MemSnoop.Timeout",
+    "page": "Utilities",
+    "title": "MemSnoop.Timeout",
+    "category": "type",
+    "text": "An iterator that stops iterating at a certain time.\n\nExample\n\njulia> using Dates\n\njulia> y = MemSnoop.Timeout(Second(10))\nMemSnoop.Timeout(2019-01-04T11:51:09.262)\n\njulia> now()\n2019-01-04T11:50:59.274\n\njulia> for i in y; end\n\njulia> now()\n2019-01-04T11:51:09.275\n\n\n\n\n\n"
 },
 
 {
