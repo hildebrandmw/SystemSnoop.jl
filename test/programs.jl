@@ -22,7 +22,7 @@
 
     measurements() = (
         idlepages = MemSnoop.IdlePageTracker(),
-        programio = MemSnoop.ProgramIO(),
+        processio = MemSnoop.ProcessIO(),
         statm = MemSnoop.Statm(),
         timestamp = MemSnoop.Timestamp(),
     )
