@@ -2,23 +2,23 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "#",
-    "page": "MemSnoop",
-    "title": "MemSnoop",
+    "page": "SystemSnoop",
+    "title": "SystemSnoop",
     "category": "page",
     "text": ""
 },
 
 {
-    "location": "#MemSnoop-1",
-    "page": "MemSnoop",
-    "title": "MemSnoop",
+    "location": "#SystemSnoop-1",
+    "page": "SystemSnoop",
+    "title": "SystemSnoop",
     "category": "section",
     "text": "Idle page tracking for memory analysis of running applications."
 },
 
 {
     "location": "#Security-Warning-1",
-    "page": "MemSnoop",
+    "page": "SystemSnoop",
     "title": "Security Warning",
     "category": "section",
     "text": "This package requires running julia as root because it needs access to several protected kernel files. To minimize your risk, I tried minimize the number of third party non-stdlib  dependencies. The only third party non-test dependency of this package is  PAPI, which I also developed. That package  depends on Binary Provider, but only for building. Use this package at your own risk."
@@ -26,10 +26,10 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "#Usage-1",
-    "page": "MemSnoop",
+    "page": "SystemSnoop",
     "title": "Usage",
     "category": "section",
-    "text": "The bread and buffer of this package is the trace function. This function takes  a SnoopedProcess and a NamedTuple of AbstractMeasurements. For example, suppose we wanted to measure some metrics about the current Julia process. We would then do something like this:julia> using MemSnoop\n\n# Procide the command we would like to run\njulia> process = `top`\n\n# Get a list of measurements we want to take. In this example, for each measurement we \n# perform an initial timestamp, monitor disk io, read the assigned and resident memory, \n# and take a final measurement\njulia> measurements = (\n    initial = MemSnoop.Timestamp(),\n    disk = MemSnoop.DiskIO(),\n    memory = MemSnoop.Statm(),\n    final = MemSnoop.Timestamp(),\n)\n\n# Then, we perform a series of measurements.\njulia> data = trace(command, measurements; sampletime = 1, iter = 1:3);\n\n# The resulting `data` is a named tuple with the same names as `measurements`. The values\n# themselves are the corresponding measurements.\njulia> data.initial\n3-element Array{Dates.DateTime,1}:\n 2019-01-03T16:57:39.064\n 2019-01-03T16:57:40.067\n 2019-01-03T16:57:41.069\n\njulia> data.disk\n3-element Array{NamedTuple{(:rchar, :wchar, :readbytes, :writebytes),NTuple{4,Int64}},1}:\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n\njulia> data.memory\n3-element Array{NamedTuple{(:size, :resident),Tuple{Int64,Int64}},1}:\n (size = 1544, resident = 191)\n (size = 1544, resident = 191)\n (size = 1544, resident = 191)\n\njulia> data.final\n3-element Array{Dates.DateTime,1}:\n 2019-01-03T16:57:39.065\n 2019-01-03T16:57:40.067\n 2019-01-03T16:57:41.069One of the most powerful measurement types is Idle Page Tracking, though this  measurement requires Julia to be run as sudo to work."
+    "text": "The bread and buffer of this package is the trace function. This function takes  a SnoopedProcess and a NamedTuple of AbstractMeasurements. For example, suppose we wanted to measure some metrics about the current Julia process. We would then do something like this:julia> using SystemSnoop\n\n# Procide the command we would like to run\njulia> process = `top`\n\n# Get a list of measurements we want to take. In this example, for each measurement we \n# perform an initial timestamp, monitor disk io, read the assigned and resident memory, \n# and take a final measurement\njulia> measurements = (\n    initial = SystemSnoop.Timestamp(),\n    disk = SystemSnoop.DiskIO(),\n    memory = SystemSnoop.Statm(),\n    final = SystemSnoop.Timestamp(),\n)\n\n# Then, we perform a series of measurements.\njulia> data = trace(command, measurements; sampletime = 1, iter = 1:3);\n\n# The resulting `data` is a named tuple with the same names as `measurements`. The values\n# themselves are the corresponding measurements.\njulia> data.initial\n3-element Array{Dates.DateTime,1}:\n 2019-01-03T16:57:39.064\n 2019-01-03T16:57:40.067\n 2019-01-03T16:57:41.069\n\njulia> data.disk\n3-element Array{NamedTuple{(:rchar, :wchar, :readbytes, :writebytes),NTuple{4,Int64}},1}:\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n (rchar = 1948, wchar = 0, readbytes = 0, writebytes = 0)\n\njulia> data.memory\n3-element Array{NamedTuple{(:size, :resident),Tuple{Int64,Int64}},1}:\n (size = 1544, resident = 191)\n (size = 1544, resident = 191)\n (size = 1544, resident = 191)\n\njulia> data.final\n3-element Array{Dates.DateTime,1}:\n 2019-01-03T16:57:39.065\n 2019-01-03T16:57:40.067\n 2019-01-03T16:57:41.069One of the most powerful measurement types is Idle Page Tracking, though this  measurement requires Julia to be run as sudo to work."
 },
 
 {
@@ -41,49 +41,49 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace/#MemSnoop.trace-Union{Tuple{N}, Tuple{S}, Tuple{AbstractProcess,NamedTuple{S,#s39} where #s39<:Tuple{Vararg{AbstractMeasurement,N}}}} where N where S",
+    "location": "trace/#SystemSnoop.trace-Union{Tuple{N}, Tuple{S}, Tuple{AbstractProcess,NamedTuple{S,#s39} where #s39<:Tuple{Vararg{AbstractMeasurement,N}}}} where N where S",
     "page": "Traces",
-    "title": "MemSnoop.trace",
+    "title": "SystemSnoop.trace",
     "category": "method",
-    "text": "trace(process, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. The values of this tuple are AbstractMeasurements.\n\nReturn a NamedTuple T with the same names as measurements but whose values are the measurement data.\n\nArgument process can be:\n\nA SnoopedProcess\nAn integer representing a process PID\nA Base.Process spawned by Julia\nA Cmd that will launch a process\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasurements::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Can also pass a SmartSample for better control of sample times.    Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the top command.\n\njulia> measurements = (\n    initial_timestamp = MemSnoop.Timestamp(),\n    idlepages = MemSnoop.IdlePageTracker(),\n    final_timestamp = MemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    `top`,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\nSee also: AbstractMeasurement, SnoopedProcess, SmartSample\n\n\n\n\n\n"
+    "text": "trace(process, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. The values of this tuple are AbstractMeasurements.\n\nReturn a NamedTuple T with the same names as measurements but whose values are the measurement data.\n\nArgument process can be:\n\nA SnoopedProcess\nAn integer representing a process PID\nA Base.Process spawned by Julia\nA Cmd that will launch a process\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasurements::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Can also pass a SmartSample for better control of sample times.    Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the top command.\n\njulia> measurements = (\n    initial_timestamp = SystemSnoop.Timestamp(),\n    idlepages = SystemSnoop.IdlePageTracker(),\n    final_timestamp = SystemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    `top`,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\nSee also: AbstractMeasurement, SnoopedProcess, SmartSample\n\n\n\n\n\n"
 },
 
 {
-    "location": "trace/#MemSnoop.AbstractMeasurement",
+    "location": "trace/#SystemSnoop.AbstractMeasurement",
     "page": "Traces",
-    "title": "MemSnoop.AbstractMeasurement",
+    "title": "SystemSnoop.AbstractMeasurement",
     "category": "type",
     "text": "Abstract supertype for process measurements.\n\nRequired API\n\nprepare\nmeasure\n\nConcrete Implementations\n\nTimestamp\nIdlePageTracker\nDiskIO\nStatm\n\n\n\n\n\n"
 },
 
 {
-    "location": "trace/#MemSnoop.SmartSample",
+    "location": "trace/#SystemSnoop.SmartSample",
     "page": "Traces",
-    "title": "MemSnoop.SmartSample",
+    "title": "SystemSnoop.SmartSample",
     "category": "type",
-    "text": "MemSnoop.SmartSample(t::TimePeriod) -> SmartSample\n\nSmart Sampler to ensure measurements happen every t time units. Samples will happen at multiples of t from the first measurement. If a sample period is missed, the sampler will wait until the next appropriate multiple of t.\n\n\n\n\n\n"
+    "text": "SystemSnoop.SmartSample(t::TimePeriod) -> SmartSample\n\nSmart Sampler to ensure measurements happen every t time units. Samples will happen at multiples of t from the first measurement. If a sample period is missed, the sampler will wait until the next appropriate multiple of t.\n\n\n\n\n\n"
 },
 
 {
-    "location": "trace/#MemSnoop.Timestamp",
+    "location": "trace/#SystemSnoop.Timestamp",
     "page": "Traces",
-    "title": "MemSnoop.Timestamp",
+    "title": "SystemSnoop.Timestamp",
     "category": "type",
     "text": "Collect timestamps.\n\n\n\n\n\n"
 },
 
 {
-    "location": "trace/#MemSnoop.measure-Union{Tuple{T}, Tuple{T,Vararg{Any,N} where N}} where T<:MemSnoop.AbstractMeasurement",
+    "location": "trace/#SystemSnoop.measure-Union{Tuple{T}, Tuple{T,Vararg{Any,N} where N}} where T<:SystemSnoop.AbstractMeasurement",
     "page": "Traces",
-    "title": "MemSnoop.measure",
+    "title": "SystemSnoop.measure",
     "category": "method",
     "text": "measure(M::AbstractMeasurement, P::AbstractProcess) -> T\n\nReturn data of type T.\n\n\n\n\n\n"
 },
 
 {
-    "location": "trace/#MemSnoop.prepare-Union{Tuple{T}, Tuple{T,Vararg{Any,N} where N}} where T<:MemSnoop.AbstractMeasurement",
+    "location": "trace/#SystemSnoop.prepare-Union{Tuple{T}, Tuple{T,Vararg{Any,N} where N}} where T<:SystemSnoop.AbstractMeasurement",
     "page": "Traces",
-    "title": "MemSnoop.prepare",
+    "title": "SystemSnoop.prepare",
     "category": "method",
     "text": "prepare(M::AbstractMeasurement, P::AbstractProcess) -> Vector{T}\n\nReturn an empty vector to hold measurement data of type T for measurement M. Any  initialization required M should happen here.\n\n\n\n\n\n"
 },
@@ -93,7 +93,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Traces",
     "title": "Traces",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"trace.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"trace.jl\"]"
 },
 
 {
@@ -105,25 +105,25 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "process/#MemSnoop.SnoopedProcess",
+    "location": "process/#SystemSnoop.SnoopedProcess",
     "page": "Process",
-    "title": "MemSnoop.SnoopedProcess",
+    "title": "SystemSnoop.SnoopedProcess",
     "category": "type",
     "text": "Struct container a pid as well as auxiliary data structure to make the snooping process more efficient. SnoopedProcesses come in two variants, Pausable and Unpausable. \n\nPausable processes will be paused before a set of measurements are taken by calling kill -STOP and resumed after afterwards by calling kill -CONT. Unpausable processes will not be touched.\n\nTo construct a Pausable process with pid, call\n\nps = SnoopedProcess{Pausable}(pid)\n\nTo construct an Unpausable process, call\n\nps = SnoopedProcess{Unpausable}(pid)\n\nFields\n\npid::Int64 - The pid of the process.\n\nMethods\n\ngetpid - Get the PID of this process.\nisrunning - Return true if process is running.\nprehook - Method to call before measurements.\nposthook - Method to call after measurements.\n\n\n\n\n\n"
 },
 
 {
-    "location": "process/#MemSnoop.posthook-Tuple{SnoopedProcess{Pausable}}",
+    "location": "process/#SystemSnoop.posthook-Tuple{SnoopedProcess{Pausable}}",
     "page": "Process",
-    "title": "MemSnoop.posthook",
+    "title": "SystemSnoop.posthook",
     "category": "method",
     "text": "posthook(P::AbstractProcess)\n\nIf P is a pausable process, unpause P.\n\n\n\n\n\n"
 },
 
 {
-    "location": "process/#MemSnoop.prehook-Tuple{SnoopedProcess{Pausable}}",
+    "location": "process/#SystemSnoop.prehook-Tuple{SnoopedProcess{Pausable}}",
     "page": "Process",
-    "title": "MemSnoop.prehook",
+    "title": "SystemSnoop.prehook",
     "category": "method",
     "text": "prehook(P::AbstractProcess)\n\nIf P is a pausable process, pause P.\n\n\n\n\n\n"
 },
@@ -133,7 +133,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Process",
     "title": "Process",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"process.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"process.jl\"]"
 },
 
 {
@@ -145,41 +145,41 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/idlepages/#MemSnoop.IdlePageTracker",
+    "location": "measurements/idlepages/idlepages/#SystemSnoop.IdlePageTracker",
     "page": "Idle Page Tracking",
-    "title": "MemSnoop.IdlePageTracker",
+    "title": "SystemSnoop.IdlePageTracker",
     "category": "type",
     "text": "Measurement type for performing Idle Page Tracking on a process. To filter process VMAs, construct as\n\nIdlePageTracker([filter])\n\nwhere filter is a VMA filter function.\n\nImplementation Details\n\nfilter - The VMA filter to apply. Defaults to all VMAs.\nvmas::Vector{VMA} - Buffer for storing VMAs.\nbuffer::Vector{UInt64} - Buffer to store the idle page bitmap.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/idlepages/#MemSnoop.initbuffer!-Tuple{MemSnoop.IdlePageTracker}",
+    "location": "measurements/idlepages/idlepages/#SystemSnoop.initbuffer!-Tuple{SystemSnoop.IdlePageTracker}",
     "page": "Idle Page Tracking",
-    "title": "MemSnoop.initbuffer!",
+    "title": "SystemSnoop.initbuffer!",
     "category": "method",
     "text": "initbuffer!(I::IdlePageTracker)\n\nRead once from page_idle/bitmap to get the size of the bitmap. Set the bitmap in I to this size to avoid reallocation every time the bitmap is read.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/idlepages/#MemSnoop.markidle-Tuple{Any,Any}",
+    "location": "measurements/idlepages/idlepages/#SystemSnoop.markidle-Tuple{Any,Any}",
     "page": "Idle Page Tracking",
-    "title": "MemSnoop.markidle",
+    "title": "SystemSnoop.markidle",
     "category": "method",
     "text": "markidle(pid, vmas)\n\nMark all of the memory pages in the list of vmas for process with pid as idle.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/idlepages/#MemSnoop.readidle-Tuple{Any,Any,Any}",
+    "location": "measurements/idlepages/idlepages/#SystemSnoop.readidle-Tuple{Any,Any,Any}",
     "page": "Idle Page Tracking",
-    "title": "MemSnoop.readidle",
+    "title": "SystemSnoop.readidle",
     "category": "method",
-    "text": "readidle(pid, vmas, bitmap) -> SortedRangeVector{UInt}\n\nReturn the active pages within vmas of process with pid. Use bitmap as the bitmap for the idle page buffer.\n\nTo initialize bitmap, call:\n\nread!(MemSnoop.IDLE_BITMAP, bitmap)\n\n\n\n\n\n"
+    "text": "readidle(pid, vmas, bitmap) -> SortedRangeVector{UInt}\n\nReturn the active pages within vmas of process with pid. Use bitmap as the bitmap for the idle page buffer.\n\nTo initialize bitmap, call:\n\nread!(SystemSnoop.IDLE_BITMAP, bitmap)\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/idlepages/#MemSnoop.walkpagemap-Tuple{Function,Any,Any}",
+    "location": "measurements/idlepages/idlepages/#SystemSnoop.walkpagemap-Tuple{Function,Any,Any}",
     "page": "Idle Page Tracking",
-    "title": "MemSnoop.walkpagemap",
+    "title": "SystemSnoop.walkpagemap",
     "category": "method",
     "text": "walkpagemap(f::Function, pid, vmas; [buffer::Vector{UInt64}])\n\nFor each VMA in iterator vmas, store the contents of /proc/pid/pagemap into buffer for this VMA and call f(buffer).\n\nNote that it is possible for buffer to be empty.\n\n\n\n\n\n"
 },
@@ -189,7 +189,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Idle Page Tracking",
     "title": "Idle Page Tracking",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"idlepages/idlepages.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"idlepages/idlepages.jl\"]"
 },
 
 {
@@ -201,57 +201,57 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/sample/#MemSnoop.Sample",
+    "location": "measurements/idlepages/sample/#SystemSnoop.Sample",
     "page": "Sample",
-    "title": "MemSnoop.Sample",
+    "title": "SystemSnoop.Sample",
     "category": "type",
     "text": "Simple container containing the list of VMAs analyzed for a sample as well as the individual pages accessed.\n\nFields\n\nvmas :: Vector{VMA} - The VMAs analyzed during this sample.\npages :: SortedRangeVector{UInt64} - The pages that were active during this sample. Pages are   encoded by virtual page number. To get an address, multiply the page number by the   pagesize (generally 4096).\n\nMethods\n\nvmas - VMAs of Sample.\npages - Active pages from Sample or Vector{Sample}.\nwss - Working set size of Sample.\nunion - Merge two Samples together.\nisactive - Check if a page was active in Sample.\nbitmap - Construct a bitmap of active pages for a Vector{Sample}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/sample/#MemSnoop.bitmap-Tuple{Array{MemSnoop.Sample,1},MemSnoop.VMA}",
+    "location": "measurements/idlepages/sample/#SystemSnoop.bitmap-Tuple{Array{SystemSnoop.Sample,1},SystemSnoop.VMA}",
     "page": "Sample",
-    "title": "MemSnoop.bitmap",
+    "title": "SystemSnoop.bitmap",
     "category": "method",
     "text": "bitmap(trace::Vector{Sample}, vma::VMA) -> Array{Bool, 2}\n\nReturn a bitmap B of active pages in trace with virtual addresses from vma.  B[i,j] == true if the ith address in vma in trace[j] is active.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/sample/#MemSnoop.isactive-Tuple{MemSnoop.Sample,Any}",
+    "location": "measurements/idlepages/sample/#SystemSnoop.isactive-Tuple{SystemSnoop.Sample,Any}",
     "page": "Sample",
-    "title": "MemSnoop.isactive",
+    "title": "SystemSnoop.isactive",
     "category": "method",
     "text": "isactive(sample::Sample, page) -> Bool\n\nReturn true if page was active in sample.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/sample/#MemSnoop.pages-Tuple{Array{MemSnoop.Sample,1}}",
+    "location": "measurements/idlepages/sample/#SystemSnoop.pages-Tuple{Array{SystemSnoop.Sample,1}}",
     "page": "Sample",
-    "title": "MemSnoop.pages",
+    "title": "SystemSnoop.pages",
     "category": "method",
     "text": "pages(trace::Vector{Sample}) -> Vector{UInt64}\n\nReturn a sorted vector of all pages in trace that were marked as \"active\" at least once. Pages are encoded by virtual page number.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/sample/#MemSnoop.pages-Tuple{MemSnoop.Sample}",
+    "location": "measurements/idlepages/sample/#SystemSnoop.pages-Tuple{SystemSnoop.Sample}",
     "page": "Sample",
-    "title": "MemSnoop.pages",
+    "title": "SystemSnoop.pages",
     "category": "method",
     "text": "pages(sample::Sample) -> Set{UInt64}\n\nReturn a set of all active pages in sample.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/sample/#MemSnoop.vmas-Tuple{Array{MemSnoop.Sample,1}}",
+    "location": "measurements/idlepages/sample/#SystemSnoop.vmas-Tuple{Array{SystemSnoop.Sample,1}}",
     "page": "Sample",
-    "title": "MemSnoop.vmas",
+    "title": "SystemSnoop.vmas",
     "category": "method",
     "text": "vmas(trace::Vector{Sample}) -> Vector{VMA}\n\nReturn the largest sorted collection V of VMAs with the property that for any sample S in trace and for any VMA s in S, s subset v for some v in V and s cap u = emptyset for all u in V setminus v.o\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/sample/#MemSnoop.wss-Tuple{MemSnoop.Sample}",
+    "location": "measurements/idlepages/sample/#SystemSnoop.wss-Tuple{SystemSnoop.Sample}",
     "page": "Sample",
-    "title": "MemSnoop.wss",
+    "title": "SystemSnoop.wss",
     "category": "method",
     "text": "wss(S::Sample) -> Int\n\nReturn the number of active pages for S.\n\n\n\n\n\n"
 },
@@ -261,7 +261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Sample",
     "title": "Sample",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"idlepages/sample.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"idlepages/sample.jl\"]"
 },
 
 {
@@ -273,9 +273,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.VMA",
+    "location": "measurements/idlepages/vma/#SystemSnoop.VMA",
     "page": "VMAs",
-    "title": "MemSnoop.VMA",
+    "title": "SystemSnoop.VMA",
     "category": "type",
     "text": "Translated Virtual Memory Area (VMA) for a process.\n\nFields\n\nstart::UInt64 - The starting virtual page number for the VMA.\nstop::UInt64 - The last valid virtual page number for the VMA.\nremainder::String - The remainder of the entry in /proc/pid/maps.\n\nMethods\n\nlength, startaddress, stopaddress\n\nFilter Functions\n\nThere are a handful of builtin filter functions to help get rid of unwanted VMAs.\n\nheap\nreadable\nwritable\nexecutable\nflagset\nlongerthan\n\n\n\n\n\n"
 },
@@ -289,7 +289,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/vma/#Base.issubset-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#Base.issubset-Tuple{SystemSnoop.VMA,SystemSnoop.VMA}",
     "page": "VMAs",
     "title": "Base.issubset",
     "category": "method",
@@ -297,7 +297,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/vma/#Base.length-Tuple{MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#Base.length-Tuple{SystemSnoop.VMA}",
     "page": "VMAs",
     "title": "Base.length",
     "category": "method",
@@ -305,7 +305,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/vma/#Base.union-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#Base.union-Tuple{SystemSnoop.VMA,SystemSnoop.VMA}",
     "page": "VMAs",
     "title": "Base.union",
     "category": "method",
@@ -313,81 +313,81 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.executable-Tuple{MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.executable-Tuple{SystemSnoop.VMA}",
     "page": "VMAs",
-    "title": "MemSnoop.executable",
+    "title": "SystemSnoop.executable",
     "category": "method",
     "text": "Return true if vma is executable.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.flagset-Tuple{MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.flagset-Tuple{SystemSnoop.VMA}",
     "page": "VMAs",
-    "title": "MemSnoop.flagset",
+    "title": "SystemSnoop.flagset",
     "category": "method",
     "text": "Return true if vma is either readable, writeable, or executable\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.getvmas!",
+    "location": "measurements/idlepages/vma/#SystemSnoop.getvmas!",
     "page": "VMAs",
-    "title": "MemSnoop.getvmas!",
+    "title": "SystemSnoop.getvmas!",
     "category": "function",
     "text": "getvmas!(buffer::Vector{VMA}, pid, [filter])\n\nFill buffer with the Virtual Memory Areas associated with the process with pid. Can optinally supply a filter. VMAs in buffer will be sorted by virtual address.\n\nFilter\n\nThe filter must be of the form\n\nf(vma::VMA) -> Bool\n\nwhere vma is the parsed VMA region from a line of the process\'s maps file.\n\nFor example, if an entry in the maps file is\n\n0088f000-010fe000 rw-p 00000000 00:00 0\n\nthen vma = VMA(0x0088f000,0x010fe000, rw-p 00000000 00:00 0)\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.heap-Tuple{MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.heap-Tuple{SystemSnoop.VMA}",
     "page": "VMAs",
-    "title": "MemSnoop.heap",
+    "title": "SystemSnoop.heap",
     "category": "method",
     "text": "Return true if vma is for the heap.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.longerthan-Tuple{Any,Integer}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.longerthan-Tuple{Any,Integer}",
     "page": "VMAs",
-    "title": "MemSnoop.longerthan",
+    "title": "SystemSnoop.longerthan",
     "category": "method",
     "text": "longerthan(x, n) -> Bool\n\nReturn true if length(x) > n\n\nlongerthan(n) -> Function\n\nReturn a function x -> longerthan(x, n)\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.overlapping-Tuple{MemSnoop.VMA,MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.overlapping-Tuple{SystemSnoop.VMA,SystemSnoop.VMA}",
     "page": "VMAs",
-    "title": "MemSnoop.overlapping",
+    "title": "SystemSnoop.overlapping",
     "category": "method",
     "text": "overlapping(a::VMA, b::VMA) -> Bool\n\nReturn true if VMA regions a and b overlap.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.readable-Tuple{MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.readable-Tuple{SystemSnoop.VMA}",
     "page": "VMAs",
-    "title": "MemSnoop.readable",
+    "title": "SystemSnoop.readable",
     "category": "method",
     "text": "Return true if vma is readable.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.startaddress-Tuple{MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.startaddress-Tuple{SystemSnoop.VMA}",
     "page": "VMAs",
-    "title": "MemSnoop.startaddress",
+    "title": "SystemSnoop.startaddress",
     "category": "method",
     "text": "startaddress(vma::VMA) -> UInt\n\nReturn the first virtual addresses assigned to vma.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.stopaddress-Tuple{MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.stopaddress-Tuple{SystemSnoop.VMA}",
     "page": "VMAs",
-    "title": "MemSnoop.stopaddress",
+    "title": "SystemSnoop.stopaddress",
     "category": "method",
     "text": "stopaddres(vma::VMA) -> UInt\n\nReturn the last virtual addresses assigned to vma.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/vma/#MemSnoop.writable-Tuple{MemSnoop.VMA}",
+    "location": "measurements/idlepages/vma/#SystemSnoop.writable-Tuple{SystemSnoop.VMA}",
     "page": "VMAs",
-    "title": "MemSnoop.writable",
+    "title": "SystemSnoop.writable",
     "category": "method",
     "text": "Return true if vma is writable.\n\n\n\n\n\n"
 },
@@ -397,7 +397,7 @@ var documenterSearchIndex = {"docs": [
     "page": "VMAs",
     "title": "VMAs",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"idlepages/vma.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"idlepages/vma.jl\"]"
 },
 
 {
@@ -409,15 +409,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/rangevector/#MemSnoop.SortedRangeVector",
+    "location": "measurements/idlepages/rangevector/#SystemSnoop.SortedRangeVector",
     "page": "Sorted Range Vectors",
-    "title": "MemSnoop.SortedRangeVector",
+    "title": "SystemSnoop.SortedRangeVector",
     "category": "type",
     "text": "Compact representation of data of type T that is both sorted and usually occurs in contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a SortedRangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the SortedRangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nSortedRangeVector{T}() -> SortedRangeVector{T}\n\nConstruct a empty SortedRangeVector with element type T.\n\nMethods\n\nsumall\nlastelement\npush!\nin\nunion\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/rangevector/#Base.in-Tuple{Any,MemSnoop.SortedRangeVector}",
+    "location": "measurements/idlepages/rangevector/#Base.in-Tuple{Any,SystemSnoop.SortedRangeVector}",
     "page": "Sorted Range Vectors",
     "title": "Base.in",
     "category": "method",
@@ -441,17 +441,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/rangevector/#MemSnoop.lastelement-Tuple{MemSnoop.SortedRangeVector}",
+    "location": "measurements/idlepages/rangevector/#SystemSnoop.lastelement-Tuple{SystemSnoop.SortedRangeVector}",
     "page": "Sorted Range Vectors",
-    "title": "MemSnoop.lastelement",
+    "title": "SystemSnoop.lastelement",
     "category": "method",
     "text": "lastelement(V::SortedRangeVector{T}) -> T\n\nReturn the last element of the last range of V.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/rangevector/#MemSnoop.sumall-Union{Tuple{SortedRangeVector{T}}, Tuple{T}} where T",
+    "location": "measurements/idlepages/rangevector/#SystemSnoop.sumall-Union{Tuple{SortedRangeVector{T}}, Tuple{T}} where T",
     "page": "Sorted Range Vectors",
-    "title": "MemSnoop.sumall",
+    "title": "SystemSnoop.sumall",
     "category": "method",
     "text": "sumall(V::SortedRangeVector)\n\nReturn the sum of lengths of each element of V.\n\n\n\n\n\n"
 },
@@ -461,7 +461,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Sorted Range Vectors",
     "title": "Sorted Range Vectors",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"idlepages/rangevector.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"idlepages/rangevector.jl\"]"
 },
 
 {
@@ -473,41 +473,41 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/utils/#MemSnoop.inmemory-Tuple{Any}",
+    "location": "measurements/idlepages/utils/#SystemSnoop.inmemory-Tuple{Any}",
     "page": "Utility Functions",
-    "title": "MemSnoop.inmemory",
+    "title": "SystemSnoop.inmemory",
     "category": "method",
     "text": "inmemory(x::UInt) -> Bool\n\nReturn true if x (interpreted as an entry in Linux /prop/[pid]/pagemap) is  located in memory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/utils/#MemSnoop.isactive-Tuple{Integer,Array{UInt64,1}}",
+    "location": "measurements/idlepages/utils/#SystemSnoop.isactive-Tuple{Integer,Array{UInt64,1}}",
     "page": "Utility Functions",
-    "title": "MemSnoop.isactive",
+    "title": "SystemSnoop.isactive",
     "category": "method",
     "text": "isactive(x::Integer, buffer::Vector{UInt64}) -> Bool\n\nReturn true if bit x of buffer is set, intrerpreting buffer as a contiguous chunk  of memory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/utils/#MemSnoop.isbitset-Tuple{Integer,Any}",
+    "location": "measurements/idlepages/utils/#SystemSnoop.isbitset-Tuple{Integer,Any}",
     "page": "Utility Functions",
-    "title": "MemSnoop.isbitset",
+    "title": "SystemSnoop.isbitset",
     "category": "method",
     "text": "isbitset(x::Integer, b::Integer) -> Bool\n\nReturn true if bit b of x is 1.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/utils/#MemSnoop.isdirty-Tuple{Any}",
+    "location": "measurements/idlepages/utils/#SystemSnoop.isdirty-Tuple{Any}",
     "page": "Utility Functions",
-    "title": "MemSnoop.isdirty",
+    "title": "SystemSnoop.isdirty",
     "category": "method",
     "text": "isbitset(x::UInt) -> Bool\n\nReturn true if the dirty bit of x (interpreted as an entry in Linux /proc/kpagecount) is set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/idlepages/utils/#MemSnoop.pfnmask-Tuple{Any}",
+    "location": "measurements/idlepages/utils/#SystemSnoop.pfnmask-Tuple{Any}",
     "page": "Utility Functions",
-    "title": "MemSnoop.pfnmask",
+    "title": "SystemSnoop.pfnmask",
     "category": "method",
     "text": "pfnmask(x::UInt) -> UInt\n\nReturn the lower 55 bits of x. When applied to a /proc/pid/pagemap entry, returns the physical page number (pfn) of that entry.\n\n\n\n\n\n"
 },
@@ -517,7 +517,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Utility Functions",
     "title": "Utility Functions",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"idlepages/util.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"idlepages/util.jl\"]"
 },
 
 {
@@ -529,17 +529,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/diskio/#MemSnoop.DiskIO",
+    "location": "measurements/diskio/#SystemSnoop.DiskIO",
     "page": "Disk IO",
-    "title": "MemSnoop.DiskIO",
+    "title": "SystemSnoop.DiskIO",
     "category": "type",
-    "text": "Read from /proc/diskstats for a set of devices.  Return a Dict{Symbol,DiskStats} where the keys are the devices being measured and the values are DiskStats for each device.\n\nFields\n\ndevices::Vector{String} - Names of devices for which to take measurements.\n\nConstructor\n\nMemSnoop.DiskIO(devices) -> DiskIO\n\nDocumentation on /proc/diskstats\n\nThe /proc/diskstats file displays the I/O statistics of block devices. Each line contains the following 14 fields:\n\n 1 - major number\n 2 - minor mumber\n 3 - device name\n 4 - reads completed successfully\n 5 - reads merged\n 6 - sectors read\n 7 - time spent reading (ms)\n 8 - writes completed\n 9 - writes merged\n10 - sectors written\n11 - time spent writing (ms)\n12 - I/Os currently in progress\n13 - time spent doing I/Os (ms)\n14 - weighted time spent doing I/Os (ms)\n\nKernel 4.18+ appends four more fields for discard tracking putting the total at 18:\n\n15 - discards completed successfully\n16 - discards merged\n17 - sectors discarded\n18 - time spent discarding\n\n\n\n\n\n"
+    "text": "Read from /proc/diskstats for a set of devices.  Return a Dict{Symbol,DiskStats} where the keys are the devices being measured and the values are DiskStats for each device.\n\nFields\n\ndevices::Vector{String} - Names of devices for which to take measurements.\n\nConstructor\n\nSystemSnoop.DiskIO(devices) -> DiskIO\n\nDocumentation on /proc/diskstats\n\nThe /proc/diskstats file displays the I/O statistics of block devices. Each line contains the following 14 fields:\n\n 1 - major number\n 2 - minor mumber\n 3 - device name\n 4 - reads completed successfully\n 5 - reads merged\n 6 - sectors read\n 7 - time spent reading (ms)\n 8 - writes completed\n 9 - writes merged\n10 - sectors written\n11 - time spent writing (ms)\n12 - I/Os currently in progress\n13 - time spent doing I/Os (ms)\n14 - weighted time spent doing I/Os (ms)\n\nKernel 4.18+ appends four more fields for discard tracking putting the total at 18:\n\n15 - discards completed successfully\n16 - discards merged\n17 - sectors discarded\n18 - time spent discarding\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/diskio/#MemSnoop.DiskStats",
+    "location": "measurements/diskio/#SystemSnoop.DiskStats",
     "page": "Disk IO",
-    "title": "MemSnoop.DiskStats",
+    "title": "SystemSnoop.DiskStats",
     "category": "type",
     "text": "Storate for DiskIO.\n\nFields\n\nreads_completed - Reads successfully completed\nreads_merged\nsectors_read\ntime_reading (units: ms). Note that this field is for all pending operations, and will   add time for multiple read requests.\nwrites_completed\nwrites_merged\nsectors_written\ntime_writing (units: ms). Note that this field is for all pending operations, and will   add time for multiple read requests.\ntime_io (units: ms). Note, this is wall for the total time this disk was busy.\n\n\n\n\n\n"
 },
@@ -549,7 +549,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Disk IO",
     "title": "Disk IO",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"diskio.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"diskio.jl\"]"
 },
 
 {
@@ -561,17 +561,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/processio/#MemSnoop.BytesIO",
+    "location": "measurements/processio/#SystemSnoop.BytesIO",
     "page": "Process IO",
-    "title": "MemSnoop.BytesIO",
+    "title": "SystemSnoop.BytesIO",
     "category": "type",
     "text": "Struct representing measurements for ProcessIO\n\nFields\n\nrchar - Characters Read.  The number of bytes which this task has caused to be read    from storage.  This is simply the sum of bytes which this process passed  to  read(2)     and  similar  system calls. It  includes  things such as terminal I/O and is unaffected    by whether or not actual physical disk I/O was required (the read might have been    satisfied from pagecache).\nwchar - Characters Written. The number of bytes which this task has caused, or shall    cause to be written to disk.  Similar caveats apply here as with rchar.\nread_bytes - Attempt to count the number of bytes which this process really did cause to    be fetched from the storage layer.  This is accurate for block-backed filesystems.\nwrite_bytes - Attempt to count the number of bytes which this process caused to be sent    to the storage layer.\n\n\n\n\n\n"
 },
 
 {
-    "location": "measurements/processio/#MemSnoop.ProcessIO",
+    "location": "measurements/processio/#SystemSnoop.ProcessIO",
     "page": "Process IO",
-    "title": "MemSnoop.ProcessIO",
+    "title": "SystemSnoop.ProcessIO",
     "category": "type",
     "text": "Record the rchar, wchar, read_bytes, and write_bytes fields of /proc/pid/io.\n\nEach measurement returns a BytesIO object.\n\nExample read from /proc/pid/io:\n\nrchar: 3089822\nwchar: 139463\nsyscr: 159\nsyscw: 178\nread_bytes: 0\nwrite_bytes: 4096\ncancelled_write_bytes: 0\n\nbecomes\n\nBytesIO(3089822, 139463, 0, 4096)\n\n\n\n\n\n"
 },
@@ -581,7 +581,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Process IO",
     "title": "Process IO",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"processio.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"processio.jl\"]"
 },
 
 {
@@ -593,9 +593,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/smaps/#MemSnoop.Smaps",
+    "location": "measurements/smaps/#SystemSnoop.Smaps",
     "page": "Smaps",
-    "title": "MemSnoop.Smaps",
+    "title": "SystemSnoop.Smaps",
     "category": "type",
     "text": "Return the amount of swap used by a process.\n\nThis is performed by reading from /proc/[pid]/smaps and accumulating all of the swap values.\n\nTODO\n\nThe implementation of this is not terribly well optimized.\n\n\n\n\n\n"
 },
@@ -605,7 +605,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Smaps",
     "title": "Smaps",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"smaps.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"smaps.jl\"]"
 },
 
 {
@@ -617,9 +617,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/statm/#MemSnoop.Statm",
+    "location": "measurements/statm/#SystemSnoop.Statm",
     "page": "Statm",
-    "title": "MemSnoop.Statm",
+    "title": "SystemSnoop.Statm",
     "category": "type",
     "text": "Record the size and resident fields of /proc/[pid]/statm.\n\nEach measurement returns a NamedTuple with names size and resident.\n\nFrom the man page:\n\n/proc/[pid]/statm\n      Provides information about memory usage, measured in pages.  The columns are:\n\n          size       (1) total program size\n                     (same as VmSize in /proc/[pid]/status)\n          resident   (2) resident set size\n                     (same as VmRSS in /proc/[pid]/status)\n          shared     (3) number of resident shared pages (i.e., backed by a file)\n                     (same as RssFile+RssShmem in /proc/[pid]/status)\n          text       (4) text (code)\n          lib        (5) library (unused since Linux 2.6; always 0)\n          data       (6) data + stack\n          dt         (7) dirty pages (unused since Linux 2.6; always 0)            \n\n\n\n\n\n"
 },
@@ -629,7 +629,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Statm",
     "title": "Statm",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"statm.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"statm.jl\"]"
 },
 
 {
@@ -641,9 +641,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/uptime/#MemSnoop.Uptime",
+    "location": "measurements/uptime/#SystemSnoop.Uptime",
     "page": "Uptime",
-    "title": "MemSnoop.Uptime",
+    "title": "SystemSnoop.Uptime",
     "category": "type",
     "text": "Record the uptime metrics of a process.\n\nTODO: Document\n\n\n\n\n\n"
 },
@@ -653,7 +653,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Uptime",
     "title": "Uptime",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"uptime.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"uptime.jl\"]"
 },
 
 {
@@ -665,73 +665,73 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "utils/#MemSnoop.Forever",
+    "location": "utils/#SystemSnoop.Forever",
     "page": "Utilities",
-    "title": "MemSnoop.Forever",
+    "title": "SystemSnoop.Forever",
     "category": "type",
     "text": "In iterator that returns an infinite amount of nothing.\n\n\n\n\n\n"
 },
 
 {
-    "location": "utils/#MemSnoop.PIDException",
+    "location": "utils/#SystemSnoop.PIDException",
     "page": "Utilities",
-    "title": "MemSnoop.PIDException",
+    "title": "SystemSnoop.PIDException",
     "category": "type",
     "text": "Exception indicating that process with pid no longer exists.\n\n\n\n\n\n"
 },
 
 {
-    "location": "utils/#MemSnoop.Timeout",
+    "location": "utils/#SystemSnoop.Timeout",
     "page": "Utilities",
-    "title": "MemSnoop.Timeout",
+    "title": "SystemSnoop.Timeout",
     "category": "type",
-    "text": "An iterator that stops iterating at a certain time.\n\nExample\n\njulia> using Dates\n\njulia> y = MemSnoop.Timeout(Second(10))\nMemSnoop.Timeout(2019-01-04T11:51:09.262)\n\njulia> now()\n2019-01-04T11:50:59.274\n\njulia> for i in y; end\n\njulia> now()\n2019-01-04T11:51:09.275\n\n\n\n\n\n"
+    "text": "An iterator that stops iterating at a certain time.\n\nExample\n\njulia> using Dates\n\njulia> y = SystemSnoop.Timeout(Second(10))\nSystemSnoop.Timeout(2019-01-04T11:51:09.262)\n\njulia> now()\n2019-01-04T11:50:59.274\n\njulia> for i in y; end\n\njulia> now()\n2019-01-04T11:51:09.275\n\n\n\n\n\n"
 },
 
 {
-    "location": "utils/#MemSnoop.increment!-Tuple{AbstractDict,Any,Any}",
+    "location": "utils/#SystemSnoop.increment!-Tuple{AbstractDict,Any,Any}",
     "page": "Utilities",
-    "title": "MemSnoop.increment!",
+    "title": "SystemSnoop.increment!",
     "category": "method",
     "text": "increment!(d::AbstractDict, k, v)\n\nIncrement d[k] by v. If d[k] does not exist, initialize it to v.\n\n\n\n\n\n"
 },
 
 {
-    "location": "utils/#MemSnoop.isrunning-Tuple{Any}",
+    "location": "utils/#SystemSnoop.isrunning-Tuple{Any}",
     "page": "Utilities",
-    "title": "MemSnoop.isrunning",
+    "title": "SystemSnoop.isrunning",
     "category": "method",
     "text": "isrunning(pid) -> Bool\n\nReturn true is a process with pid is running.\n\n\n\n\n\n"
 },
 
 {
-    "location": "utils/#MemSnoop.pause-Tuple{Any}",
+    "location": "utils/#SystemSnoop.pause-Tuple{Any}",
     "page": "Utilities",
-    "title": "MemSnoop.pause",
+    "title": "SystemSnoop.pause",
     "category": "method",
     "text": "pause(pid)\n\nPause process with pid. If process does not exist, throw a PIDException.\n\n\n\n\n\n"
 },
 
 {
-    "location": "utils/#MemSnoop.pidsafeopen-Tuple{Function,String,Any,Vararg{Any,N} where N}",
+    "location": "utils/#SystemSnoop.pidsafeopen-Tuple{Function,String,Any,Vararg{Any,N} where N}",
     "page": "Utilities",
-    "title": "MemSnoop.pidsafeopen",
+    "title": "SystemSnoop.pidsafeopen",
     "category": "method",
     "text": "pidfraceopen(f::Function, file::String, pid, args...; kw...)\n\nOpen system pseudo file file for process with pid and pass the handle to f. If a  File does not exist error is thown, throws a PIDException instead.\n\nArguments args and kw are forwarded to the call to open.\n\n\n\n\n\n"
 },
 
 {
-    "location": "utils/#MemSnoop.resume-Tuple{Any}",
+    "location": "utils/#SystemSnoop.resume-Tuple{Any}",
     "page": "Utilities",
-    "title": "MemSnoop.resume",
+    "title": "SystemSnoop.resume",
     "category": "method",
     "text": "resume(pid)\n\nResume process with pid. If process does not exist, throw a PIDException\n\n\n\n\n\n"
 },
 
 {
-    "location": "utils/#MemSnoop.safeparse-Union{Tuple{T}, Tuple{Type{T},Any}} where T",
+    "location": "utils/#SystemSnoop.safeparse-Union{Tuple{T}, Tuple{Type{T},Any}} where T",
     "page": "Utilities",
-    "title": "MemSnoop.safeparse",
+    "title": "SystemSnoop.safeparse",
     "category": "method",
     "text": "safeparse(::Type{T}, str; base = 10) -> T\n\nTry to parse str to type T. If that fails, return zero(T).\n\n\n\n\n\n"
 },
@@ -741,7 +741,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Utilities",
     "title": "Utilities",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"src/util.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"src/util.jl\"]"
 },
 
 {
@@ -753,17 +753,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "hugepages/#MemSnoop.check_hugepages-Tuple{}",
+    "location": "hugepages/#SystemSnoop.check_hugepages-Tuple{}",
     "page": "Transparent Hugepages",
-    "title": "MemSnoop.check_hugepages",
+    "title": "SystemSnoop.check_hugepages",
     "category": "method",
     "text": "check_hugepages() -> Bool\n\nReturn true if Transparent Huge Pages are disabled. If THP are enabled, also print a warning.\n\n\n\n\n\n"
 },
 
 {
-    "location": "hugepages/#MemSnoop.enable_hugepages-Union{Tuple{Type{T}}, Tuple{T}} where T<:MemSnoop.TransparentHugePage",
+    "location": "hugepages/#SystemSnoop.enable_hugepages-Union{Tuple{Type{T}}, Tuple{T}} where T<:SystemSnoop.TransparentHugePage",
     "page": "Transparent Hugepages",
-    "title": "MemSnoop.enable_hugepages",
+    "title": "SystemSnoop.enable_hugepages",
     "category": "method",
     "text": "enable_hugepages(::Type{T}) where {T <: TransparentHugePage}\n\nSet the status of Transparent Huge Pages to T.\n\n\n\n\n\n"
 },
@@ -773,7 +773,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Transparent Hugepages",
     "title": "Transparent Hugepages",
     "category": "section",
-    "text": "Modules = [MemSnoop]\nPages = [\"hugepages.jl\"]"
+    "text": "Modules = [SystemSnoop]\nPages = [\"hugepages.jl\"]"
 },
 
 {
@@ -789,7 +789,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Proof of Concept",
     "title": "Proof of Concept",
     "category": "section",
-    "text": "To verify that captured traces are behaving as expected, two synthetic workloads were written in c++ with predictable memory access patterns. These test files can be found in deps/src/ and can be built either with the Makefile in deps/ or by using Julia\'s package building functionality with the following # Switch to PKG mode\njulia> ]\n\n# Build MemSnoop - automatically building test workloads.\npkg> build MemSnoop"
+    "text": "To verify that captured traces are behaving as expected, two synthetic workloads were written in c++ with predictable memory access patterns. These test files can be found in deps/src/ and can be built either with the Makefile in deps/ or by using Julia\'s package building functionality with the following # Switch to PKG mode\njulia> ]\n\n# Build SystemSnoop - automatically building test workloads.\npkg> build SystemSnoop"
 },
 
 {
@@ -797,7 +797,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Proof of Concept",
     "title": "Test Workload 1: single.cpp",
     "category": "section",
-    "text": "This workload uses a single statically allocated array A of 2000000 doubles. First, the program enters a wait loop for about 4 seconds. Then, it repeatedly accesses all of A for 4 seconds before returning to an idle loop for another 8 seconds. The code for the main routine is shown below:const int ARRAY_SIZE = 2000000;\nstatic double A[ARRAY_SIZE];\n\nint main(int argc, char *argv[])\n{\n    // Display the address of the first element of \"A\"\n    std::cout << &A[0] << \"\\n\";\n\n    // Time for array accesses (seconds)\n    int runtime = 4;\n\n    // Spend time doing nothing\n    wait(runtime);\n\n    // Repeatedly access \"A\" for \"runtime\" seconds\n    std::cout << \"Populating `a`\\n\"; \n    access(A, runtime);\n    std::cout << std::accumulate(A, A + ARRAY_SIZE, 0.0) << \"\\n\";\n\n    // Do nothing for a bit longer\n    wait(2 * runtime);\n\n    return 0;\n}In terms of access patterns, we would expect to see a relatively minimal accesses to any  memory address for the first four seconds, followed by access to a 2000000 * 8 = 16 MB  region of memory while the program is accessing A, followed by a period of relative calm again. Below is a plot of the captured trace for this workload:(Image: )Let\'s unpack this a little. First, the x-axis of the figure represents sample number -   MemSnoop was set to sample over two second periods. The y-axis roughly represents the virtual memory address with lower addresses on top and higher addresses on the bottom. (yes, I know this is backwards and will fix it eventually :(  ). Yellow indicates that a page was accessed (i.e. not idle) while purple indicates and idle page.Thus, we can see that the above image matches our intuation as to what should happen under the test workload. A large chunk of memory where the array A lives is idle for the first sample period, active for the next three, and idle again for the last two. Furthermore, we can estimate the size of the working set during the active phase by eyeballing the height of the middle yellow blob (exact numbers can be obtained easily from the trace itself). The central yellow mass has a height of roughly 4000, indicating that about 4000 virtual pages were accessed. If each page is 4096 bytes, this works out to around 16 MB of total accessed data, which matches what we\'d expect for the size of A."
+    "text": "This workload uses a single statically allocated array A of 2000000 doubles. First, the program enters a wait loop for about 4 seconds. Then, it repeatedly accesses all of A for 4 seconds before returning to an idle loop for another 8 seconds. The code for the main routine is shown below:const int ARRAY_SIZE = 2000000;\nstatic double A[ARRAY_SIZE];\n\nint main(int argc, char *argv[])\n{\n    // Display the address of the first element of \"A\"\n    std::cout << &A[0] << \"\\n\";\n\n    // Time for array accesses (seconds)\n    int runtime = 4;\n\n    // Spend time doing nothing\n    wait(runtime);\n\n    // Repeatedly access \"A\" for \"runtime\" seconds\n    std::cout << \"Populating `a`\\n\"; \n    access(A, runtime);\n    std::cout << std::accumulate(A, A + ARRAY_SIZE, 0.0) << \"\\n\";\n\n    // Do nothing for a bit longer\n    wait(2 * runtime);\n\n    return 0;\n}In terms of access patterns, we would expect to see a relatively minimal accesses to any  memory address for the first four seconds, followed by access to a 2000000 * 8 = 16 MB  region of memory while the program is accessing A, followed by a period of relative calm again. Below is a plot of the captured trace for this workload:(Image: )Let\'s unpack this a little. First, the x-axis of the figure represents sample number -   SystemSnoop was set to sample over two second periods. The y-axis roughly represents the virtual memory address with lower addresses on top and higher addresses on the bottom. (yes, I know this is backwards and will fix it eventually :(  ). Yellow indicates that a page was accessed (i.e. not idle) while purple indicates and idle page.Thus, we can see that the above image matches our intuation as to what should happen under the test workload. A large chunk of memory where the array A lives is idle for the first sample period, active for the next three, and idle again for the last two. Furthermore, we can estimate the size of the working set during the active phase by eyeballing the height of the middle yellow blob (exact numbers can be obtained easily from the trace itself). The central yellow mass has a height of roughly 4000, indicating that about 4000 virtual pages were accessed. If each page is 4096 bytes, this works out to around 16 MB of total accessed data, which matches what we\'d expect for the size of A."
 },
 
 {
@@ -861,7 +861,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Docstring Index",
     "title": "Docstring Index",
     "category": "section",
-    "text": "Modules = [MemSnoop]"
+    "text": "Modules = [SystemSnoop]"
 },
 
 ]}
