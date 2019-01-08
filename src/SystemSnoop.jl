@@ -1,4 +1,4 @@
-module MemSnoop
+module SystemSnoop
 
 const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
 

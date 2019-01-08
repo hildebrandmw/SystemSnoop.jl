@@ -1,6 +1,6 @@
 @testset "Testing Utilities" begin
-    buffer = MemSnoop.VMA[] 
-    MemSnoop.getvmas!(buffer, getpid())
+    buffer = SystemSnoop.VMA[] 
+    SystemSnoop.getvmas!(buffer, getpid())
     @test length(buffer) > 0
-    @time MemSnoop.getvmas!(buffer, getpid())
+    @time SystemSnoop.getvmas!(buffer, getpid())
 end

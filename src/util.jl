@@ -15,8 +15,8 @@ An iterator that stops iterating at a certain time.
 ```
 julia> using Dates
 
-julia> y = MemSnoop.Timeout(Second(10))
-MemSnoop.Timeout(2019-01-04T11:51:09.262)
+julia> y = SystemSnoop.Timeout(Second(10))
+SystemSnoop.Timeout(2019-01-04T11:51:09.262)
 
 julia> now()
 2019-01-04T11:50:59.274

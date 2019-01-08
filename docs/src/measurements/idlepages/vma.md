@@ -1,6 +1,6 @@
 # VMAs
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["idlepages/vma.jl"]
 ```

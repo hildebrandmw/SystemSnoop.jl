@@ -1,6 +1,6 @@
 # Transparent Hugepages
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["hugepages.jl"]
 ```

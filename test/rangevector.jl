@@ -1,25 +1,25 @@
 @testset "Testing SortedRangeVector" begin
-    R = MemSnoop.SortedRangeVector(UnitRange{Int}[])
+    R = SystemSnoop.SortedRangeVector(UnitRange{Int}[])
 
     push!(R, 1)
     @test R.ranges == [1:1]
     @test length(R) == 1
-    @test MemSnoop.lastelement(R) == 1
+    @test SystemSnoop.lastelement(R) == 1
 
     push!(R, 2)
     @test R.ranges == [1:2]
     @test length(R) == 1
-    @test MemSnoop.lastelement(R) == 2
+    @test SystemSnoop.lastelement(R) == 2
 
     push!(R, 10)
     @test R.ranges == [1:2, 10:10]
     @test length(R) == 2
-    @test MemSnoop.lastelement(R) == 10
+    @test SystemSnoop.lastelement(R) == 10
 
     push!(R, 12)
     @test R.ranges == [1:2, 10:10, 12:12]
     @test length(R) == 3
-    @test MemSnoop.lastelement(R) == 12
+    @test SystemSnoop.lastelement(R) == 12
 
     # Test "getindex"
     @test R[1] == 1:2
@@ -62,7 +62,7 @@
     @test in(12, R) == true
     @test in(13, R) == false
 
-    @test MemSnoop.lastelement(R) == 12
+    @test SystemSnoop.lastelement(R) == 12
 
     #####
     ##### Test unions
@@ -72,15 +72,15 @@
     benchmark_dict = Dict{Symbol,Any}()
 
     # Union of two null elements
-    a = MemSnoop.SortedRangeVector{Int}()
-    b = MemSnoop.SortedRangeVector{Int}()
+    a = SystemSnoop.SortedRangeVector{Int}()
+    b = SystemSnoop.SortedRangeVector{Int}()
 
-    @test union(a, b) == MemSnoop.SortedRangeVector{Int}()
+    @test union(a, b) == SystemSnoop.SortedRangeVector{Int}()
     benchmark_dict[:empty] = @benchmark union($a, $b)
 
     # One populated range vector and one empty range vector.
-    a = MemSnoop.SortedRangeVector([1:2, 4:10, 15:15])
-    b = MemSnoop.SortedRangeVector{Int}()
+    a = SystemSnoop.SortedRangeVector([1:2, 4:10, 15:15])
+    b = SystemSnoop.SortedRangeVector{Int}()
 
     @test union(a, b) == a
     @test union(b, a) == a
@@ -88,33 +88,33 @@
     benchmark_dict[:first_empty] = @benchmark union($b, $a)
 
     # Now try taking unions for real
-    a = MemSnoop.SortedRangeVector([1:2, 10:20])
-    b = MemSnoop.SortedRangeVector([22:30])
-    expected = MemSnoop.SortedRangeVector([1:2, 10:20, 22:30])
+    a = SystemSnoop.SortedRangeVector([1:2, 10:20])
+    b = SystemSnoop.SortedRangeVector([22:30])
+    expected = SystemSnoop.SortedRangeVector([1:2, 10:20, 22:30])
     @test union(a, b) == expected
     @test union(b, a) == expected
 
-    a = MemSnoop.SortedRangeVector([1:2, 3:4])
-    b = MemSnoop.SortedRangeVector([2:3])
-    expected = MemSnoop.SortedRangeVector([1:4])
+    a = SystemSnoop.SortedRangeVector([1:2, 3:4])
+    b = SystemSnoop.SortedRangeVector([2:3])
+    expected = SystemSnoop.SortedRangeVector([1:4])
     @test union(a, b) == expected
     @test union(b, a) == expected
 
-    a = MemSnoop.SortedRangeVector([1:2, 5:6, 10:11])
-    b = MemSnoop.SortedRangeVector([3:4, 12:12, 19:20])
-    expected = MemSnoop.SortedRangeVector([1:6, 10:12, 19:20])
+    a = SystemSnoop.SortedRangeVector([1:2, 5:6, 10:11])
+    b = SystemSnoop.SortedRangeVector([3:4, 12:12, 19:20])
+    expected = SystemSnoop.SortedRangeVector([1:6, 10:12, 19:20])
     @test union(a, b) == expected
     @test union(b, a) == expected
 
-    a = MemSnoop.SortedRangeVector([1:2, 3:4, 10:12])
-    b = MemSnoop.SortedRangeVector([3:5, 10:11])
-    expected = MemSnoop.SortedRangeVector([1:5, 10:12])
+    a = SystemSnoop.SortedRangeVector([1:2, 3:4, 10:12])
+    b = SystemSnoop.SortedRangeVector([3:5, 10:11])
+    expected = SystemSnoop.SortedRangeVector([1:5, 10:12])
     @test union(a, b) == expected
     @test union(b, a) == expected
 
-    a = MemSnoop.SortedRangeVector([1:2, 10:12])
-    b = MemSnoop.SortedRangeVector([1:3, 9:13])
-    expected = MemSnoop.SortedRangeVector([1:3, 9:13])
+    a = SystemSnoop.SortedRangeVector([1:2, 10:12])
+    b = SystemSnoop.SortedRangeVector([1:3, 9:13])
+    expected = SystemSnoop.SortedRangeVector([1:3, 9:13])
     @test union(a, b) == expected
     @test union(b, a) == expected
     benchmark_dict[:trial_1] = @benchmark union($a, $b)

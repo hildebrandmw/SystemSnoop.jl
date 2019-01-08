@@ -1,4 +1,4 @@
-# MemSnoop
+# SystemSnoop
 
 | **Documentation**                                                               | **Build Status**                                                                                |
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
@@ -26,8 +26,8 @@ From inside the Julia REPL, press `]` to enter `pkg` mode, then type the followi
 # Install PAPI
 pkg> add https://github.com/hildebrandmw/PAPI.jl
 
-# Install MemSnoop
-pkg. add https://github.com/hildebrandmw/MemSnoop.jl
+# Install SystemSnoop
+pkg. add https://github.com/hildebrandmw/SystemSnoop.jl
 ```
 
 ### Development Installation
@@ -38,7 +38,7 @@ in which case Julia's package manager will download the repos into `~/.julia/dev
 Alternatively, if you want to clone the git repos manually, you can run
 ```sh
 git clone https://github.com/hildebrandmw/PAPI.jl PAPI
-git clone https://github.com/hildebrandmw/MemSnoop.jl MemSnoop
+git clone https://github.com/hildebrandmw/SystemSnoop.jl SystemSnoop
 ```
 Then start Julia and do
 ```julia
@@ -46,17 +46,17 @@ julia> ]
 
 pkg> dev ./PAPI
 
-pkg> dev ./MemSnoop
+pkg> dev ./SystemSnoop
 ```
 
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: https://hildebrandmw.github.io/MemSnoop.jl/latest
+[docs-latest-url]: https://hildebrandmw.github.io/SystemSnoop.jl/latest
 
 [lifecycle-img]: https://img.shields.io/badge/lifecycle-experimental-orange.svg
 
-[travis-img]: https://travis-ci.org/hildebrandmw/MemSnoop.jl.svg?branch=master
-[travis-url]: https://travis-ci.org/hildebrandmw/MemSnoop.jl
+[travis-img]: https://travis-ci.org/hildebrandmw/SystemSnoop.jl.svg?branch=master
+[travis-url]: https://travis-ci.org/hildebrandmw/SystemSnoop.jl
 
-[codecov-img]: http://codecov.io/github/hildebrandmw/MemSnoop.jl/coverage.svg?branch=master
-[codecov-url]: http://codecov.io/github/hildebrandmw/MemSnoop.jl?branch=master
+[codecov-img]: http://codecov.io/github/hildebrandmw/SystemSnoop.jl/coverage.svg?branch=master
+[codecov-url]: http://codecov.io/github/hildebrandmw/SystemSnoop.jl?branch=master

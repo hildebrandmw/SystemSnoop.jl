@@ -1,4 +1,4 @@
-# MemSnoop
+# SystemSnoop
 
 Idle page tracking for memory analysis of running applications.
 
@@ -19,7 +19,7 @@ suppose we wanted to measure some metrics about the current Julia process. We wo
 do something like this:
 
 ```julia
-julia> using MemSnoop
+julia> using SystemSnoop
 
 # Procide the command we would like to run
 julia> process = `top`
@@ -28,10 +28,10 @@ julia> process = `top`
 # perform an initial timestamp, monitor disk io, read the assigned and resident memory, 
 # and take a final measurement
 julia> measurements = (
-    initial = MemSnoop.Timestamp(),
-    disk = MemSnoop.DiskIO(),
-    memory = MemSnoop.Statm(),
-    final = MemSnoop.Timestamp(),
+    initial = SystemSnoop.Timestamp(),
+    disk = SystemSnoop.DiskIO(),
+    memory = SystemSnoop.Statm(),
+    final = SystemSnoop.Timestamp(),
 )
 
 # Then, we perform a series of measurements.

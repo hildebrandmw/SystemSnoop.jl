@@ -1,6 +1,6 @@
 # Sample
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["idlepages/sample.jl"]
 ```

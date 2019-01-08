@@ -96,9 +96,9 @@ Do five measurements of idle page tracking on the `top` command.
 
 ```
 julia> measurements = (
-    initial_timestamp = MemSnoop.Timestamp(),
-    idlepages = MemSnoop.IdlePageTracker(),
-    final_timestamp = MemSnoop.Timestamp(),
+    initial_timestamp = SystemSnoop.Timestamp(),
+    idlepages = SystemSnoop.IdlePageTracker(),
+    final_timestamp = SystemSnoop.Timestamp(),
 );
 
 julia> data = trace(
@@ -161,7 +161,7 @@ end
 _sleep(x::Number) = sleep(x)
 
 """
-    MemSnoop.SmartSample(t::TimePeriod) -> SmartSample
+    SystemSnoop.SmartSample(t::TimePeriod) -> SmartSample
 
 Smart Sampler to ensure measurements happen every `t` time units. Samples will happen at
 multiples of `t` from the first measurement. If a sample period is missed, the sampler will

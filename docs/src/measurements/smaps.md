@@ -1,6 +1,6 @@
 # Smaps
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["smaps.jl"]
 ```

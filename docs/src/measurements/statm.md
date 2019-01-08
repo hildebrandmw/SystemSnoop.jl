@@ -1,6 +1,6 @@
 # Statm
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["statm.jl"]
 ```

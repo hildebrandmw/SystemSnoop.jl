@@ -184,7 +184,7 @@ the idle page buffer.
 To initialize bitmap, call:
 
 ```
-read!(MemSnoop.IDLE_BITMAP, bitmap)
+read!(SystemSnoop.IDLE_BITMAP, bitmap)
 ```
 """
 function readidle(pid, vmas, buffer)

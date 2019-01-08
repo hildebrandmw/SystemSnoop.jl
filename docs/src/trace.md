@@ -1,6 +1,6 @@
 # Traces
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["trace.jl"]
 ```

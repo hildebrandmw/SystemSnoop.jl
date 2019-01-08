@@ -43,15 +43,15 @@ function check_hugepages()
         @warn """
         Transparent Huge Pages are not disabled. The curent setting is: "$setting".
         Disabling THP can lead to better memory tracking at the potential cost of performance.
-        However, you're running MemSnoop anyways so what's another slow-down among friends?
+        However, you're running SystemSnoop anyways so what's another slow-down among friends?
 
         To disable THP, run
 
-        juila> MemSnoop.enable_hugepages(MemSnoop.Never)
+        juila> SystemSnoop.enable_hugepages(SystemSnoop.Never)
 
         To reenable hugepages afterwards, run
 
-        julia> MemSnoop.enable_hugepages(MemSnoop.MAdvise)
+        julia> SystemSnoop.enable_hugepages(SystemSnoop.MAdvise)
         """
 
         return false

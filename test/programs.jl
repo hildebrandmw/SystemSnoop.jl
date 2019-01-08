@@ -21,15 +21,15 @@
     pid, process, pipe = SnoopTest.pidlaunch("single")
 
     measurements() = (
-        idlepages = MemSnoop.IdlePageTracker(),
-        processio = MemSnoop.ProcessIO(),
-        statm = MemSnoop.Statm(),
-        timestamp = MemSnoop.Timestamp(),
+        idlepages = SystemSnoop.IdlePageTracker(),
+        processio = SystemSnoop.ProcessIO(),
+        statm = SystemSnoop.Statm(),
+        timestamp = SystemSnoop.Timestamp(),
     )
 
     # Pass a single length range as the iterator so we only take one sample.
     T = trace(
-        MemSnoop.SnoopedProcess{MemSnoop.Pausable}(pid),
+        SystemSnoop.SnoopedProcess{SystemSnoop.Pausable}(pid),
         measurements();
         sampletime = 6
     )
@@ -49,8 +49,8 @@
     # First sample should have all the hits
     sample = first(T)
     for frame in start_page:end_page
-        @test MemSnoop.isactive(sample, frame)
-        if !MemSnoop.isactive(sample, frame)
+        @test SystemSnoop.isactive(sample, frame)
+        if !SystemSnoop.isactive(sample, frame)
             @show start_page
             @show end_page
             @show frame
@@ -62,15 +62,15 @@
     ### Benchmarking
     ###
     println("Benchmarking `pages(::Vector{Sample})`")
-    @btime MemSnoop.pages($T)
+    @btime SystemSnoop.pages($T)
 
-    v = MemSnoop.vmas(T)
+    v = SystemSnoop.vmas(T)
     println("Benchmarking `vmas(::Vector{Sample})`")
-    @btime MemSnoop.vmas($T)
+    @btime SystemSnoop.vmas($T)
 
     println("Benchmarking `bitmap`")
     _, ind = findmax(length.(v))
-    @btime MemSnoop.bitmap($T, $(v[ind]))
+    @btime SystemSnoop.bitmap($T, $(v[ind]))
 
     # XXX
     ## Doing this Breaks CI ... I don't know if it has something to do with the 
@@ -80,8 +80,8 @@
     # Last sample should have no hits
     sample = trace[end]
     for frame in start_page:end_page
-        @test !MemSnoop.isactive(sample, frame)
-        if MemSnoop.isactive(sample, frame)
+        @test !SystemSnoop.isactive(sample, frame)
+        if SystemSnoop.isactive(sample, frame)
             @show start_page
             @show end_page
             @show frame

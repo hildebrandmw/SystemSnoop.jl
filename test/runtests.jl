@@ -1,14 +1,14 @@
-using MemSnoop
+using SystemSnoop
 using Test
 using Combinatorics
 using BenchmarkTools
 
-MemSnoop.enable_hugepages(MemSnoop.Never)
+SystemSnoop.enable_hugepages(SystemSnoop.Never)
 
 # Testing String prinng
-println(MemSnoop.Always)
-println(MemSnoop.MAdvise)
-println(MemSnoop.Never)
+println(SystemSnoop.Always)
+println(SystemSnoop.MAdvise)
+println(SystemSnoop.Never)
 
 # Set up some variables for running the test programs.
 TESTDIR = @__DIR__

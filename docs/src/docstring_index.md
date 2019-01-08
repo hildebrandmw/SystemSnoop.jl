@@ -1,5 +1,5 @@
 # Docstring Index
 
 ```@index
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 ```

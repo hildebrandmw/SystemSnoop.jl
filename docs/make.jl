@@ -1,9 +1,9 @@
-using Documenter, MemSnoop
+using Documenter, SystemSnoop
 
 makedocs(
-    modules = [MemSnoop],
+    modules = [SystemSnoop],
     format = :html,
-    sitename = "MemSnoop.jl",
+    sitename = "SystemSnoop.jl",
     html_prettyurls = get(ENV, "CI", nothing) == "true",
     pages = Any[
         "index.md", 
@@ -32,7 +32,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/hildebrandmw/MemSnoop.jl.git",
+    repo = "github.com/hildebrandmw/SystemSnoop.jl.git",
     target = "build",
     julia = "1.1",
     deps = nothing,

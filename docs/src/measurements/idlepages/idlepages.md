@@ -1,6 +1,6 @@
 # Idle Page Tracking
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["idlepages/idlepages.jl"]
 ```

@@ -1,6 +1,6 @@
 # Working Set Size
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["wss.jl"]
 ```

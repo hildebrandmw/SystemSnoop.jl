@@ -8,8 +8,8 @@ package building functionality with the following
 # Switch to PKG mode
 julia> ]
 
-# Build MemSnoop - automatically building test workloads.
-pkg> build MemSnoop
+# Build SystemSnoop - automatically building test workloads.
+pkg> build SystemSnoop
 ```
 
 ## Test Workload 1: `single.cpp`
@@ -53,7 +53,7 @@ again. Below is a plot of the captured trace for this workload:
 ![](assets/single.png)
 
 Let's unpack this a little. First, the `x`-axis of the figure represents sample number -  
-`MemSnoop` was set to sample over two second periods. The `y`-axis roughly represents the
+`SystemSnoop` was set to sample over two second periods. The `y`-axis roughly represents the
 virtual memory address with lower addresses on top and higher addresses on the bottom. (yes,
 I know this is backwards and will fix it eventually :(  ). Yellow indicates that a page was
 accessed (i.e. not idle) while purple indicates and idle page.

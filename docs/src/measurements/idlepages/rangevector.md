@@ -1,6 +1,6 @@
 # Sorted Range Vectors
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["idlepages/rangevector.jl"]
 ```

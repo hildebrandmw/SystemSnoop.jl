@@ -1,6 +1,6 @@
 # Disk IO
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["diskio.jl"]
 ```

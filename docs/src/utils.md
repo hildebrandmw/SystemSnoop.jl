@@ -1,6 +1,6 @@
 # Utilities
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["src/util.jl"]
 ```

@@ -1,6 +1,6 @@
 # Process
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["process.jl"]
 ```

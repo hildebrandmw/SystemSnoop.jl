@@ -10,7 +10,7 @@ Fields
 Constructor
 -----------
 ```
-MemSnoop.DiskIO(devices) -> DiskIO
+SystemSnoop.DiskIO(devices) -> DiskIO
 ```
 
 Documentation on `/proc/diskstats`

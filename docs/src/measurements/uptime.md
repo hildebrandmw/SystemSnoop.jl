@@ -1,6 +1,6 @@
 # Uptime
 
 ```@autodocs
-Modules = [MemSnoop]
+Modules = [SystemSnoop]
 Pages = ["uptime.jl"]
 ```

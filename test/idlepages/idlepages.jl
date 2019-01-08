@@ -2,10 +2,10 @@
     # Strategy: construct a test collection and then run tests on that.
     # Note that the actual field in the "vmas" category of "Sample" doesn't matter for
     # trace extraction - it's just a bookkeeping strategy.
-    isactive = MemSnoop.isactive
-    VMA = MemSnoop.VMA
-    SortedRangeVector = MemSnoop.SortedRangeVector
-    Sample = MemSnoop.Sample
+    isactive = SystemSnoop.isactive
+    VMA = SystemSnoop.VMA
+    SortedRangeVector = SystemSnoop.SortedRangeVector
+    Sample = SystemSnoop.Sample
 
     VMAs = [
         [VMA(1, 10)],
@@ -27,17 +27,17 @@
     @test isactive(trace[1], UInt(8))  == true
     @test isactive(trace[1], UInt(9))  == false
 
-    @test MemSnoop.wss(trace[1]) == 7
-    @test MemSnoop.wss(trace[2]) == 1
-    @test MemSnoop.wss(trace[3]) == 3
+    @test SystemSnoop.wss(trace[1]) == 7
+    @test SystemSnoop.wss(trace[2]) == 1
+    @test SystemSnoop.wss(trace[3]) == 3
 
-    @test MemSnoop.pages(trace[1]) == Set([1, 2, 3, 5, 6, 7, 8])
-    @test MemSnoop.pages(trace[2]) == Set([2])
-    @test MemSnoop.pages(trace[3]) == Set([4, 5, 6])
+    @test SystemSnoop.pages(trace[1]) == Set([1, 2, 3, 5, 6, 7, 8])
+    @test SystemSnoop.pages(trace[2]) == Set([2])
+    @test SystemSnoop.pages(trace[3]) == Set([4, 5, 6])
 
-    @test MemSnoop.vmas(trace) == [VMA(0, 11), VMA(20, 30)]
+    @test SystemSnoop.vmas(trace) == [VMA(0, 11), VMA(20, 30)]
 
-    @test MemSnoop.pages(trace) == [1, 2, 3, 4, 5, 6, 7, 8]
+    @test SystemSnoop.pages(trace) == [1, 2, 3, 4, 5, 6, 7, 8]
 
     #####
     ##### Test Union
@@ -84,7 +84,7 @@
     ##### Bitmap
     #####
 
-    sub = MemSnoop.bitmap(trace, VMA(0, 1))
+    sub = SystemSnoop.bitmap(trace, VMA(0, 1))
     expected =
         [ false false false;  # 0
           true  false false ] # 1
@@ -92,7 +92,7 @@
     @test sub == expected
 
 
-    sub = MemSnoop.bitmap(trace, VMA(1, 4))
+    sub = SystemSnoop.bitmap(trace, VMA(1, 4))
     expected = [ true  false false; # 1
                  true  true  false; # 2
                  true  false false; # 3
@@ -101,32 +101,32 @@
 
 
     # Make sure the size we get is what we expect for a large extraction
-    sub = MemSnoop.bitmap(trace, VMA(0, 10))
+    sub = SystemSnoop.bitmap(trace, VMA(0, 10))
     @test size(sub) == (11, length(trace))
 
 
     # Get a VMA that is entirely out of range.
-    sub = MemSnoop.bitmap(trace, VMA(20, 30))
+    sub = SystemSnoop.bitmap(trace, VMA(20, 30))
     @test all(isequal(false), sub)
 end
 
 @testset "Timing Idlepage Operations" begin
     # Create a process based on the Julia instance we are using.
-    process = MemSnoop.SnoopedProcess(getpid())
-    tracker = MemSnoop.IdlePageTracker()
-    MemSnoop.prepare(tracker, process)
+    process = SystemSnoop.SnoopedProcess(getpid())
+    tracker = SystemSnoop.IdlePageTracker()
+    SystemSnoop.prepare(tracker, process)
 
     println()
     println("Testing Reads from the Idle Buffer")
-    @btime read!($(MemSnoop.IDLE_BITMAP), $(tracker.buffer))
+    @btime read!($(SystemSnoop.IDLE_BITMAP), $(tracker.buffer))
 
     println()
     println("Testing Time it takes to Seek Write Idle Pages") 
-    MemSnoop.getvmas!(tracker.vmas, getpid(process))
-    @btime MemSnoop.markidle($(getpid(process)), $(tracker.vmas))
+    SystemSnoop.getvmas!(tracker.vmas, getpid(process))
+    @btime SystemSnoop.markidle($(getpid(process)), $(tracker.vmas))
 
     println()
     println("Testing Time it takes to read idle pages")
-    MemSnoop.getvmas!(tracker.vmas, getpid(process))
-    @btime MemSnoop.readidle($(getpid(process)), $(tracker.vmas), $(tracker.buffer))
+    SystemSnoop.getvmas!(tracker.vmas, getpid(process))
+    @btime SystemSnoop.readidle($(getpid(process)), $(tracker.vmas), $(tracker.buffer))
 end
