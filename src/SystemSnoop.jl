@@ -6,7 +6,7 @@ import Base: isless, length, issubset, union, compact, ==, tail
 import Base: iterate, size, getindex, searchsortedfirst, push!, in, IteratorSize, IteratorEltype
 import Base.Iterators: flatten, take, drop
 
-using Serialization, Dates
+using Serialization, Dates, RecipesBase
 
 export  trace, 
         # process traits
@@ -51,5 +51,8 @@ include("trace.jl")
 # Measurements
 include("measurements/measurements.jl")
 include("analysis/analysis.jl")
+
+# Plotting
+include("plot.jl")
 
 end # module
