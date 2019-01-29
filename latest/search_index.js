@@ -593,14 +593,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/smaps/#SystemSnoop.Smaps",
-    "page": "Smaps",
-    "title": "SystemSnoop.Smaps",
-    "category": "type",
-    "text": "Return the amount of swap used by a process.\n\nThis is performed by reading from /proc/[pid]/smaps and accumulating all of the swap values.\n\nTODO\n\nThe implementation of this is not terribly well optimized.\n\n\n\n\n\n"
-},
-
-{
     "location": "measurements/smaps/#Smaps-1",
     "page": "Smaps",
     "title": "Smaps",
