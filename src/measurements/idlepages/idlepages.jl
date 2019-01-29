@@ -61,6 +61,7 @@ function initbuffer!(I::IdlePageTracker)
     # work, so we actually have to buffer the whole array once to get the size. Since this
     # only happens at the beginning of a trace, it's okay to pay this additional latency.
     nentries = open(IDLE_BITMAP) do bitmap
+        println("Opened Bitmap")
         buffer = reinterpret(UInt64, read(bitmap))
         return length(buffer)
     end
