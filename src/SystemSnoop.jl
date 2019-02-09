@@ -23,15 +23,6 @@ const PAGESIZE = 4096
 const PAGESHIFT = (Int ∘ log2)(PAGESIZE)
 
 #####
-##### Initialization
-#####
-
-# Check if huge pages are enabled and display a warning if they are.
-function __init__()
-    check_hugepages()
-end
-
-#####
 ##### Extend "serialize" and "deserialize"
 #####
 
@@ -43,7 +34,6 @@ load(file::String) = open(deserialize, file)
 ##### File Includes
 #####
 
-include("hugepages.jl")
 include("util.jl")
 include("process.jl")
 include("trace.jl")

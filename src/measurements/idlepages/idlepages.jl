@@ -3,6 +3,12 @@ include("util.jl")
 include("rangevector.jl")
 include("vma.jl")
 include("sample.jl")
+include("hugepages.jl")
+
+# Display warning once for huge pages being turned on.
+#
+# Only display warning the first time an IdlePageTracker is instantiated.
+const HAVE_WARNED = Ref{Bool}(false)
 
 ## Idle Page Tracking
 """
@@ -23,6 +29,16 @@ struct IdlePageTracker{T <: Function} <: AbstractMeasurement
     filter::T
     vmas::Vector{VMA}
     buffer::Vector{UInt64}
+
+    function IdlePageTracker(f::T, vmas::Vector{VMA}, buffer) where {T <: Function}
+        # maybe generate a huge-page warning
+        if !HAVE_WARNED[]
+            check_hugepages()
+            HAVE_WARNED[] = true
+        end
+
+        return new{T}(f, vmas, buffer)
+    end
 end
 IdlePageTracker(f::Function = tautology) = IdlePageTracker(f, VMA[], UInt64[])
 
