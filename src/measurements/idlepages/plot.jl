@@ -1,8 +1,6 @@
 struct AccessPlot end
 
-label(vma::SystemSnoop.VMA) = """
-    $(string(vma.start, base = 16)) - $(string(vma.stop, base = 16))
-    """
+label(vma::VMA) = "$(string(vma.start, base = 16)) - $(string(vma.stop, base = 16))"
 
 function compact(f, data, m, n)
     # preallocate an output array
@@ -32,18 +30,18 @@ subsample(x, n) = x[1:n:length(x)]
     )
 
     # Apply VMA filter
-    vmas = filter(vma_filter, SystemSnoop.vmas(trace))
+    vmas = filter(vma_filter, vmas(trace))
 
     index = 1
     data = map(vmas) do v
         println("Processing Index $index of $(length(vmas))")
         index += 1
 
-        @time bitmap = SystemSnoop.bitmap(trace, v)
-        compact(compact_fn, SystemSnoop.bitmap(trace, v), ycompact, xcompact)
+        @time bitmap = bitmap(trace, v)
+        compact(compact_fn, bitmap(trace, v), ycompact, xcompact)
     end
 
-    data = [compact(compact_fn, SystemSnoop.bitmap(trace, v), ycompact, xcompact) for v in vmas]
+    data = [compact(compact_fn, bitmap(trace, v), ycompact, xcompact) for v in vmas]
     println("Data Collected")
 
     # Filter out data that is below the given threshold of occupancy

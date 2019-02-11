@@ -1,4 +1,17 @@
-############################################################################################
+module Utils
+
+export Forever, 
+    Timeout,
+    increment!, 
+    PIDException, 
+    pause, 
+    resume,
+    pidsafeopen,
+    safeparse,
+    isrunning
+
+import Base: iterate, IteratorSize, IsInfinite
+using Dates
 
 """
 In iterator that returns an infinite amount of `nothing`.
@@ -126,3 +139,5 @@ end
 Return `true` is a process with `pid` is running.
 """
 isrunning(pid) = isdir("/proc/$pid")
+
+end

@@ -20,14 +20,17 @@ From the man page:
           dt         (7) dirty pages (unused since Linux 2.6; always 0)            
 ```
 """
-struct Statm <: AbstractMeasurement end
+mutable struct Statm 
+    pid::Int64
+end
+Statm() = Statm(0)
 
 const StatmTuple = NamedTuple{(:size, :resident), Tuple{Int,Int}}
 
-prepare(::Statm, args...) = Vector{StatmTuple}()
+Measurements.prepare(S::Statm, P) = (S.pid = getpid(P); return Vector{StatmTuple}())
 
-function measure(S::Statm, process)::StatmTuple
-    pid = getpid(process)
+function Measurements.measure(S::Statm)::StatmTuple
+    pid = S.pid
     stats = pidsafeopen("/proc/$pid/statm", pid) do f
         
         size = safeparse(Int, readuntil(f, ' '))

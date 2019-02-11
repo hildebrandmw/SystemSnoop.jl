@@ -1,48 +1,22 @@
 module SystemSnoop
 
-const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
+using Dates
 
-import Base: isless, length, issubset, union, compact, ==, tail
-import Base: iterate, size, getindex, searchsortedfirst, push!, in, IteratorSize, IteratorEltype
-import Base.Iterators: flatten, take, drop
+export trace, SnoopedProcess, Pausable, Unpausable
 
-using Serialization, Dates, RecipesBase
-
-export  trace, 
-        # process traits
-        SnoopedProcess, Pausable, Unpausable
-
-
-#####
-##### Constants
-#####
-
-# Assumes all pages are 4kB. Hugepage check is performed during initialization
-# to ensure that this holds.
-const PAGESIZE = 4096
-const PAGESHIFT = (Int ∘ log2)(PAGESIZE)
-
-#####
-##### Extend "serialize" and "deserialize"
-#####
-
-###TODO: Future Julia release will not need these definitions
-save(file::String, x) = open(f -> serialize(f, x), file, write = true)
-load(file::String) = open(deserialize, file)
+import Base: tail
 
 #####
 ##### File Includes
 #####
 
-include("util.jl")
+include("util.jl");     using .Utils
+include("measure.jl");  using .Measurements
+
 include("process.jl")
 include("trace.jl")
 
 # Measurements
 include("measurements/measurements.jl")
-include("analysis/analysis.jl")
-
-# Plotting
-include("plot.jl")
 
 end # module

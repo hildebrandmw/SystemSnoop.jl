@@ -3,13 +3,6 @@ using Test
 using Combinatorics
 using BenchmarkTools
 
-SystemSnoop.enable_hugepages(SystemSnoop.Never)
-
-# Testing String prinng
-println(SystemSnoop.Always)
-println(SystemSnoop.MAdvise)
-println(SystemSnoop.Never)
-
 # Set up some variables for running the test programs.
 TESTDIR = @__DIR__
 

@@ -21,7 +21,7 @@
     pid, process, pipe = SnoopTest.pidlaunch("single")
 
     measurements() = (
-        idlepages = SystemSnoop.IdlePageTracker(),
+        idlepages = SystemSnoop.IdlePages.IdlePageTracker(),
         processio = SystemSnoop.ProcessIO(),
         statm = SystemSnoop.Statm(),
         timestamp = SystemSnoop.Timestamp(),
@@ -49,8 +49,8 @@
     # First sample should have all the hits
     sample = first(T)
     for frame in start_page:end_page
-        @test SystemSnoop.isactive(sample, frame)
-        if !SystemSnoop.isactive(sample, frame)
+        @test SystemSnoop.IdlePages.isactive(sample, frame)
+        if !SystemSnoop.IdlePages.isactive(sample, frame)
             @show start_page
             @show end_page
             @show frame
@@ -62,15 +62,15 @@
     ### Benchmarking
     ###
     println("Benchmarking `pages(::Vector{Sample})`")
-    @btime SystemSnoop.pages($T)
+    @btime SystemSnoop.IdlePages.pages($T)
 
-    v = SystemSnoop.vmas(T)
+    v = SystemSnoop.IdlePages.vmas(T)
     println("Benchmarking `vmas(::Vector{Sample})`")
-    @btime SystemSnoop.vmas($T)
+    @btime SystemSnoop.IdlePages.vmas($T)
 
     println("Benchmarking `bitmap`")
     _, ind = findmax(length.(v))
-    @btime SystemSnoop.bitmap($T, $(v[ind]))
+    @btime SystemSnoop.IdlePages.bitmap($T, $(v[ind]))
 
     # XXX
     ## Doing this Breaks CI ... I don't know if it has something to do with the 

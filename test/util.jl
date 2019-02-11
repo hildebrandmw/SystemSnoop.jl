@@ -1,6 +1,6 @@
 @testset "Testing Utilities" begin
-    buffer = SystemSnoop.VMA[] 
-    SystemSnoop.getvmas!(buffer, getpid())
+    buffer = SystemSnoop.IdlePages.VMA[] 
+    SystemSnoop.IdlePages.getvmas!(buffer, getpid())
     @test length(buffer) > 0
-    @time SystemSnoop.getvmas!(buffer, getpid())
+    @time SystemSnoop.IdlePages.getvmas!(buffer, getpid())
 end

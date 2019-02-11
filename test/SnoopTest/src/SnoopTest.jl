@@ -1,7 +1,6 @@
 module SnoopTest
 
 const DEPSDIR = joinpath(@__DIR__, "..", "deps")
-const PIDLAUNCHER = joinpath(DEPSDIR, "pidlauncher.sh")
 
 #####
 ##### Janky hack to build test dependencies
@@ -35,11 +34,11 @@ process `pid`, the script `Process` itself, and a `Pipe` to the stdout of the pr
 function launch(command::String)
     # Resolve the path to the test. 
     pipe = Pipe()
-    setup = pipeline(`$PIDLAUNCHER $command`; stdout = pipe)
+    setup = pipeline(`$command`; stdout = pipe)
     process = run(setup; wait = false)
 
     # Parse the first thing returned and let this process do its thing with reckless abandon
-    pid = parse(Int, readline(pipe)) 
+    pid = getpid(process)
     return pid, process, pipe
 end
 

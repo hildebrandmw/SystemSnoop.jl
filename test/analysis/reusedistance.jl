@@ -1,5 +1,5 @@
 @testset "Testing BucketStack" begin
-    B = SystemSnoop.BucketStack{Int}()
+    B = SystemSnoop.IdlePages.BucketStack{Int}()
     @test length(B) == 0
 
     push!(B, Set([1,2,3]))
@@ -126,6 +126,6 @@ end
     #     3 => 3
     # )
 
-    bounds = SystemSnoop.inter_reuse(buckets)
+    bounds = SystemSnoop.IdlePages.inter_reuse(buckets)
     @test bounds.upper == expected_upperbound
 end

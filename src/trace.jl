@@ -1,47 +1,9 @@
-#####
-##### AbstractMeasurement
-#####
-
-"""
-Abstract supertype for process measurements.
-
-Required API
-------------
-* [`prepare`](@ref)
-* [`measure`](@ref)
-
-Concrete Implementations
-------------------------
-* [`Timestamp`](@ref)
-* [`IdlePageTracker`](@ref)
-* [`DiskIO`](@ref)
-* [`Statm`](@ref)
-"""
-abstract type AbstractMeasurement end
-
-"""
-    prepare(M::AbstractMeasurement, P::AbstractProcess) -> Vector{T}
-
-Return an empty vector to hold measurement data of type `T` for measurement `M`. Any 
-initialization required `M` should happen here.
-"""
-prepare(::T, args...) where {T <: AbstractMeasurement} = error("Implement `prepare` for $T")
-
-"""
-    measure(M::AbstractMeasurement, P::AbstractProcess) -> T
-
-Return data of type `T`.
-"""
-measure(::T, args...) where {T <: AbstractMeasurement} = error("Implement `measure` for $T")
-
-## Time Stamping
-
 """
 Collect timestamps.
 """
-struct Timestamp <: AbstractMeasurement end
-prepare(::Timestamp, args...) = DateTime[]
-measure(::Timestamp, args...) = now()
+struct Timestamp end
+Measurements.prepare(::Timestamp, args...) = DateTime[]
+Measurements.measure(::Timestamp, args...) = now()
 
 #####
 ##### trace
@@ -51,7 +13,8 @@ measure(::Timestamp, args...) = now()
     trace(process, measurements::NamedTuple; kw...) -> NamedTuple
 
 Perform a measurement trace on `process`. The measurements to be performed are specified
-by the `measurements` argument. The values of this tuple are [`AbstractMeasurement`](@ref)s.
+by the `measurements` argument. The values of this tuple are types that implement the
+[`prepare`](@ref) and [`measure`](@ref) interface.
 
 Return a `NamedTuple` `T` with the same names as
 `measurements` but whose values are the measurement data.
@@ -75,8 +38,8 @@ The general flow of this function is as follows:
 
 Measurements
 ------------
-* `measurements::NamedTuple` : A `NamedTuple` where each element is some
-    [`AbstractMeasurement`](@ref).
+* `measurements::NamedTuple` : A `NamedTuple` where each element implements [`prepare`](@ref)
+    and [`measure`](@ref).
 
 Keyword Arguments
 -----------------
@@ -113,15 +76,15 @@ julia> typeof(data)
 NamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}
 ```
 
-See also: [`AbstractMeasurement`](@ref), [`SnoopedProcess`](@ref), [`SmartSample`](@ref)
+See also: [`SnoopedProcess`](@ref), [`SmartSample`](@ref)
 """
 function trace(
         process::AbstractProcess,
-        measurements::NamedTuple{S,<:NTuple{N,AbstractMeasurement}};
+        measurements::NamedTuple;
         sampletime = 2,
         iter = Forever(),
         callback = (args...) -> nothing
-    ) where {S,N}
+    )
 
     # Get a tuple of structs we are going to mutate
     trace = _prepare(process, measurements)
@@ -135,7 +98,7 @@ function trace(
 
             ## Prep for taking measurements
             prehook(process)
-            _measure(process, trace, measurements)
+            _measure(trace, measurements)
 
             ## Cleanup after measurements
             callback(process, trace, measurements)
@@ -212,22 +175,22 @@ it's because Julia's compilier is good at figuring this stuff out.
 function _prepare(process::AbstractProcess, measurements::NamedTuple{names}) where {names} 
     return NamedTuple{names}(_prepare(process, Tuple(measurements)...))
 end
-_prepare(process::AbstractProcess, m, args...) = (prepare(m, process), _prepare(process, args...)...)
+_prepare(process::AbstractProcess, m, args...) = (Measurements.prepare(m, process), _prepare(process, args...)...)
 _prepare(::AbstractProcess) = ()
 
 ## _measure
-function _measure(process::AbstractProcess, trace::NamedTuple, measurements::NamedTuple) 
-    _measure(process, Tuple(trace), Tuple(measurements))
+function _measure(trace::NamedTuple, measurements::NamedTuple) 
+    _measure(Tuple(trace), Tuple(measurements))
     return nothing
 end
 
-function _measure(process, trace::Tuple, measurements::Tuple)
+function _measure(trace::Tuple, measurements::Tuple)
     t = _first(trace...)
     m = _first(measurements...)
     # Perform the first measurement
-    push!(t, measure(m, process))
+    push!(t, Measurements.measure(m))
     # Recurse
-    _measure(process, tail(trace), tail(measurements))
+    _measure(tail(trace), tail(measurements))
     return nothing
 end
-_measure(process, ::Tuple{}, ::Tuple{}) = nothing
+_measure(::Tuple{}, ::Tuple{}) = nothing

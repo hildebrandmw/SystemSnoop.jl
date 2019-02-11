@@ -1,14 +1,14 @@
-# The strategy here is to create a custom subtype of AbstractMeasurement
-# to test that the internal functions of the "trace" function are being used.
-mutable struct TestMeasure <: SystemSnoop.AbstractMeasurement
+# The strategy here is to create a custom type to test that the internal functions of the 
+# "trace" function are being used.
+mutable struct TestMeasure
     prepare::Int64
     measure::Int64
 
     TestMeasure() = new(0,0)
 end
 
-SystemSnoop.prepare(T::TestMeasure, args...) = (T.prepare += 1; Int[])
-SystemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
+SystemSnoop.Measurements.prepare(T::TestMeasure, args...) = (T.prepare += 1; Int[])
+SystemSnoop.Measurements.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
 
 @testset "Testing Trace Kernel Functions" begin
 
@@ -25,7 +25,7 @@ SystemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     @test trace == (test = Int[],)
     @test T.prepare == 1
 
-    SystemSnoop._measure(process, trace, measurements)
+    SystemSnoop._measure(trace, measurements)
     @test trace == (test = [1],)
     @test T.measure == 1
 
@@ -40,7 +40,7 @@ SystemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     @test trace == (testA = Int[], testB = Int[])
     @test T.prepare == 2
 
-    SystemSnoop._measure(process, trace, measurements)
+    SystemSnoop._measure(trace, measurements)
     @test trace == (testA = [1], testB = [2])
     @test T.measure == 2
 
@@ -54,7 +54,7 @@ SystemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     @test T.prepare == 1
     @test S.prepare == 1
 
-    SystemSnoop._measure(process, trace, measurements)
+    SystemSnoop._measure(trace, measurements)
     @test trace == (testT = [1], testS = [1])
     @test T.measure == 1
     @test S.measure == 1
@@ -69,7 +69,7 @@ SystemSnoop.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
     @test trace == (A = Int[], B = Int[], C = Int[])
     @test T.prepare == 3
 
-    SystemSnoop._measure(process, trace, measurements)
+    SystemSnoop._measure(trace, measurements)
     @test trace == (A = [1], B = [2], C = [3])
     @test T.measure == 3
 end

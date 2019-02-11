@@ -3,7 +3,7 @@ Record the uptime metrics of a process.
 
 TODO: Document
 """
-struct Uptime <: AbstractMeasurement end
+struct Uptime end
 
 struct UptimeStruct
     system_uptime::Float64
@@ -17,9 +17,9 @@ struct UptimeStruct
     blkio_ticks::Int64
 end
 
-prepare(U::Uptime, args...) = Vector{UptimeStruct}()
+Measurements.prepare(U::Uptime, args...) = Vector{UptimeStruct}()
 
-function measure(U::Uptime, process)::UptimeStruct
+function Measurements.measure(U::Uptime, process)::UptimeStruct
     # Get the utime from /proc/uptime
     system_uptime = open("/proc/uptime") do f
         safeparse(Float64, readuntil(f, ' '))

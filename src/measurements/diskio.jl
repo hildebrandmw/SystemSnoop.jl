@@ -42,12 +42,12 @@ tracking putting the total at 18:
     17 - sectors discarded
     18 - time spent discarding
 """
-struct DiskIO <: AbstractMeasurement
+struct DiskIO
     devices::Vector{String}
 end
 
-prepare(::DiskIO, args...) = Vector{Dict{Symbol,DiskStats}}()
-measure(D::DiskIO, args...) = diskstats(D.devices)
+Measurements.prepare(::DiskIO, args...) = Vector{Dict{Symbol,DiskStats}}()
+Measurements.measure(D::DiskIO) = diskstats(D.devices)
 
 #####
 ##### Implementation details

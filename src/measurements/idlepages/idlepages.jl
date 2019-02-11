@@ -1,14 +1,34 @@
+module IdlePages
+
+export IdlePageTracker, WSS
+
+using RecipesBase
+import Base: isless, length, issubset, union, compact, ==, tail
+import Base: iterate, size, getindex, searchsortedfirst, push!, in, IteratorSize, IteratorEltype
+import Base.Iterators: flatten, take, drop
+
 # Routines implementing Idle Page Tracking
 include("util.jl")
 include("rangevector.jl")
 include("vma.jl")
 include("sample.jl")
 include("hugepages.jl")
+include("reusedistance.jl")
+include("plot.jl")
+
+import ..Measurements
+using ..Utils
 
 # Display warning once for huge pages being turned on.
 #
 # Only display warning the first time an IdlePageTracker is instantiated.
 const HAVE_WARNED = Ref{Bool}(false)
+
+# Assumes all pages are 4kB. Hugepage check is performed during initialization
+# to ensure that this holds.
+const PAGESIZE = 4096
+const PAGESHIFT = (Int ∘ log2)(PAGESIZE)
+const IDLE_BITMAP = "/sys/kernel/mm/page_idle/bitmap"
 
 ## Idle Page Tracking
 """
@@ -25,10 +45,11 @@ Implementation Details
 * `vmas::Vector{VMA}` - Buffer for storing VMAs.
 * `buffer::Vector{UInt64}` - Buffer to store the idle page bitmap.
 """
-struct IdlePageTracker{T <: Function} <: AbstractMeasurement 
+struct IdlePageTracker{T <: Function}
     filter::T
     vmas::Vector{VMA}
     buffer::Vector{UInt64}
+    pid::Ref{Int64}
 
     function IdlePageTracker(f::T, vmas::Vector{VMA}, buffer) where {T <: Function}
         # maybe generate a huge-page warning
@@ -37,16 +58,20 @@ struct IdlePageTracker{T <: Function} <: AbstractMeasurement
             HAVE_WARNED[] = true
         end
 
-        return new{T}(f, vmas, buffer)
+        return new{T}(f, vmas, buffer, Ref(0))
     end
 end
 IdlePageTracker(f::Function = tautology) = IdlePageTracker(f, VMA[], UInt64[])
 
-prepare(I::IdlePageTracker, process::AbstractProcess) = (initbuffer!(I); return Sample[])
+function Measurements.prepare(I::IdlePageTracker, process) 
+    initbuffer!(I)
+    I.pid[] = getpid(process)
+    return Sample[]
+end
 
-function measure(I::IdlePageTracker, process)
+function Measurements.measure(I::IdlePageTracker)
     # Get VMAs, read idle bits and set idle bits
-    getvmas!(I.vmas, getpid(process), I.filter)
+    getvmas!(I.vmas, I.pid[], I.filter)
 
     # Copy the idle bitmap buffer and then immediately mark everything as idle again.
     # Only after that do the post processing to find the active pages.
@@ -54,12 +79,33 @@ function measure(I::IdlePageTracker, process)
     # This reduces the time spent between a read and subsequent clear of the idle bits
     # in the case where a program in not paused.
     read!(IDLE_BITMAP, I.buffer)
-    markidle(getpid(process), I.vmas)
+    markidle(I.pid[], I.vmas)
 
-    pages = readidle(getpid(process), I.vmas, I.buffer)
+    pages = readidle(I.pid[], I.vmas, I.buffer)
 
     return Sample(copy(I.vmas), pages)
 end
+
+"""
+Record the Working Set Size (WSS) in bytes of an application using Idle Page Tracking.
+
+This is essentially a wrapper for [`IdlePageTracker`], but just returns the working set
+size rather than a trace of all active pages and thus is a better candidate for monitoring
+long running programs.
+
+If using an [`IdlePageTracker`](@ref), there is no need to use this measurement as well.
+"""
+struct WSS{T}
+    idlepage::IdlePageTracker{T}
+end
+WSS(f::Function = tautology) = WSS(IdlePageTracker(f))
+
+function Measurements.prepare(W::WSS, args...)
+    # initialize the idle page tracker
+    prepare(W.idlepage, args...) 
+    return Vector{Int}()
+end
+Measurements.measure(W::WSS, args...) = wss(measure(W.idlepage, args...))
 
 #####
 ##### Implementations
@@ -224,4 +270,6 @@ function readidle(pid, vmas, buffer)
     end
 
     return pages
+end
+
 end

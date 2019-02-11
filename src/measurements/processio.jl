@@ -20,7 +20,10 @@ becomes
 BytesIO(3089822, 139463, 0, 4096)
 ```
 """
-struct ProcessIO <: AbstractMeasurement end
+mutable struct ProcessIO 
+    pid::Int64
+end
+ProcessIO() = ProcessIO(0)
 
 """
 Struct representing measurements for [`ProcessIO`](@ref)
@@ -49,15 +52,15 @@ struct BytesIO
     writebytes::Int64
 end
 
-prepare(::ProcessIO, args...) = Vector{BytesIO}()
+Measurements.prepare(proc::ProcessIO, P) = (proc.pid = getpid(P); return Vector{BytesIO}())
 
 function _parseline(ln) 
     ind = findlast(isequal(' '), ln)
     return safeparse(Int, SubString(ln, ind))
 end
 
-function measure(D::ProcessIO, process)
-    pid = getpid(process)
+function Measurements.measure(P::ProcessIO)
+    pid = P.pid
     bytesio = pidsafeopen("/proc/$pid/io", pid) do f
         iterator = eachline(f)
 
