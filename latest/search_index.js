@@ -41,19 +41,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace/#SystemSnoop.trace-Union{Tuple{N}, Tuple{S}, Tuple{AbstractProcess,NamedTuple{S,#s39} where #s39<:Tuple{Vararg{AbstractMeasurement,N}}}} where N where S",
+    "location": "trace/#SystemSnoop.trace-Tuple{SystemSnoop.AbstractProcess,NamedTuple}",
     "page": "Traces",
     "title": "SystemSnoop.trace",
     "category": "method",
-    "text": "trace(process, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. The values of this tuple are AbstractMeasurements.\n\nReturn a NamedTuple T with the same names as measurements but whose values are the measurement data.\n\nArgument process can be:\n\nA SnoopedProcess\nAn integer representing a process PID\nA Base.Process spawned by Julia\nA Cmd that will launch a process\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasurements::NamedTuple : A NamedTuple where each element is some   AbstractMeasurement.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Can also pass a SmartSample for better control of sample times.    Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the top command.\n\njulia> measurements = (\n    initial_timestamp = SystemSnoop.Timestamp(),\n    idlepages = SystemSnoop.IdlePageTracker(),\n    final_timestamp = SystemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    `top`,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\nSee also: AbstractMeasurement, SnoopedProcess, SmartSample\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace/#SystemSnoop.AbstractMeasurement",
-    "page": "Traces",
-    "title": "SystemSnoop.AbstractMeasurement",
-    "category": "type",
-    "text": "Abstract supertype for process measurements.\n\nRequired API\n\nprepare\nmeasure\n\nConcrete Implementations\n\nTimestamp\nIdlePageTracker\nDiskIO\nStatm\n\n\n\n\n\n"
+    "text": "trace(process, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. The values of this tuple are types that implement the prepare and measure interface.\n\nReturn a NamedTuple T with the same names as measurements but whose values are the measurement data.\n\nArgument process can be:\n\nA SnoopedProcess\nAn integer representing a process PID\nA Base.Process spawned by Julia\nA Cmd that will launch a process\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasurements::NamedTuple : A NamedTuple where each element implements prepare   and measure.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Can also pass a SmartSample for better control of sample times.    Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the top command.\n\njulia> measurements = (\n    initial_timestamp = SystemSnoop.Timestamp(),\n    idlepages = SystemSnoop.IdlePageTracker(),\n    final_timestamp = SystemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    `top`,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\nSee also: SnoopedProcess, SmartSample\n\n\n\n\n\n"
 },
 
 {
@@ -70,22 +62,6 @@ var documenterSearchIndex = {"docs": [
     "title": "SystemSnoop.Timestamp",
     "category": "type",
     "text": "Collect timestamps.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace/#SystemSnoop.measure-Union{Tuple{T}, Tuple{T,Vararg{Any,N} where N}} where T<:SystemSnoop.AbstractMeasurement",
-    "page": "Traces",
-    "title": "SystemSnoop.measure",
-    "category": "method",
-    "text": "measure(M::AbstractMeasurement, P::AbstractProcess) -> T\n\nReturn data of type T.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace/#SystemSnoop.prepare-Union{Tuple{T}, Tuple{T,Vararg{Any,N} where N}} where T<:SystemSnoop.AbstractMeasurement",
-    "page": "Traces",
-    "title": "SystemSnoop.prepare",
-    "category": "method",
-    "text": "prepare(M::AbstractMeasurement, P::AbstractProcess) -> Vector{T}\n\nReturn an empty vector to hold measurement data of type T for measurement M. Any  initialization required M should happen here.\n\n\n\n\n\n"
 },
 
 {
@@ -145,46 +121,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/idlepages/#SystemSnoop.IdlePageTracker",
-    "page": "Idle Page Tracking",
-    "title": "SystemSnoop.IdlePageTracker",
-    "category": "type",
-    "text": "Measurement type for performing Idle Page Tracking on a process. To filter process VMAs, construct as\n\nIdlePageTracker([filter])\n\nwhere filter is a VMA filter function.\n\nImplementation Details\n\nfilter - The VMA filter to apply. Defaults to all VMAs.\nvmas::Vector{VMA} - Buffer for storing VMAs.\nbuffer::Vector{UInt64} - Buffer to store the idle page bitmap.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/idlepages/#SystemSnoop.initbuffer!-Tuple{SystemSnoop.IdlePageTracker}",
-    "page": "Idle Page Tracking",
-    "title": "SystemSnoop.initbuffer!",
-    "category": "method",
-    "text": "initbuffer!(I::IdlePageTracker)\n\nRead once from page_idle/bitmap to get the size of the bitmap. Set the bitmap in I to this size to avoid reallocation every time the bitmap is read.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/idlepages/#SystemSnoop.markidle-Tuple{Any,Any}",
-    "page": "Idle Page Tracking",
-    "title": "SystemSnoop.markidle",
-    "category": "method",
-    "text": "markidle(pid, vmas)\n\nMark all of the memory pages in the list of vmas for process with pid as idle.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/idlepages/#SystemSnoop.readidle-Tuple{Any,Any,Any}",
-    "page": "Idle Page Tracking",
-    "title": "SystemSnoop.readidle",
-    "category": "method",
-    "text": "readidle(pid, vmas, bitmap) -> SortedRangeVector{UInt}\n\nReturn the active pages within vmas of process with pid. Use bitmap as the bitmap for the idle page buffer.\n\nTo initialize bitmap, call:\n\nread!(SystemSnoop.IDLE_BITMAP, bitmap)\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/idlepages/#SystemSnoop.walkpagemap-Tuple{Function,Any,Any}",
-    "page": "Idle Page Tracking",
-    "title": "SystemSnoop.walkpagemap",
-    "category": "method",
-    "text": "walkpagemap(f::Function, pid, vmas; [buffer::Vector{UInt64}])\n\nFor each VMA in iterator vmas, store the contents of /proc/pid/pagemap into buffer for this VMA and call f(buffer).\n\nNote that it is possible for buffer to be empty.\n\n\n\n\n\n"
-},
-
-{
     "location": "measurements/idlepages/idlepages/#Idle-Page-Tracking-1",
     "page": "Idle Page Tracking",
     "title": "Idle Page Tracking",
@@ -198,62 +134,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Sample",
     "category": "page",
     "text": ""
-},
-
-{
-    "location": "measurements/idlepages/sample/#SystemSnoop.Sample",
-    "page": "Sample",
-    "title": "SystemSnoop.Sample",
-    "category": "type",
-    "text": "Simple container containing the list of VMAs analyzed for a sample as well as the individual pages accessed.\n\nFields\n\nvmas :: Vector{VMA} - The VMAs analyzed during this sample.\npages :: SortedRangeVector{UInt64} - The pages that were active during this sample. Pages are   encoded by virtual page number. To get an address, multiply the page number by the   pagesize (generally 4096).\n\nMethods\n\nvmas - VMAs of Sample.\npages - Active pages from Sample or Vector{Sample}.\nwss - Working set size of Sample.\nunion - Merge two Samples together.\nisactive - Check if a page was active in Sample.\nbitmap - Construct a bitmap of active pages for a Vector{Sample}.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/sample/#SystemSnoop.bitmap-Tuple{Array{SystemSnoop.Sample,1},SystemSnoop.VMA}",
-    "page": "Sample",
-    "title": "SystemSnoop.bitmap",
-    "category": "method",
-    "text": "bitmap(trace::Vector{Sample}, vma::VMA) -> Array{Bool, 2}\n\nReturn a bitmap B of active pages in trace with virtual addresses from vma.  B[i,j] == true if the ith address in vma in trace[j] is active.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/sample/#SystemSnoop.isactive-Tuple{SystemSnoop.Sample,Any}",
-    "page": "Sample",
-    "title": "SystemSnoop.isactive",
-    "category": "method",
-    "text": "isactive(sample::Sample, page) -> Bool\n\nReturn true if page was active in sample.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/sample/#SystemSnoop.pages-Tuple{Array{SystemSnoop.Sample,1}}",
-    "page": "Sample",
-    "title": "SystemSnoop.pages",
-    "category": "method",
-    "text": "pages(trace::Vector{Sample}) -> Vector{UInt64}\n\nReturn a sorted vector of all pages in trace that were marked as \"active\" at least once. Pages are encoded by virtual page number.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/sample/#SystemSnoop.pages-Tuple{SystemSnoop.Sample}",
-    "page": "Sample",
-    "title": "SystemSnoop.pages",
-    "category": "method",
-    "text": "pages(sample::Sample) -> Set{UInt64}\n\nReturn a set of all active pages in sample.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/sample/#SystemSnoop.vmas-Tuple{Array{SystemSnoop.Sample,1}}",
-    "page": "Sample",
-    "title": "SystemSnoop.vmas",
-    "category": "method",
-    "text": "vmas(trace::Vector{Sample}) -> Vector{VMA}\n\nReturn the largest sorted collection V of VMAs with the property that for any sample S in trace and for any VMA s in S, s subset v for some v in V and s cap u = emptyset for all u in V setminus v.o\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/sample/#SystemSnoop.wss-Tuple{SystemSnoop.Sample}",
-    "page": "Sample",
-    "title": "SystemSnoop.wss",
-    "category": "method",
-    "text": "wss(S::Sample) -> Int\n\nReturn the number of active pages for S.\n\n\n\n\n\n"
 },
 
 {
@@ -273,126 +153,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/vma/#SystemSnoop.VMA",
-    "page": "VMAs",
-    "title": "SystemSnoop.VMA",
-    "category": "type",
-    "text": "Translated Virtual Memory Area (VMA) for a process.\n\nFields\n\nstart::UInt64 - The starting virtual page number for the VMA.\nstop::UInt64 - The last valid virtual page number for the VMA.\nremainder::String - The remainder of the entry in /proc/pid/maps.\n\nMethods\n\nlength, startaddress, stopaddress\n\nFilter Functions\n\nThere are a handful of builtin filter functions to help get rid of unwanted VMAs.\n\nheap\nreadable\nwritable\nexecutable\nflagset\nlongerthan\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#Base.compact-Tuple{Any}",
-    "page": "VMAs",
-    "title": "Base.compact",
-    "category": "method",
-    "text": "compact(vmas::Vector{VMA}) -> Vector{VMA}\n\nGiven an unsorted collection vmas, return the smallest collection V such that\n\nFor any u in vmas, u subset v for some v in V.\nAll elements of V are disjoint.\nV is sorted by starting address.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#Base.issubset-Tuple{SystemSnoop.VMA,SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "Base.issubset",
-    "category": "method",
-    "text": "issubset(a::VMA, b::VMA) -> Bool\n\nReturn true if VMA region a is a subset of b.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#Base.length-Tuple{SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "Base.length",
-    "category": "method",
-    "text": "length(vma::VMA) -> Int\n\nReturn the size of vma in number of pages.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#Base.union-Tuple{SystemSnoop.VMA,SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "Base.union",
-    "category": "method",
-    "text": "union(a::VMA, b::VMA) -> VMA\n\nReturn a VMA that is the union of the regions covered by a and b. Assumes that a and b are overlapping.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.executable-Tuple{SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "SystemSnoop.executable",
-    "category": "method",
-    "text": "Return true if vma is executable.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.flagset-Tuple{SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "SystemSnoop.flagset",
-    "category": "method",
-    "text": "Return true if vma is either readable, writeable, or executable\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.getvmas!",
-    "page": "VMAs",
-    "title": "SystemSnoop.getvmas!",
-    "category": "function",
-    "text": "getvmas!(buffer::Vector{VMA}, pid, [filter])\n\nFill buffer with the Virtual Memory Areas associated with the process with pid. Can optinally supply a filter. VMAs in buffer will be sorted by virtual address.\n\nFilter\n\nThe filter must be of the form\n\nf(vma::VMA) -> Bool\n\nwhere vma is the parsed VMA region from a line of the process\'s maps file.\n\nFor example, if an entry in the maps file is\n\n0088f000-010fe000 rw-p 00000000 00:00 0\n\nthen vma = VMA(0x0088f000,0x010fe000, rw-p 00000000 00:00 0)\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.heap-Tuple{SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "SystemSnoop.heap",
-    "category": "method",
-    "text": "Return true if vma is for the heap.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.longerthan-Tuple{Any,Integer}",
-    "page": "VMAs",
-    "title": "SystemSnoop.longerthan",
-    "category": "method",
-    "text": "longerthan(x, n) -> Bool\n\nReturn true if length(x) > n\n\nlongerthan(n) -> Function\n\nReturn a function x -> longerthan(x, n)\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.overlapping-Tuple{SystemSnoop.VMA,SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "SystemSnoop.overlapping",
-    "category": "method",
-    "text": "overlapping(a::VMA, b::VMA) -> Bool\n\nReturn true if VMA regions a and b overlap.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.readable-Tuple{SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "SystemSnoop.readable",
-    "category": "method",
-    "text": "Return true if vma is readable.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.startaddress-Tuple{SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "SystemSnoop.startaddress",
-    "category": "method",
-    "text": "startaddress(vma::VMA) -> UInt\n\nReturn the first virtual addresses assigned to vma.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.stopaddress-Tuple{SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "SystemSnoop.stopaddress",
-    "category": "method",
-    "text": "stopaddres(vma::VMA) -> UInt\n\nReturn the last virtual addresses assigned to vma.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/vma/#SystemSnoop.writable-Tuple{SystemSnoop.VMA}",
-    "page": "VMAs",
-    "title": "SystemSnoop.writable",
-    "category": "method",
-    "text": "Return true if vma is writable.\n\n\n\n\n\n"
-},
-
-{
     "location": "measurements/idlepages/vma/#VMAs-1",
     "page": "VMAs",
     "title": "VMAs",
@@ -409,54 +169,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/idlepages/rangevector/#SystemSnoop.SortedRangeVector",
-    "page": "Sorted Range Vectors",
-    "title": "SystemSnoop.SortedRangeVector",
-    "category": "type",
-    "text": "Compact representation of data of type T that is both sorted and usually occurs in contiguous ranges. For example, since groups of virtual memory pages are usually accessed together, a SortedRangeVector can encode those more compactly than a normal vector.\n\nFields\n\nranges :: Vector{UnitRange{T} - The elements of the SortedRangeVector, compacted into   contiguous ranges.\n\nConstructor\n\nSortedRangeVector{T}() -> SortedRangeVector{T}\n\nConstruct a empty SortedRangeVector with element type T.\n\nMethods\n\nsumall\nlastelement\npush!\nin\nunion\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/rangevector/#Base.in-Tuple{Any,SystemSnoop.SortedRangeVector}",
-    "page": "Sorted Range Vectors",
-    "title": "Base.in",
-    "category": "method",
-    "text": "in(x, V::SortedRangeVector) -> Bool\n\nPerfor an efficient search in V for x.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/rangevector/#Base.push!-Union{Tuple{T}, Tuple{SortedRangeVector{T},T}} where T",
-    "page": "Sorted Range Vectors",
-    "title": "Base.push!",
-    "category": "method",
-    "text": "push!(V::SortedRangeVector{T}, x::T) where {T}\n\nAdd x to the end of V, merging x into the final range if appropriate.\n\npush!(V::SortedRangeVector{T}, x::UnitRange{T}) where {T}\n\nMerge x with the final range in V if they overlap. Otherwise, append x to the end of V.\n\nNOTE: Assumes that first(x) >= first(last(V)) \n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/rangevector/#Base.union-Union{Tuple{T}, Tuple{SortedRangeVector{T},SortedRangeVector{T}}} where T",
-    "page": "Sorted Range Vectors",
-    "title": "Base.union",
-    "category": "method",
-    "text": "union(A::SortedRangeVector, B::SortedRangeVector)\n\nEfficiently union A and B together.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/rangevector/#SystemSnoop.lastelement-Tuple{SystemSnoop.SortedRangeVector}",
-    "page": "Sorted Range Vectors",
-    "title": "SystemSnoop.lastelement",
-    "category": "method",
-    "text": "lastelement(V::SortedRangeVector{T}) -> T\n\nReturn the last element of the last range of V.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/rangevector/#SystemSnoop.sumall-Union{Tuple{SortedRangeVector{T}}, Tuple{T}} where T",
-    "page": "Sorted Range Vectors",
-    "title": "SystemSnoop.sumall",
-    "category": "method",
-    "text": "sumall(V::SortedRangeVector)\n\nReturn the sum of lengths of each element of V.\n\n\n\n\n\n"
-},
-
-{
     "location": "measurements/idlepages/rangevector/#Sorted-Range-Vectors-1",
     "page": "Sorted Range Vectors",
     "title": "Sorted Range Vectors",
@@ -470,46 +182,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Utility Functions",
     "category": "page",
     "text": ""
-},
-
-{
-    "location": "measurements/idlepages/utils/#SystemSnoop.inmemory-Tuple{Any}",
-    "page": "Utility Functions",
-    "title": "SystemSnoop.inmemory",
-    "category": "method",
-    "text": "inmemory(x::UInt) -> Bool\n\nReturn true if x (interpreted as an entry in Linux /prop/[pid]/pagemap) is  located in memory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/utils/#SystemSnoop.isactive-Tuple{Integer,Array{UInt64,1}}",
-    "page": "Utility Functions",
-    "title": "SystemSnoop.isactive",
-    "category": "method",
-    "text": "isactive(x::Integer, buffer::Vector{UInt64}) -> Bool\n\nReturn true if bit x of buffer is set, intrerpreting buffer as a contiguous chunk  of memory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/utils/#SystemSnoop.isbitset-Tuple{Integer,Any}",
-    "page": "Utility Functions",
-    "title": "SystemSnoop.isbitset",
-    "category": "method",
-    "text": "isbitset(x::Integer, b::Integer) -> Bool\n\nReturn true if bit b of x is 1.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/utils/#SystemSnoop.isdirty-Tuple{Any}",
-    "page": "Utility Functions",
-    "title": "SystemSnoop.isdirty",
-    "category": "method",
-    "text": "isbitset(x::UInt) -> Bool\n\nReturn true if the dirty bit of x (interpreted as an entry in Linux /proc/kpagecount) is set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/idlepages/utils/#SystemSnoop.pfnmask-Tuple{Any}",
-    "page": "Utility Functions",
-    "title": "SystemSnoop.pfnmask",
-    "category": "method",
-    "text": "pfnmask(x::UInt) -> UInt\n\nReturn the lower 55 bits of x. When applied to a /proc/pid/pagemap entry, returns the physical page number (pfn) of that entry.\n\n\n\n\n\n"
 },
 
 {
@@ -657,78 +329,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "utils/#SystemSnoop.Forever",
-    "page": "Utilities",
-    "title": "SystemSnoop.Forever",
-    "category": "type",
-    "text": "In iterator that returns an infinite amount of nothing.\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#SystemSnoop.PIDException",
-    "page": "Utilities",
-    "title": "SystemSnoop.PIDException",
-    "category": "type",
-    "text": "Exception indicating that process with pid no longer exists.\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#SystemSnoop.Timeout",
-    "page": "Utilities",
-    "title": "SystemSnoop.Timeout",
-    "category": "type",
-    "text": "An iterator that stops iterating at a certain time.\n\nExample\n\njulia> using Dates\n\njulia> y = SystemSnoop.Timeout(Second(10))\nSystemSnoop.Timeout(2019-01-04T11:51:09.262)\n\njulia> now()\n2019-01-04T11:50:59.274\n\njulia> for i in y; end\n\njulia> now()\n2019-01-04T11:51:09.275\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#SystemSnoop.increment!-Tuple{AbstractDict,Any,Any}",
-    "page": "Utilities",
-    "title": "SystemSnoop.increment!",
-    "category": "method",
-    "text": "increment!(d::AbstractDict, k, v)\n\nIncrement d[k] by v. If d[k] does not exist, initialize it to v.\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#SystemSnoop.isrunning-Tuple{Any}",
-    "page": "Utilities",
-    "title": "SystemSnoop.isrunning",
-    "category": "method",
-    "text": "isrunning(pid) -> Bool\n\nReturn true is a process with pid is running.\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#SystemSnoop.pause-Tuple{Any}",
-    "page": "Utilities",
-    "title": "SystemSnoop.pause",
-    "category": "method",
-    "text": "pause(pid)\n\nPause process with pid. If process does not exist, throw a PIDException.\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#SystemSnoop.pidsafeopen-Tuple{Function,String,Any,Vararg{Any,N} where N}",
-    "page": "Utilities",
-    "title": "SystemSnoop.pidsafeopen",
-    "category": "method",
-    "text": "pidfraceopen(f::Function, file::String, pid, args...; kw...)\n\nOpen system pseudo file file for process with pid and pass the handle to f. If a  File does not exist error is thown, throws a PIDException instead.\n\nArguments args and kw are forwarded to the call to open.\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#SystemSnoop.resume-Tuple{Any}",
-    "page": "Utilities",
-    "title": "SystemSnoop.resume",
-    "category": "method",
-    "text": "resume(pid)\n\nResume process with pid. If process does not exist, throw a PIDException\n\n\n\n\n\n"
-},
-
-{
-    "location": "utils/#SystemSnoop.safeparse-Union{Tuple{T}, Tuple{Type{T},Any}} where T",
-    "page": "Utilities",
-    "title": "SystemSnoop.safeparse",
-    "category": "method",
-    "text": "safeparse(::Type{T}, str; base = 10) -> T\n\nTry to parse str to type T. If that fails, return zero(T).\n\n\n\n\n\n"
-},
-
-{
     "location": "utils/#Utilities-1",
     "page": "Utilities",
     "title": "Utilities",
@@ -742,22 +342,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Transparent Hugepages",
     "category": "page",
     "text": ""
-},
-
-{
-    "location": "hugepages/#SystemSnoop.check_hugepages-Tuple{}",
-    "page": "Transparent Hugepages",
-    "title": "SystemSnoop.check_hugepages",
-    "category": "method",
-    "text": "check_hugepages() -> Bool\n\nReturn true if Transparent Huge Pages are disabled. If THP are enabled, also print a warning.\n\n\n\n\n\n"
-},
-
-{
-    "location": "hugepages/#SystemSnoop.enable_hugepages-Union{Tuple{Type{T}}, Tuple{T}} where T<:SystemSnoop.TransparentHugePage",
-    "page": "Transparent Hugepages",
-    "title": "SystemSnoop.enable_hugepages",
-    "category": "method",
-    "text": "enable_hugepages(::Type{T}) where {T <: TransparentHugePage}\n\nSet the status of Transparent Huge Pages to T.\n\n\n\n\n\n"
 },
 
 {
