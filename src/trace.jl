@@ -113,8 +113,12 @@ end
 trace(pid::Integer, args...; kw...) = trace(SnoopedProcess(pid), args...; kw...)
 trace(process::Base.Process, args...; kw...) = trace(getpid(process), args...; kw...)
 function trace(cmd::Base.AbstractCmd, args...; kw...)
-    process = run(cmd; wait = false)
-    return trace(process, args...; kw...)
+    try
+        process = run(cmd; wait = false)
+        return trace(process, args...; kw...)
+    finally
+        kill(process)
+    end
 end
 
 #####
