@@ -27,9 +27,9 @@ Statm() = Statm(0)
 
 const StatmTuple = NamedTuple{(:size, :resident), Tuple{Int,Int}}
 
-Measurements.prepare(S::Statm, P) = (S.pid = getpid(P); return Vector{StatmTuple}())
+SnoopBase.prepare(S::Statm, P) = (S.pid = getpid(P); return Vector{StatmTuple}())
 
-function Measurements.measure(S::Statm)::StatmTuple
+function SnoopBase.measure(S::Statm)::StatmTuple
     pid = S.pid
     stats = pidsafeopen("/proc/$pid/statm", pid) do f
         

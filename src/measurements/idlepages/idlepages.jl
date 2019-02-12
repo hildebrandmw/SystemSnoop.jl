@@ -16,8 +16,7 @@ include("hugepages.jl")
 include("reusedistance.jl")
 include("plot.jl")
 
-import ..Measurements
-using ..Utils
+using ..SnoopBase
 
 # Display warning once for huge pages being turned on.
 #
@@ -63,13 +62,13 @@ struct IdlePageTracker{T <: Function}
 end
 IdlePageTracker(f::Function = tautology) = IdlePageTracker(f, VMA[], UInt64[])
 
-function Measurements.prepare(I::IdlePageTracker, process) 
+function SnoopBase.prepare(I::IdlePageTracker, process) 
     initbuffer!(I)
     I.pid[] = getpid(process)
     return Sample[]
 end
 
-function Measurements.measure(I::IdlePageTracker)
+function SnoopBase.measure(I::IdlePageTracker)
     # Get VMAs, read idle bits and set idle bits
     getvmas!(I.vmas, I.pid[], I.filter)
 
@@ -100,12 +99,12 @@ struct WSS{T}
 end
 WSS(f::Function = tautology) = WSS(IdlePageTracker(f))
 
-function Measurements.prepare(W::WSS, args...)
+function SnoopBase.prepare(W::WSS, args...)
     # initialize the idle page tracker
     prepare(W.idlepage, args...) 
     return Vector{Int}()
 end
-Measurements.measure(W::WSS, args...) = wss(measure(W.idlepage, args...))
+SnoopBase.measure(W::WSS, args...) = wss(measure(W.idlepage, args...))
 
 #####
 ##### Implementations

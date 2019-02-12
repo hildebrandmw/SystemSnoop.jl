@@ -17,9 +17,9 @@ struct UptimeStruct
     blkio_ticks::Int64
 end
 
-Measurements.prepare(U::Uptime, args...) = Vector{UptimeStruct}()
+SnoopBase.prepare(U::Uptime, args...) = Vector{UptimeStruct}()
 
-function Measurements.measure(U::Uptime, process)::UptimeStruct
+function SnoopBase.measure(U::Uptime, process)::UptimeStruct
     # Get the utime from /proc/uptime
     system_uptime = open("/proc/uptime") do f
         safeparse(Float64, readuntil(f, ' '))

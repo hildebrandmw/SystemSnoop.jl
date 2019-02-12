@@ -116,7 +116,7 @@ end
     # Create a process based on the Julia instance we are using.
     process = SystemSnoop.SnoopedProcess(getpid())
     tracker = SystemSnoop.IdlePages.IdlePageTracker()
-    SystemSnoop.Measurements.prepare(tracker, process)
+    SystemSnoop.SnoopBase.prepare(tracker, process)
 
     println()
     println("Testing Reads from the Idle Buffer")
