@@ -1,7 +1,7 @@
 ## AbstractProcess ##
 abstract type AbstractProcess end
-Utils.pause(P::AbstractProcess) = pause(getpid(P))
-Utils.resume(P::AbstractProcess) = resume(getpid(P))
+pause(P::AbstractProcess) = pause(getpid(P))
+resume(P::AbstractProcess) = resume(getpid(P))
 
 abstract type AbstractPausable end
 struct Unpausable <: AbstractPausable end
@@ -39,8 +39,8 @@ struct SnoopedProcess{P <: AbstractPausable} <: AbstractProcess
     pid :: Int64
 end
 
-Base.getpid(P::SnoopedProcess) = P.pid
-Utils.isrunning(P::SnoopedProcess) = isrunning(getpid(P))
+getpid(P::SnoopedProcess) = P.pid
+isrunning(P::SnoopedProcess) = isrunning(getpid(P))
 SnoopedProcess(pid::Integer) = SnoopedProcess{Unpausable}(pid)
 
 # Before measurements

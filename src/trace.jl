@@ -2,8 +2,8 @@
 Collect timestamps.
 """
 struct Timestamp end
-Measurements.prepare(::Timestamp, args...) = DateTime[]
-Measurements.measure(::Timestamp, args...) = now()
+prepare(::Timestamp, args...) = DateTime[]
+measure(::Timestamp, args...) = now()
 
 #####
 ##### trace
@@ -106,6 +106,8 @@ function trace(
         end
     catch error
         isa(error, PIDException) || rethrow(error)
+    finally
+        _clean(measurements)
     end
     return trace
 end
@@ -113,12 +115,17 @@ end
 trace(pid::Integer, args...; kw...) = trace(SnoopedProcess(pid), args...; kw...)
 trace(process::Base.Process, args...; kw...) = trace(getpid(process), args...; kw...)
 function trace(cmd::Base.AbstractCmd, args...; kw...)
+<<<<<<< HEAD
     try
         process = run(cmd; wait = false)
         return trace(process, args...; kw...)
     finally
         kill(process)
     end
+=======
+    process = run(pipeline(cmd; stdout = stdout); wait = false)
+    return trace(process, args...; kw...)
+>>>>>>> db62375e93cee20458eda2e562d9be58626642f5
 end
 
 #####
@@ -179,7 +186,7 @@ it's because Julia's compilier is good at figuring this stuff out.
 function _prepare(process::AbstractProcess, measurements::NamedTuple{names}) where {names} 
     return NamedTuple{names}(_prepare(process, Tuple(measurements)...))
 end
-_prepare(process::AbstractProcess, m, args...) = (Measurements.prepare(m, process), _prepare(process, args...)...)
+_prepare(process::AbstractProcess, m, args...) = (prepare(m, process), _prepare(process, args...)...)
 _prepare(::AbstractProcess) = ()
 
 ## _measure
@@ -192,9 +199,11 @@ function _measure(trace::Tuple, measurements::Tuple)
     t = _first(trace...)
     m = _first(measurements...)
     # Perform the first measurement
-    push!(t, Measurements.measure(m))
+    push!(t, measure(m))
     # Recurse
     _measure(tail(trace), tail(measurements))
     return nothing
 end
 _measure(::Tuple{}, ::Tuple{}) = nothing
+
+_clean(measurements::NamedTuple) = map(clean, Tuple(measurements))

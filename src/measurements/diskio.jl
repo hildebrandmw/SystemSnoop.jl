@@ -46,8 +46,8 @@ struct DiskIO
     devices::Vector{String}
 end
 
-Measurements.prepare(::DiskIO, args...) = Vector{Dict{Symbol,DiskStats}}()
-Measurements.measure(D::DiskIO) = diskstats(D.devices)
+SnoopBase.prepare(::DiskIO, args...) = Vector{Dict{Symbol,DiskStats}}()
+SnoopBase.measure(D::DiskIO) = diskstats(D.devices)
 
 #####
 ##### Implementation details

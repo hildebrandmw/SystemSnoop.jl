@@ -2,7 +2,7 @@ module PAPI
 
 export PAPICounters
 
-import ..Measurements
+import ..SnoopBase
 using PAPI
 
 mutable struct PAPICounters{N, names}
@@ -18,7 +18,7 @@ mutable struct PAPICounters{N, names}
 end
 
 _rettype(::PAPICounters{N,names}) where {N,names} = NamedTuple{names, NTuple{N, Int64}}
-function Measurements.prepare(P::PAPICounters, process)
+function SnoopBase.prepare(P::PAPICounters, process)
     # Create a new eventset so we can run these back to back
     P.eventset = PAPI.EventSet()     
     PAPI.component!(P.eventset)
@@ -33,7 +33,7 @@ function Measurements.prepare(P::PAPICounters, process)
     return Vector{_rettype(P)}()
 end
 
-function Measurements.measure(P::PAPICounters)
+function SnoopBase.measure(P::PAPICounters)
     # Stop/Read hardware counters and reset the counters.
     # calling "reset" automatically starts them counting again.
     PAPI.stop(P.eventset)
