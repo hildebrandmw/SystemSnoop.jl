@@ -14,7 +14,9 @@ export  trace,
         resume,
         pidsafeopen,
         safeparse,
-        isrunning
+        isrunning,
+        SmartSample,
+        TimeOut
 
 import Base: iterate, IteratorSize, IsInfinite, getpid, tail
 using Dates
