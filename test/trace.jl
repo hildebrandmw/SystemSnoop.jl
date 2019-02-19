@@ -7,8 +7,8 @@ mutable struct TestMeasure
     TestMeasure() = new(0,0)
 end
 
-SystemSnoop.Measurements.prepare(T::TestMeasure, args...) = (T.prepare += 1; Int[])
-SystemSnoop.Measurements.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
+SystemSnoop.SnoopBase.prepare(T::TestMeasure, args...) = (T.prepare += 1; Int[])
+SystemSnoop.SnoopBase.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
 
 @testset "Testing Trace Kernel Functions" begin
 
@@ -21,11 +21,11 @@ SystemSnoop.Measurements.measure(T::TestMeasure, args...) = (T.measure += 1; T.m
     T = TestMeasure()
     measurements = (test = T,)
 
-    trace = SystemSnoop._prepare(process, measurements)
+    trace = SystemSnoop.SnoopBase._prepare(process, measurements)
     @test trace == (test = Int[],)
     @test T.prepare == 1
 
-    SystemSnoop._measure(trace, measurements)
+    SystemSnoop.SnoopBase.SnoopBase._measure(trace, measurements)
     @test trace == (test = [1],)
     @test T.measure == 1
 
@@ -36,11 +36,11 @@ SystemSnoop.Measurements.measure(T::TestMeasure, args...) = (T.measure += 1; T.m
     T = TestMeasure()
     measurements = (testA = T ,testB = T)
 
-    trace = SystemSnoop._prepare(process, measurements)
+    trace = SystemSnoop.SnoopBase._prepare(process, measurements)
     @test trace == (testA = Int[], testB = Int[])
     @test T.prepare == 2
 
-    SystemSnoop._measure(trace, measurements)
+    SystemSnoop.SnoopBase._measure(trace, measurements)
     @test trace == (testA = [1], testB = [2])
     @test T.measure == 2
 
@@ -49,12 +49,12 @@ SystemSnoop.Measurements.measure(T::TestMeasure, args...) = (T.measure += 1; T.m
     S = TestMeasure()
     measurements = (testT = T, testS = S)
 
-    trace = SystemSnoop._prepare(process, measurements)
+    trace = SystemSnoop.SnoopBase._prepare(process, measurements)
     @test trace == (testT = Int[], testS = Int[])
     @test T.prepare == 1
     @test S.prepare == 1
 
-    SystemSnoop._measure(trace, measurements)
+    SystemSnoop.SnoopBase._measure(trace, measurements)
     @test trace == (testT = [1], testS = [1])
     @test T.measure == 1
     @test S.measure == 1
@@ -65,11 +65,11 @@ SystemSnoop.Measurements.measure(T::TestMeasure, args...) = (T.measure += 1; T.m
     T = TestMeasure()
     measurements = (A = T, B = T, C = T)
 
-    trace = SystemSnoop._prepare(process, measurements)
+    trace = SystemSnoop.SnoopBase._prepare(process, measurements)
     @test trace == (A = Int[], B = Int[], C = Int[])
     @test T.prepare == 3
 
-    SystemSnoop._measure(trace, measurements)
+    SystemSnoop.SnoopBase._measure(trace, measurements)
     @test trace == (A = [1], B = [2], C = [3])
     @test T.measure == 3
 end

@@ -4,7 +4,9 @@ export  trace,
         # Measurement API
         prepare, measure, clean,
         # Process Exports
-        SnoopedProcess ,
+        SnoopedProcess,
+        Pausable,
+        Unpausable,
         # Random utilities
         Forever, 
         Timeout,
