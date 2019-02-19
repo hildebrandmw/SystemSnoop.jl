@@ -41,30 +41,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "trace/#SystemSnoop.trace-Tuple{SystemSnoop.AbstractProcess,NamedTuple}",
-    "page": "Traces",
-    "title": "SystemSnoop.trace",
-    "category": "method",
-    "text": "trace(process, measurements::NamedTuple; kw...) -> NamedTuple\n\nPerform a measurement trace on process. The measurements to be performed are specified by the measurements argument. The values of this tuple are types that implement the prepare and measure interface.\n\nReturn a NamedTuple T with the same names as measurements but whose values are the measurement data.\n\nArgument process can be:\n\nA SnoopedProcess\nAn integer representing a process PID\nA Base.Process spawned by Julia\nA Cmd that will launch a process\n\nThe general flow of this function is as follows:\n\nSleep for sampletime\nCall prehook on process\nCall measure on each measurement.\nCall callback\nCall posthook on process\nRepeat for each element of iter.\n\nMeasurements\n\nmeasurements::NamedTuple : A NamedTuple where each element implements prepare   and measure.\n\nKeyword Arguments\n\nsampletime : Seconds between reading and reseting the idle page flags to determine page   activity. Can also pass a SmartSample for better control of sample times.    Default: 2\niter : Iterator to control the number of samples to take. Default behavior is to keep   sampling until monitored process terminates. Default: Run until program terminates.\ncallback : Optional callback for printing out status information (such as number   of iterations).\n\nExample\n\nDo five measurements of idle page tracking on the top command.\n\njulia> measurements = (\n    initial_timestamp = SystemSnoop.Timestamp(),\n    idlepages = SystemSnoop.IdlePageTracker(),\n    final_timestamp = SystemSnoop.Timestamp(),\n);\n\njulia> data = trace(\n    `top`,\n    measurements;\n    sampletime = 1,\n    iter = 1:5\n);\n\n# Introspect into `data`\njulia> typeof(data)\nNamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.DateTime,1},Array{Sample,1},Array{Dates.DateTime,1}}}\n\nSee also: SnoopedProcess, SmartSample\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace/#SystemSnoop.SmartSample",
-    "page": "Traces",
-    "title": "SystemSnoop.SmartSample",
-    "category": "type",
-    "text": "SystemSnoop.SmartSample(t::TimePeriod) -> SmartSample\n\nSmart Sampler to ensure measurements happen every t time units. Samples will happen at multiples of t from the first measurement. If a sample period is missed, the sampler will wait until the next appropriate multiple of t.\n\n\n\n\n\n"
-},
-
-{
-    "location": "trace/#SystemSnoop.Timestamp",
-    "page": "Traces",
-    "title": "SystemSnoop.Timestamp",
-    "category": "type",
-    "text": "Collect timestamps.\n\n\n\n\n\n"
-},
-
-{
     "location": "trace/#Traces-1",
     "page": "Traces",
     "title": "Traces",
@@ -78,30 +54,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Process",
     "category": "page",
     "text": ""
-},
-
-{
-    "location": "process/#SystemSnoop.SnoopedProcess",
-    "page": "Process",
-    "title": "SystemSnoop.SnoopedProcess",
-    "category": "type",
-    "text": "Struct container a pid as well as auxiliary data structure to make the snooping process more efficient. SnoopedProcesses come in two variants, Pausable and Unpausable. \n\nPausable processes will be paused before a set of measurements are taken by calling kill -STOP and resumed after afterwards by calling kill -CONT. Unpausable processes will not be touched.\n\nTo construct a Pausable process with pid, call\n\nps = SnoopedProcess{Pausable}(pid)\n\nTo construct an Unpausable process, call\n\nps = SnoopedProcess{Unpausable}(pid)\n\nFields\n\npid::Int64 - The pid of the process.\n\nMethods\n\ngetpid - Get the PID of this process.\nisrunning - Return true if process is running.\nprehook - Method to call before measurements.\nposthook - Method to call after measurements.\n\n\n\n\n\n"
-},
-
-{
-    "location": "process/#SystemSnoop.posthook-Tuple{SnoopedProcess{Pausable}}",
-    "page": "Process",
-    "title": "SystemSnoop.posthook",
-    "category": "method",
-    "text": "posthook(P::AbstractProcess)\n\nIf P is a pausable process, unpause P.\n\n\n\n\n\n"
-},
-
-{
-    "location": "process/#SystemSnoop.prehook-Tuple{SnoopedProcess{Pausable}}",
-    "page": "Process",
-    "title": "SystemSnoop.prehook",
-    "category": "method",
-    "text": "prehook(P::AbstractProcess)\n\nIf P is a pausable process, pause P.\n\n\n\n\n\n"
 },
 
 {
