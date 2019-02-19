@@ -3,7 +3,7 @@ module PAPI
 export PAPICounters
 
 import ..SnoopBase
-using PAPI
+using ..PAPI
 
 mutable struct PAPICounters{N, names}
     codes::NTuple{N,Int32}
