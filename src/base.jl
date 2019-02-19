@@ -16,7 +16,7 @@ export  trace,
         safeparse,
         isrunning,
         SmartSample,
-        TimeOut
+        Timestamp
 
 import Base: iterate, IteratorSize, IsInfinite, getpid, tail
 using Dates
