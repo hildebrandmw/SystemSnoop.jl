@@ -1,21 +1,35 @@
 module SystemSnoop
 
-using Dates, Requires
+export  trace,
+        # Measurement API
+        prepare, measure, clean,
+        # Process Exports
+        SnoopedProcess,
+        Pausable,
+        Unpausable,
+        # Random utilities
+        Forever,
+        Timeout,
+        increment!,
+        PIDException,
+        pause,
+        resume,
+        pidsafeopen,
+        safeparse,
+        isrunning,
+        SmartSample,
+        Timestamp
 
-export trace, SnoopedProcess, Pausable, Unpausable
-
-function __init__()
-    @require PAPI="25707955-362c-5858-b477-b2b4559b2019" include("optional/papi.jl")
-    @require PCM="7d644800-0fd4-5f4f-871b-eb28bd968194" include("optional/pcm.jl")
-end
+import Base: iterate, IteratorSize, IsInfinite, getpid, tail
+using Dates
 
 #####
 ##### File Includes
 #####
 
-include("base.jl"); using .SnoopBase
-
-# Measurements
-include("measurements/measurements.jl")
+include("process.jl")
+include("trace.jl")
+include("base.jl")
 
 end # module
+

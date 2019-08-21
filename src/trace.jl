@@ -168,15 +168,8 @@ end
 ##### Trace Kernel Functions
 #####
 
-# Tuple Magic
+# Tuple Magic :D
 _first(m, args...) = m
-
-#=
-The general strategy to these function is to leverage julia's type inference and
-specialization to statically resolve all of the funtions calls instead of needing to do
-dynamic dispatch. That is why some of these function calls look unnecessarily complicated -
-it's because Julia's compilier is good at figuring this stuff out.
-=#
 
 ## _prepare
 function _prepare(process::AbstractProcess, measurements::NamedTuple{names}) where {names} 

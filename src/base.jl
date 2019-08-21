@@ -1,35 +1,7 @@
-module SnoopBase
-
-export  trace, 
-        # Measurement API
-        prepare, measure, clean,
-        # Process Exports
-        SnoopedProcess,
-        Pausable,
-        Unpausable,
-        # Random utilities
-        Forever, 
-        Timeout,
-        increment!, 
-        PIDException, 
-        pause, 
-        resume,
-        pidsafeopen,
-        safeparse,
-        isrunning,
-        SmartSample,
-        Timestamp
-
-import Base: iterate, IteratorSize, IsInfinite, getpid, tail
-using Dates
-
-include("process.jl")
-include("trace.jl")
-
 """
     prepare(M, P) -> Vector{T}
 
-Return an empty vector to hold measurement data of type `T` for measurement `M`. Any 
+Return an empty vector to hold measurement data of type `T` for measurement `M`. Any
 initialization required `M` should happen here. Argument `P` is an object with a method
 
     getpid(P) -> Integer
@@ -103,7 +75,7 @@ increment!(d::AbstractDict, k, v) = haskey(d, k) ? (d[k] += v) : (d[k] = v)
 """
 Exception indicating that process with `pid` no longer exists.
 """
-struct PIDException <: Exception 
+struct PIDException <: Exception
     pid::Int64
 end
 PIDException() = PIDException(0)
@@ -117,7 +89,7 @@ PIDException() = PIDException(0)
 
 Pause process with `pid`. If process does not exist, throw a [`PIDException`](@ref).
 """
-function pause(pid) 
+function pause(pid)
     try
         run(`kill -STOP $pid`)
     catch error
@@ -131,7 +103,7 @@ end
 
 Resume process with `pid`. If process does not exist, throw a [`PIDException`](@ref)
 """
-function resume(pid)  
+function resume(pid)
     try
         run(`kill -CONT $pid`)
     catch error
@@ -145,9 +117,9 @@ end
 #####
 
 """
-    pidfraceopen(f::Function, file::String, pid, args...; kw...)
+    pidsafeopen(f::Function, file::String, pid, args...; kw...)
 
-Open system pseudo file `file` for process with `pid` and pass the handle to `f`. If a 
+Open system pseudo file `file` for process with `pid` and pass the handle to `f`. If a
 `File does not exist` error is thown, throws a `PIDException` instead.
 
 Arguments `args` and `kw` are forwarded to the call to `open`.
@@ -183,4 +155,3 @@ Return `true` is a process with `pid` is running.
 """
 isrunning(pid) = isdir("/proc/$pid")
 
-end
