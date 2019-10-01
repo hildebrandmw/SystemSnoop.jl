@@ -9,7 +9,7 @@ to give insight in to the memory useage of arbitrary programs at the page level 
 granularity. The main function is
 
 ```julia
-trace(pid, measurements; [sampletime], [iter], [filter]) -> Vector{Sample}
+snoop(pid, measurements; [sampletime], [iter], [filter]) -> Vector{Sample}
 ```
 
 Which generates a full trace of virtual pages that were accessed with `sampletime` level

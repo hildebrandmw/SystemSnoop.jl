@@ -6,11 +6,11 @@ prepare(::Timestamp, args...) = DateTime[]
 measure(::Timestamp, args...) = now()
 
 #####
-##### trace
+##### snoop
 #####
 
 """
-    trace(process, measurements::NamedTuple; kw...) -> NamedTuple
+    snoop(process, measurements::NamedTuple; kw...) -> NamedTuple
 
 Perform a measurement trace on `process`. The measurements to be performed are specified
 by the `measurements` argument. The values of this tuple are types that implement the
@@ -64,7 +64,7 @@ julia> measurements = (
     final_timestamp = SystemSnoop.Timestamp(),
 );
 
-julia> data = trace(
+julia> data = snoop(
     `top`,
     measurements;
     sampletime = 1,
@@ -78,7 +78,7 @@ NamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.
 
 See also: [`SnoopedProcess`](@ref), [`SmartSample`](@ref)
 """
-function trace(
+function snoop(
         process::AbstractProcess,
         measurements::NamedTuple;
         sampletime = 2,
@@ -112,9 +112,9 @@ function trace(
     return trace
 end
 
-trace(pid::Integer, args...; kw...) = trace(SnoopedProcess(pid), args...; kw...)
-trace(process::Base.Process, args...; kw...) = trace(getpid(process), args...; kw...)
-function trace(cmd::Base.AbstractCmd, args...; kw...)
+snoop(pid::Integer, args...; kw...) = snoop(SnoopedProcess(pid), args...; kw...)
+snoop(process::Base.Process, args...; kw...) = snoop(getpid(process), args...; kw...)
+function snoop(cmd::Base.AbstractCmd, args...; kw...)
     local process
     try
         process = run(cmd; wait = false)
