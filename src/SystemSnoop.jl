@@ -1,6 +1,6 @@
 module SystemSnoop
 
-export  trace,
+export  snoop,
         # Measurement API
         prepare, measure, clean,
         # Process Exports

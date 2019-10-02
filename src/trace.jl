@@ -9,6 +9,46 @@ measure(::Timestamp, args...) = now()
 ##### snoop
 #####
 
+mutable struct Snooper{P <: AbstractProcess, NT <: NamedTuple, T}
+    process::P
+    measurements::NT
+    trace::T
+
+    # Flag to indicate if the cleanup routine has run.
+    iscleaned::Bool
+
+    # Inner constructor to attach finalizer
+    function Snooper(process::P, measurements::NT) where {P, NT}
+        trace = _prepare(process, measurements)
+        snooper = new{P, NT, typeof(trace)}(process, measurements, trace, false)
+        finalizer(clean, snooper)
+        return snooper
+    end
+end
+
+
+isrunning(S::Snooper) = isrunning(S.process)
+function measure(S::Snooper)
+    success = true
+    try
+        prehook(S.process)
+        _measure(S.trace, S.measurements)
+        posthook(S.process)
+    catch error
+        isa(error, PIDException) || rethrow(error)
+        success = false
+    end
+    return success
+end
+
+function clean(S::Snooper)
+    if !S.iscleaned
+        _clean(S.measurements)
+        S.iscleaned = true
+    end
+    return nothing
+end
+
 """
     snoop(process, measurements::NamedTuple; kw...) -> NamedTuple
 
@@ -32,9 +72,8 @@ The general flow of this function is as follows:
 1. Sleep for `sampletime`
 2. Call [`prehook`](@ref) on `process`
 3. Call [`measure`](@ref) on each measurement.
-4. Call `callback`
-5. Call [`posthook`](@ref) on `process`
-6. Repeat for each element of `iter`.
+4. Call [`posthook`](@ref) on `process`
+5. Repeat for each element of `iter`.
 
 Measurements
 ------------
@@ -49,9 +88,6 @@ Keyword Arguments
 
 * `iter` : Iterator to control the number of samples to take. Default behavior is to keep
     sampling until monitored process terminates. Default: Run until program terminates.
-
-* `callback` : Optional callback for printing out status information (such as number
-    of iterations).
 
 Example
 -------
@@ -78,36 +114,23 @@ NamedTuple{(:initial_timestamp, :idlepages, :final_timestamp),Tuple{Array{Dates.
 
 See also: [`SnoopedProcess`](@ref), [`SmartSample`](@ref)
 """
+function snoop(f, process::AbstractProcess, measurements::NamedTuple)
+    snooper = Snooper(process, measurements)
+    f(snooper)
+    return snooper.trace
+end
+
 function snoop(
-        process::AbstractProcess,
-        measurements::NamedTuple;
-        sampletime = 2,
-        iter = Forever(),
-        callback = (args...) -> nothing
+        process::AbstractProcess, 
+        measurements::NamedTuple; 
+        sampletime = 2, 
+        iter = Forever()
     )
-
-    # Get a tuple of structs we are going to mutate
-    trace = _prepare(process, measurements)
-    try
+    trace = snoop(process, measurements) do snooper
         for _ in iter
-            ## Wait for next iteration
-            _sleep(sampletime)
-
-            # Abort if process is no longer running
-            isrunning(process) || break
-
-            ## Prep for taking measurements
-            prehook(process)
-            _measure(trace, measurements)
-
-            ## Cleanup after measurements
-            callback(process, trace, measurements)
-            posthook(process)
+            sleep(sampletime)
+            measure(snooper) || break
         end
-    catch error
-        isa(error, PIDException) || rethrow(error)
-    finally
-        _clean(measurements)
     end
     return trace
 end
@@ -118,17 +141,11 @@ function snoop(cmd::Base.AbstractCmd, args...; kw...)
     local process
     try
         process = run(cmd; wait = false)
-        return trace(process, args...; kw...)
+        return snoop(process, args...; kw...)
     finally
         kill(process)
     end
 end
-
-#####
-##### _sleep
-#####
-
-_sleep(x::Number) = sleep(x)
 
 """
     SystemSnoop.SmartSample(t::TimePeriod) -> SmartSample
@@ -144,7 +161,7 @@ mutable struct SmartSample{T <: TimePeriod}
 end
 
 SmartSample(s::TimePeriod) = SmartSample(now(), s, 0)
-function _sleep(s::SmartSample)
+function Base.sleep(s::SmartSample)
     # Initialize the sampler
     if s.iteration == 0
         s.initial = now()
