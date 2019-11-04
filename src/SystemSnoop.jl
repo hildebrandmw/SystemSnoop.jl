@@ -30,6 +30,7 @@ using Dates
 include("process.jl")
 include("trace.jl")
 include("base.jl")
+include("util.jl")
 
 end # module
 

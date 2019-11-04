@@ -8,7 +8,9 @@ initialization required `M` should happen here. Argument `P` is an object with a
 
 Defined that returnd the PID of `P`.
 """
-prepare(::T, args...) where {T} = error("Implement `prepare` for $T")
+prepare(::T, args...) where {T} = nothing
+
+typehint(::Any) = Any
 
 """
     measure(M) -> T
@@ -59,7 +61,7 @@ struct Timeout
     endtime::DateTime
 end
 Timeout(p::TimePeriod) = Timeout(now() + p)
-iterate(T::Timeout, args...) = (now() >= T.endtime) ? nothing : (nothing, nothing)
+iterate(T::Timeout, x...) = (now() >= T.endtime) ? nothing : (nothing, nothing)
 
 """
     increment!(d::AbstractDict, k, v)
@@ -113,7 +115,7 @@ function resume(pid)
 end
 
 #####
-##### PIDsafe macro
+##### pidsafe
 #####
 
 """
@@ -155,3 +157,40 @@ Return `true` is a process with `pid` is running.
 """
 isrunning(pid) = isdir("/proc/$pid")
 
+#####
+##### Sampler
+#####
+
+"""
+    SystemSnoop.SmartSample(t::TimePeriod) -> SmartSample
+
+Smart Sampler to ensure measurements happen every `t` time units. Samples will happen at
+multiples of `t` from the first measurement. If a sample period is missed, the sampler will
+wait until the next appropriate multiple of `t`.
+"""
+mutable struct SmartSample{T <: TimePeriod}
+    initial::DateTime
+    increment::T
+    iteration::Int64
+end
+
+SmartSample(s::TimePeriod) = SmartSample(now(), s, 0)
+function Base.sleep(s::SmartSample)
+    # Initialize the sampler
+    if s.iteration == 0
+        s.initial = now()
+        s.iteration = 1
+    end
+
+    # Compute the amount of time we need to sleep
+    sleeptime = s.initial + (s.iteration * s.increment) - now()
+
+    # Just incase measurements took longer than anticipated
+    while sleeptime < zero(sleeptime)
+        s.iteration += 1
+        sleeptime = s.initial + (s.iteration * s.increment) - now()
+    end
+    sleep(sleeptime)
+    s.iteration += 1
+    return nothing
+end

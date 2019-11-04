@@ -7,9 +7,15 @@ abstract type AbstractPausable end
 struct Unpausable <: AbstractPausable end
 struct Pausable <: AbstractPausable end
 
+struct GlobalProcess <: AbstractProcess end
+pause(::GlobalProcess) = nothing
+resume(::GlobalProcess) = nothing
+getpid(::GlobalProcess) = 0
+isrunning(::GlobalProcess) = true
+
 """
 Struct container a `pid` as well as auxiliary data structure to make the snooping process
-more efficient. `SnoopedProcess`es come in two variants, `Pausable` and `Unpausable`. 
+more efficient. `SnoopedProcess`es come in two variants, `Pausable` and `Unpausable`.
 
 `Pausable` processes will be paused before a set of measurements are taken by calling
 `kill -STOP` and resumed after afterwards by calling `kill -CONT`.
@@ -50,7 +56,7 @@ SnoopedProcess(pid::Integer) = SnoopedProcess{Unpausable}(pid)
 If `P` is a pausable process, pause `P`.
 """
 prehook(P::SnoopedProcess{Pausable}) = pause(P)
-prehook(P::SnoopedProcess{Unpausable}) = nothing
+prehook(P::AbstractProcess) = nothing
 
 # After measurements
 """
@@ -59,5 +65,5 @@ prehook(P::SnoopedProcess{Unpausable}) = nothing
 If `P` is a pausable process, unpause `P`.
 """
 posthook(P::SnoopedProcess{Pausable}) = resume(P)
-posthook(P::SnoopedProcess{Unpausable}) = nothing
+posthook(P::AbstractProcess) = nothing
 
