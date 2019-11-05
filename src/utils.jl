@@ -3,14 +3,6 @@
 #####
 
 """
-In iterator that returns an infinite amount of `nothing`.
-"""
-struct Forever end
-
-iterate(Forever, args...) = (nothing, nothing)
-IteratorSize(::Forever) = IsInfinite()
-
-"""
 An iterator that stops iterating at a certain time.
 
 **Example**
@@ -29,11 +21,11 @@ julia> now()
 2019-01-04T11:51:09.275
 ```
 """
-struct Timeout
-    endtime::DateTime
+struct Timeout{T <: Dates.TimePeriod}
+    runtime::T
 end
-Timeout(p::TimePeriod) = Timeout(now() + p)
-iterate(T::Timeout, x...) = (now() >= T.endtime) ? nothing : (nothing, nothing)
+iterate(T::Timeout) = (nothing, now() + T.runtime)
+iterate(T::Timeout, stoptime) = (now() >= stoptime) ? nothing : (nothing, stoptime)
 
 #####
 ##### Pagemap Utilities
@@ -50,6 +42,13 @@ PIDException() = PIDException(0)
 #####
 ##### OS Utilities
 #####
+
+"""
+    isrunning(pid) -> Bool
+
+Return `true` is a process with `pid` is running.
+"""
+isrunning(pid) = isdir("/proc/$pid")
 
 """
     pause(pid)
@@ -78,49 +77,6 @@ function resume(pid)
     end
     return nothing
 end
-
-#####
-##### pidsafe
-#####
-
-"""
-    pidsafeopen(f::Function, file::String, pid, args...; kw...)
-
-Open system pseudo file `file` for process with `pid` and pass the handle to `f`. If a
-`File does not exist` error is thown, throws a `PIDException` instead.
-
-Arguments `args` and `kw` are forwarded to the call to `open`.
-"""
-function pidsafeopen(f::Function, file::String, pid, args...; kw...)
-    try
-        open(file, args...; kw...) do handle
-            f(handle)
-        end
-    catch error
-        if isa(error, SystemError) && error.errnum == 2
-            throw(PIDException(pid))
-        else
-            rethrow(error)
-        end
-    end
-end
-
-"""
-    safeparse(::Type{T}, str; base = 10) -> T
-
-Try to parse `str` to type `T`. If that fails, return `zero(T)`.
-"""
-function safeparse(::Type{T}, str; kw...) where {T}
-    x = tryparse(T, str; kw...)
-    return x === nothing ? zero(T) : x
-end
-
-"""
-    isrunning(pid) -> Bool
-
-Return `true` is a process with `pid` is running.
-"""
-isrunning(pid) = isdir("/proc/$pid")
 
 #####
 ##### Sampler

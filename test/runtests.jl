@@ -1,8 +1,6 @@
 using SystemSnoop
 using Test
-using Combinatorics
-using BenchmarkTools
-using Dates
+using Dates: Dates
 
 # Set up some variables for running the test programs.
 TESTDIR = @__DIR__
@@ -19,6 +17,7 @@ SnoopTest.build()
 ##### Test Suits
 #####
 
+include("utils.jl")
 include("base.jl")
 
 # Core functionality

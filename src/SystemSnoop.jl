@@ -13,8 +13,6 @@ export  snoop,
         PIDException,
         pause,
         resume,
-        pidsafeopen,
-        safeparse,
         isrunning,
         SmartSample,
         Timestamp

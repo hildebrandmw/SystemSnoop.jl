@@ -29,11 +29,12 @@ _typehint(::Val{false}, x, kw) = typehint(x)
 _typehint(::Val{true}, x...) = Core.Compiler.return_type(measure, typeof.(x))
 
 """
-    measure(M) -> T
+    measure(x, kw)
 
-Perform a measurement on `M` and return data of type `T`.
+Perform a measurement for `x`. Argument `kw` is a `NamedTuple` of the keyword arguments
+passed to [`snoop`](@ref).
 """
-measure(::T) where {T} = error("Implement `measure` for $T")
+measure(::T, kw) where {T} = error("Implement `measure` for $T")
 
 """
     clean(M) -> Nothing
