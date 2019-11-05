@@ -1,4 +1,4 @@
-# The strategy here is to create a custom type to test that the internal functions of the 
+# The strategy here is to create a custom type to test that the internal functions of the
 # "trace" function are being used.
 mutable struct TestMeasure
     prepare::Int64
@@ -7,8 +7,8 @@ mutable struct TestMeasure
     TestMeasure() = new(0,0)
 end
 
-SystemSnoop.SnoopBase.prepare(T::TestMeasure, args...) = (T.prepare += 1; Int[])
-SystemSnoop.SnoopBase.measure(T::TestMeasure, args...) = (T.measure += 1; T.measure)
+SystemSnoop.typehint(::TestMeasure) = Int
+SystemSnoop.measure(T::TestMeasure, kw) = (T.measure += 1; T.measure)
 
 @testset "Testing Trace Kernel Functions" begin
 

@@ -24,7 +24,10 @@ mutable struct Snooper{NT <: NamedTuple, A <: NamedTuple, P <: AbstractProcess, 
         kw = NamedTuple{keys(kw)}(values(kw))
 
         # Determine the container type for results.
-        trace_eltype = NamedTuple{keys(measurements), Tuple{typehint.(Tuple(measurements))...}}
+        trace_eltype = NamedTuple{
+            keys(measurements),
+            Tuple{_typehint.(Tuple(measurements), Ref(kw))...}
+        }
         trace = Vector{trace_eltype}()
 
         _prepare(measurements, kw)

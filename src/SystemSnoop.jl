@@ -2,7 +2,7 @@ module SystemSnoop
 
 export  snoop,
         # Measurement API
-        prepare, measure, clean,
+        measure!,
         # Process Exports
         SnoopedProcess,
         Pausable,
@@ -10,7 +10,6 @@ export  snoop,
         # Random utilities
         Forever,
         Timeout,
-        increment!,
         PIDException,
         pause,
         resume,
@@ -30,7 +29,7 @@ using Dates
 include("process.jl")
 include("trace.jl")
 include("base.jl")
-include("util.jl")
+include("utils.jl")
 
 end # module
 

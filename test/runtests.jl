@@ -2,6 +2,7 @@ using SystemSnoop
 using Test
 using Combinatorics
 using BenchmarkTools
+using Dates
 
 # Set up some variables for running the test programs.
 TESTDIR = @__DIR__
@@ -18,20 +19,22 @@ SnoopTest.build()
 ##### Test Suits
 #####
 
+include("base.jl")
+
 # Core functionality
-include("util.jl")
-include("rangevector.jl")
+#include("util.jl")
+#include("rangevector.jl")
 
 # idle page tracking
-include("idlepages/vma.jl")
-include("idlepages/idlepages.jl")
-include("idlepages/timing.jl")
+#include("idlepages/vma.jl")
+#include("idlepages/idlepages.jl")
+#include("idlepages/timing.jl")
 
 # trace function
-include("trace.jl")
+#include("trace.jl")
 
 # Larger tests
-include("programs.jl")
+#include("programs.jl")
 
 # Test analysis
-include("analysis/reusedistance.jl")
+#include("analysis/reusedistance.jl")
