@@ -41,6 +41,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "trace/#SystemSnoop.Timestamp",
+    "page": "Traces",
+    "title": "SystemSnoop.Timestamp",
+    "category": "type",
+    "text": "Collect timestamps.\n\n\n\n\n\n"
+},
+
+{
     "location": "trace/#Traces-1",
     "page": "Traces",
     "title": "Traces",
@@ -54,6 +62,30 @@ var documenterSearchIndex = {"docs": [
     "title": "Process",
     "category": "page",
     "text": ""
+},
+
+{
+    "location": "process/#SystemSnoop.SnoopedProcess",
+    "page": "Process",
+    "title": "SystemSnoop.SnoopedProcess",
+    "category": "type",
+    "text": "Struct container a pid as well as auxiliary data structure to make the snooping process more efficient. SnoopedProcesses come in two variants, Pausable and Unpausable.\n\nPausable processes will be paused before a set of measurements are taken by calling kill -STOP and resumed after afterwards by calling kill -CONT. Unpausable processes will not be touched.\n\nTo construct a Pausable process with pid, call\n\nps = SnoopedProcess{Pausable}(pid)\n\nTo construct an Unpausable process, call\n\nps = SnoopedProcess{Unpausable}(pid)\n\nFields\n\npid::Int64 - The pid of the process.\n\nMethods\n\ngetpid - Get the PID of this process.\nisrunning - Return true if process is running.\nprehook - Method to call before measurements.\nposthook - Method to call after measurements.\n\n\n\n\n\n"
+},
+
+{
+    "location": "process/#SystemSnoop.posthook-Tuple{SnoopedProcess{Pausable}}",
+    "page": "Process",
+    "title": "SystemSnoop.posthook",
+    "category": "method",
+    "text": "posthook(P::AbstractProcess)\n\nIf P is a pausable process, unpause P.\n\n\n\n\n\n"
+},
+
+{
+    "location": "process/#SystemSnoop.prehook-Tuple{SnoopedProcess{Pausable}}",
+    "page": "Process",
+    "title": "SystemSnoop.prehook",
+    "category": "method",
+    "text": "prehook(P::AbstractProcess)\n\nIf P is a pausable process, pause P.\n\n\n\n\n\n"
 },
 
 {
@@ -153,22 +185,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/diskio/#SystemSnoop.DiskIO",
-    "page": "Disk IO",
-    "title": "SystemSnoop.DiskIO",
-    "category": "type",
-    "text": "Read from /proc/diskstats for a set of devices.  Return a Dict{Symbol,DiskStats} where the keys are the devices being measured and the values are DiskStats for each device.\n\nFields\n\ndevices::Vector{String} - Names of devices for which to take measurements.\n\nConstructor\n\nSystemSnoop.DiskIO(devices) -> DiskIO\n\nDocumentation on /proc/diskstats\n\nThe /proc/diskstats file displays the I/O statistics of block devices. Each line contains the following 14 fields:\n\n 1 - major number\n 2 - minor mumber\n 3 - device name\n 4 - reads completed successfully\n 5 - reads merged\n 6 - sectors read\n 7 - time spent reading (ms)\n 8 - writes completed\n 9 - writes merged\n10 - sectors written\n11 - time spent writing (ms)\n12 - I/Os currently in progress\n13 - time spent doing I/Os (ms)\n14 - weighted time spent doing I/Os (ms)\n\nKernel 4.18+ appends four more fields for discard tracking putting the total at 18:\n\n15 - discards completed successfully\n16 - discards merged\n17 - sectors discarded\n18 - time spent discarding\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/diskio/#SystemSnoop.DiskStats",
-    "page": "Disk IO",
-    "title": "SystemSnoop.DiskStats",
-    "category": "type",
-    "text": "Storate for DiskIO.\n\nFields\n\nreads_completed - Reads successfully completed\nreads_merged\nsectors_read\ntime_reading (units: ms). Note that this field is for all pending operations, and will   add time for multiple read requests.\nwrites_completed\nwrites_merged\nsectors_written\ntime_writing (units: ms). Note that this field is for all pending operations, and will   add time for multiple read requests.\ntime_io (units: ms). Note, this is wall for the total time this disk was busy.\n\n\n\n\n\n"
-},
-
-{
     "location": "measurements/diskio/#Disk-IO-1",
     "page": "Disk IO",
     "title": "Disk IO",
@@ -182,22 +198,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Process IO",
     "category": "page",
     "text": ""
-},
-
-{
-    "location": "measurements/processio/#SystemSnoop.BytesIO",
-    "page": "Process IO",
-    "title": "SystemSnoop.BytesIO",
-    "category": "type",
-    "text": "Struct representing measurements for ProcessIO\n\nFields\n\nrchar - Characters Read.  The number of bytes which this task has caused to be read    from storage.  This is simply the sum of bytes which this process passed  to  read(2)     and  similar  system calls. It  includes  things such as terminal I/O and is unaffected    by whether or not actual physical disk I/O was required (the read might have been    satisfied from pagecache).\nwchar - Characters Written. The number of bytes which this task has caused, or shall    cause to be written to disk.  Similar caveats apply here as with rchar.\nread_bytes - Attempt to count the number of bytes which this process really did cause to    be fetched from the storage layer.  This is accurate for block-backed filesystems.\nwrite_bytes - Attempt to count the number of bytes which this process caused to be sent    to the storage layer.\n\n\n\n\n\n"
-},
-
-{
-    "location": "measurements/processio/#SystemSnoop.ProcessIO",
-    "page": "Process IO",
-    "title": "SystemSnoop.ProcessIO",
-    "category": "type",
-    "text": "Record the rchar, wchar, read_bytes, and write_bytes fields of /proc/pid/io.\n\nEach measurement returns a BytesIO object.\n\nExample read from /proc/pid/io:\n\nrchar: 3089822\nwchar: 139463\nsyscr: 159\nsyscw: 178\nread_bytes: 0\nwrite_bytes: 4096\ncancelled_write_bytes: 0\n\nbecomes\n\nBytesIO(3089822, 139463, 0, 4096)\n\n\n\n\n\n"
 },
 
 {
@@ -233,14 +233,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "measurements/statm/#SystemSnoop.Statm",
-    "page": "Statm",
-    "title": "SystemSnoop.Statm",
-    "category": "type",
-    "text": "Record the size and resident fields of /proc/[pid]/statm.\n\nEach measurement returns a NamedTuple with names size and resident.\n\nFrom the man page:\n\n/proc/[pid]/statm\n      Provides information about memory usage, measured in pages.  The columns are:\n\n          size       (1) total program size\n                     (same as VmSize in /proc/[pid]/status)\n          resident   (2) resident set size\n                     (same as VmRSS in /proc/[pid]/status)\n          shared     (3) number of resident shared pages (i.e., backed by a file)\n                     (same as RssFile+RssShmem in /proc/[pid]/status)\n          text       (4) text (code)\n          lib        (5) library (unused since Linux 2.6; always 0)\n          data       (6) data + stack\n          dt         (7) dirty pages (unused since Linux 2.6; always 0)            \n\n\n\n\n\n"
-},
-
-{
     "location": "measurements/statm/#Statm-1",
     "page": "Statm",
     "title": "Statm",
@@ -254,14 +246,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Uptime",
     "category": "page",
     "text": ""
-},
-
-{
-    "location": "measurements/uptime/#SystemSnoop.Uptime",
-    "page": "Uptime",
-    "title": "SystemSnoop.Uptime",
-    "category": "type",
-    "text": "Record the uptime metrics of a process.\n\nTODO: Document\n\n\n\n\n\n"
 },
 
 {
