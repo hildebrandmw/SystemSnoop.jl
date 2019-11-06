@@ -4,17 +4,6 @@
 prepare(::T, kw) where {T} = nothing
 
 """
-    allow_retype(x) -> Val{false}
-
-By default, disables automatic checking of compiler return type for `measure(x, kw)` when
-inferring storage. Instead, falls back to `typehint(x)`.
-
-Extending this for your types to return `Val{true}()` will instead use
-`Core.Compiler.return_type`.
-"""
-allow_rettype(::Any) = Val{false}()
-
-"""
     typehint(::Any)
 
 Extend this function with the expected return type from `measure`.
@@ -24,9 +13,22 @@ return type for your measurement.
 """
 typehint(::Any) = Any
 
-_typehint(x::Any, kw) = _typehint(allow_rettype(x), x, kw)
-_typehint(::Val{false}, x, kw) = typehint(x)
-_typehint(::Val{true}, x...) = Core.Compiler.return_type(measure, typeof.(x))
+# If the user has extended `typehint(x)` - return the result of that.
+#
+# Otherwise - the best we can do is `Any` anyways, so we might as well to invoke the
+# compiler to get a return type.
+#
+# Since Tuples are covariant anyways, being looser with our type information will not be
+# incorrect.
+_typehint(x::Any, kw) = _typehint(typehint(x), x, kw)
+
+function _typehint(::Any, x, kw) 
+    err = ArgumentError("SystemSnoop.typehint(::$(typeof(x))) must return a DataType")
+    throw(err)
+end
+_typehint(::Type{T}, x, kw) where {T} = T
+_typehint(::Type{Any}, x, kw) = Base.promote_op(measure, typeof(x), typeof(kw))
+
 
 """
     measure(x, kw)
@@ -37,9 +39,10 @@ passed to [`snoop`](@ref).
 measure(::T, kw) where {T} = error("Implement `measure` for $T")
 
 """
-    clean(M) -> Nothing
+    clean(x, [kw]) -> Nothing
 
-Performan any cleanup needed by your measurement. This method is optional.
+Perform any cleanup needed by your measurement. This method is optional.
 """
+clean(x, kw) = clean(x)
 clean(::T) where {T} = nothing
 

@@ -19,19 +19,16 @@ mutable struct Snooper{NT <: NamedTuple, A <: NamedTuple, P <: AbstractProcess, 
     iscleaned::Bool
 
     # Inner constructor to attach finalizer
-    function Snooper(measurements::NT, process::P = GlobalProcess(); kw...) where {P, NT}
-        # Turn any keywords into NamedTuples
-        kw = NamedTuple{keys(kw)}(values(kw))
-
+    function Snooper(measurements::NamedTuple{names,types}, process::P, kw::N) where {names, types, P, N <: NamedTuple}
         # Determine the container type for results.
         trace_eltype = NamedTuple{
-            keys(measurements),
+            names,
             Tuple{_typehint.(Tuple(measurements), Ref(kw))...}
         }
         trace = Vector{trace_eltype}()
 
         _prepare(measurements, kw)
-        snooper = new{NT, typeof(kw), P, Vector{trace_eltype}}(
+        snooper = new{NamedTuple{names,types}, N, P, Vector{trace_eltype}}(
             measurements,
             kw,
             process,
@@ -42,6 +39,11 @@ mutable struct Snooper{NT <: NamedTuple, A <: NamedTuple, P <: AbstractProcess, 
         finalizer(clean, snooper)
         return snooper
     end
+end
+
+# Forward keyword arguments to a NamedTuple.
+function Snooper(measurements::NamedTuple, process::AbstractProcess = GlobalProcess(); kw...)
+    return Snooper(measurements, process, (;kw...))
 end
 
 function measure!(S::Snooper)

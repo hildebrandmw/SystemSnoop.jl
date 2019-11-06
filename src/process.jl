@@ -1,17 +1,13 @@
 ## AbstractProcess ##
 abstract type AbstractProcess end
-pause(P::AbstractProcess) = pause(getpid(P))
-resume(P::AbstractProcess) = resume(getpid(P))
-
-abstract type AbstractPausable end
-struct Unpausable <: AbstractPausable end
-struct Pausable <: AbstractPausable end
+prehook(::AbstractProcess) = nothing
+posthook(::AbstractProcess) = nothing
 
 struct GlobalProcess <: AbstractProcess end
-pause(::GlobalProcess) = nothing
-resume(::GlobalProcess) = nothing
-getpid(::GlobalProcess) = 0
 isrunning(::GlobalProcess) = true
+
+struct Unpausable end
+struct Pausable end
 
 """
 Struct container a `pid` as well as auxiliary data structure to make the snooping process
@@ -41,13 +37,16 @@ Methods
 * [`prehook`](@ref) - Method to call before measurements.
 * [`posthook`](@ref) - Method to call after measurements.
 """
-struct SnoopedProcess{P <: AbstractPausable} <: AbstractProcess
+struct SnoopedProcess{P} <: AbstractProcess
     pid :: Int64
 end
 
 getpid(P::SnoopedProcess) = P.pid
 isrunning(P::SnoopedProcess) = isrunning(getpid(P))
 SnoopedProcess(pid::Integer) = SnoopedProcess{Unpausable}(pid)
+
+pause(S::SnoopedProcess{Pausable}) = pause(getpid(S))
+resume(S::SnoopedProcess{Pausable}) = resume(getpid(S))
 
 # Before measurements
 """
@@ -56,7 +55,6 @@ SnoopedProcess(pid::Integer) = SnoopedProcess{Unpausable}(pid)
 If `P` is a pausable process, pause `P`.
 """
 prehook(P::SnoopedProcess{Pausable}) = pause(P)
-prehook(P::AbstractProcess) = nothing
 
 # After measurements
 """
@@ -65,5 +63,4 @@ prehook(P::AbstractProcess) = nothing
 If `P` is a pausable process, unpause `P`.
 """
 posthook(P::SnoopedProcess{Pausable}) = resume(P)
-posthook(P::AbstractProcess) = nothing
 
