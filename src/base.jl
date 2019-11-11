@@ -1,7 +1,8 @@
 """
-    prepare(x, kw)
+    prepare(x, [kw])
 """
-prepare(::T, kw) where {T} = nothing
+prepare(::Any) = nothing
+prepare(x, kw) = prepare(x)
 
 """
     typehint(::Any)
@@ -22,7 +23,7 @@ typehint(::Any) = Any
 # incorrect.
 _typehint(x::Any, kw) = _typehint(typehint(x), x, kw)
 
-function _typehint(::Any, x, kw) 
+function _typehint(::Any, x, kw)
     err = ArgumentError("SystemSnoop.typehint(::$(typeof(x))) must return a DataType")
     throw(err)
 end
@@ -31,12 +32,13 @@ _typehint(::Type{Any}, x, kw) = Base.promote_op(measure, typeof(x), typeof(kw))
 
 
 """
-    measure(x, kw)
+    measure(x, [kw])
 
 Perform a measurement for `x`. Argument `kw` is a `NamedTuple` of the keyword arguments
 passed to [`snoop`](@ref).
 """
-measure(::T, kw) where {T} = error("Implement `measure` for $T")
+measure(::T) where {T} = error("Implement `measure` for $T")
+measure(x, kw) = measure(x)
 
 """
     clean(x, [kw]) -> Nothing
