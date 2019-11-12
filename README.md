@@ -58,5 +58,5 @@ pkg> dev ./SystemSnoop
 [travis-img]: https://travis-ci.org/hildebrandmw/SystemSnoop.jl.svg?branch=master
 [travis-url]: https://travis-ci.org/hildebrandmw/SystemSnoop.jl
 
-[codecov-img]: http://codecov.io/github/hildebrandmw/SystemSnoop.jl/coverage.svg?branch=master
-[codecov-url]: http://codecov.io/github/hildebrandmw/SystemSnoop.jl?branch=master
+[codecov-img]: https://codecov.io/gh/hildebrandmw/SystemSnoop.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/hildebrandmw/SystemSnoop.jl
