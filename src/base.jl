@@ -1,5 +1,18 @@
 """
-    prepare(x, [kw])
+    prepare(x, [kw::NamedTuple])
+
+Perform any preparation steps required for measurement type `x`.
+
+If no external arguments are required, you can simply extend
+```julia
+SystemSnoop.prepare(x)
+```
+for `typeof(x)`.
+
+Otherwise, you will recieve a named tuple `kw` corresponding to the keyword arguments
+passed to the enclosing call to [`snoop`](@ref).
+
+This method is optional.
 """
 prepare(::Any) = nothing
 prepare(x, kw) = prepare(x)
@@ -8,9 +21,9 @@ prepare(x, kw) = prepare(x)
     typehint(::Any)
 
 Extend this function with the expected return type from `measure`.
+If this method is not defined, SystemSnoop will fallback on Julia's type inference.
 
-Alternatively, you may extend [`allow_rettype`](@ref) to use the compiler's expected
-return type for your measurement.
+This method is optional.
 """
 typehint(::Any) = Any
 
@@ -30,12 +43,13 @@ end
 _typehint(::Type{T}, x, kw) where {T} = T
 _typehint(::Type{Any}, x, kw) = Base.promote_op(measure, typeof(x), typeof(kw))
 
-
 """
     measure(x, [kw])
 
-Perform a measurement for `x`. Argument `kw` is a `NamedTuple` of the keyword arguments
-passed to [`snoop`](@ref).
+Perform a measurement for `x`. Optional argument `kw` is a `NamedTuple` of the keyword
+arguments passed to [`snoop`](@ref).
+
+This method is required.
 """
 measure(::T) where {T} = error("Implement `measure` for $T")
 measure(x, kw) = measure(x)
