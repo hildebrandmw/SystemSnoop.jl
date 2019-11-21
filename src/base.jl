@@ -17,6 +17,9 @@ This method is optional.
 prepare(::Any) = nothing
 prepare(x, kw) = prepare(x)
 
+# Use `Sentinel` for dispatch purposes.
+struct Sentinel end
+
 """
     typehint(::Any)
 
@@ -25,7 +28,7 @@ If this method is not defined, SystemSnoop will fallback on Julia's type inferen
 
 This method is optional.
 """
-typehint(::Any) = Any
+typehint(::Any) = Sentinel
 
 # If the user has extended `typehint(x)` - return the result of that.
 #
@@ -40,8 +43,8 @@ function _typehint(::Any, x, kw)
     err = ArgumentError("SystemSnoop.typehint(::$(typeof(x))) must return a DataType")
     throw(err)
 end
-_typehint(::Type{T}, x, kw) where {T} = T
-_typehint(::Type{Any}, x, kw) = Base.promote_op(measure, typeof(x), typeof(kw))
+@inline _typehint(::Type{T}, x, kw) where {T} = T
+@inline _typehint(::Type{Sentinel}, x, kw) = Base.promote_op(measure, typeof(x), typeof(kw))
 
 """
     measure(x, [kw])
@@ -51,7 +54,7 @@ arguments passed to [`snoop`](@ref).
 
 This method is required.
 """
-measure(::T) where {T} = error("Implement `measure` for $T")
+measure(x::T) where {T} = error("Implement `measure` for $T")
 measure(x, kw) = measure(x)
 
 """
