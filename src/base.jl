@@ -60,5 +60,17 @@ measure(x, kw) = measure(x)
 Perform any cleanup needed by your measurement. This method is optional.
 """
 clean(x, kw) = clean(x)
-clean(::T) where {T} = nothing
+clean(::Any) = nothing
+
+"""
+    postprocess(x, v, [kw]) -> NamedTuple
+
+Perform any post-processing for the measured data `v` from measurement `x`.
+
+* If a `NamedTuple` is returned, the names from the tuple will be inlined into the collected
+data.
+"""
+postprocess(x, v, kw) = postprocess(x, v)
+postprocess(x, v) = NamedTuple()
+
 

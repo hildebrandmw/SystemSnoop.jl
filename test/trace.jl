@@ -16,6 +16,8 @@ function SystemSnoop.measure(x::Incrementer, kw)
     return x.count
 end
 
+SystemSnoop.postprocess(x::Incrementer, v) = (:incrementer = x.count,)
+
 function inference_check()
     measurements = (
         timestamp = SystemSnoop.Timestamp(),
@@ -28,6 +30,7 @@ function inference_check()
             sleep(0.01)
             measure!(snooper)
         end
+        return SystemSnoop.postprocess(snooper)
     end
 end
 
@@ -62,12 +65,18 @@ end
     @inferred inference_check()
 
     # Try some other variants of `snoop`
-    trace = snoop(getpid(), measurements; increment = increment) do snooper
+    #
+    # Also make sure that placing in a return value is forwareded properly to the top level.
+    trace, ret = snoop(getpid(), measurements; increment = increment) do snooper
         for _ in SystemSnoop.Timeout(Dates.Second(1))
             measure!(snooper)
             sleep(0.1)
         end
+        return "test me"
     end
+
+    @test isa(trace, StructArrays.StructArray)
+    @test ret == "test me"
 
     # Lave a little wiggle room.
     @test length(trace) > 9

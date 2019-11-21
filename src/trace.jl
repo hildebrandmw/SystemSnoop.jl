@@ -25,10 +25,11 @@ mutable struct Snooper{NT <: NamedTuple, A <: NamedTuple, P <: AbstractProcess, 
             names,
             Tuple{_typehint.(Tuple(measurements), Ref(kw))...}
         }
-        trace = Vector{trace_eltype}()
+
+        trace = StructArrays.StructArray{trace_eltype}(undef, 0)
 
         _prepare(measurements, kw)
-        snooper = new{NamedTuple{names,types}, N, P, Vector{trace_eltype}}(
+        snooper = new{NamedTuple{names,types}, N, P, typeof(trace)}(
             measurements,
             kw,
             process,
@@ -61,6 +62,17 @@ function clean(S::Snooper)
     return nothing
 end
 
+# Call `postprocess` on each of the measurements, gathering only the non-empty results
+function postprocess(S::Snooper)
+    # Temporarily strip the `StructArrays` semantics from the NamedTuple so we can do some
+    # tuple tricks with it.
+    arrays = StructArrays.fieldarrays(S.trace)
+
+    # Call `process` on the measurement - trace pairs.
+    processed_data = postprocess.(Tuple(S.measurements), Tuple(arrays), Ref(S.kw))
+    return merge(processed_data...)
+end
+
 # Broadcasting inner methods
 _prepare(measurements::NamedTuple, kw) = prepare.(Tuple(measurements), Ref(kw))
 
@@ -77,12 +89,20 @@ isrunning(S::Snooper) = isrunning(S.process)
 ##### `snoop`
 #####
 
+maybewrap(x, ::Nothing) = x
+maybewrap(x, y) = (x, y)
+
 snoop(f, measurements::NamedTuple; kw...) = snoop(f, GlobalProcess(), measurements; kw...)
 function snoop(f, process::AbstractProcess, measurements::NamedTuple; kw...)
     snooper = Snooper(measurements, process; kw...)
-    f(snooper)
+    val = f(snooper)
     clean(snooper)
-    return snooper.trace
+
+    # Capture the returned value from the inner function.
+    # If they wanted to return something, wrap it up with the trace for them.
+    #
+    # This provides a nice API for explicitly performing post-processing
+    return maybewrap(snooper.trace, val)
 end
 
 # Specilizations for some stuff

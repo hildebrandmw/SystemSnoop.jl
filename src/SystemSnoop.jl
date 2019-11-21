@@ -19,6 +19,7 @@ export  snoop,
 
 import Base: iterate, IteratorSize, IsInfinite, getpid, tail
 using Dates
+using StructArrays: StructArrays
 
 #####
 ##### File Includes
