@@ -2,7 +2,7 @@
 
 | **Documentation**                                                               | **Build Status**                                                                                |
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-latest-img]][docs-latest-url] | [![][travis-img]][travis-url] ![][lifecycle-img] [![][codecov-img]][codecov-url] |
+| [![][docs-latest-img]][docs-latest-url] | [![][travis-img]][travis-url] [![][lifecycle-img]][lifecycle-url] [![][codecov-img]][codecov-url] |
 
 Base API for unifying the collection of data for computer systems monitoring purposes.
 This is particularly useful when writing measurement to gather either system wide metrics (such as DRAM bandwidth, total number of L3 cache hits etc.) or process specific metrics (CPU usage, memory usge etc.)
@@ -219,7 +219,8 @@ Which generates the following plot
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://hildebrandmw.github.io/SystemSnoop.jl/latest
 
-[lifecycle-img]: https://img.shields.io/badge/lifecycle-experimental-orange.svg
+[lifecycle-img]: https://img.shields.io/badge/lifecycle-maturing-blue.svg
+[lifecycle-url]: https://www.tidyverse.org/lifecycle/
 
 [travis-img]: https://travis-ci.org/hildebrandmw/SystemSnoop.jl.svg?branch=master
 [travis-url]: https://travis-ci.org/hildebrandmw/SystemSnoop.jl
