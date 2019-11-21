@@ -32,7 +32,10 @@ function SystemSnoop.measure(x::TestA, kw)
     return x.measure_count
 end
 SystemSnoop.clean(x::TestA) = (x.clean_count += 1)
-SystemSnoop.postproces(x::TestA, v) = (Symbol("x$(x.num)") = "it works!",)
+function SystemSnoop.postprocess(x::TestA, v) 
+    pair = (Symbol("x$(x.num)") => "it works!",)
+    return (;pair...)
+end
 
 _tupletype(::Type{NamedTuple{N,T}}) where {N,T} = T
 _keys(::Type{NamedTuple{N,T}}) where {N,T} = N
@@ -94,6 +97,6 @@ _keys(::Type{NamedTuple{N,T}}) where {N,T} = N
 
     # Now make sure `postprocess` works.
     processed = SystemSnoop.postprocess(snooper)
-    @test processed == (:x1 = "it works!", :x2 = "it works!")
+    @test processed == (x1 = "it works!", x2 = "it works!")
 end
 

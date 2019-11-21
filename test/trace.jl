@@ -16,7 +16,7 @@ function SystemSnoop.measure(x::Incrementer, kw)
     return x.count
 end
 
-SystemSnoop.postprocess(x::Incrementer, v) = (:incrementer = x.count,)
+SystemSnoop.postprocess(x::Incrementer, v) = (incrementer = x.count,)
 
 function inference_check()
     measurements = (
