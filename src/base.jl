@@ -18,6 +18,7 @@ prepare(::Any) = nothing
 prepare(x, kw) = prepare(x)
 
 # Use `Sentinel` for dispatch purposes.
+# Using `Any` seems to cause inference to give up too early.
 struct Sentinel end
 
 """

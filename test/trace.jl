@@ -47,7 +47,7 @@ end
     # smoothly.
     iters = 3
     increment = 20
-    trace = snoop(process, measurements; increment = increment) do snooper
+    trace = snoop(measurements, process; increment = increment) do snooper
         for _ in 1:iters
             measure!(snooper)
         end
@@ -67,7 +67,7 @@ end
     # Try some other variants of `snoop`
     #
     # Also make sure that placing in a return value is forwareded properly to the top level.
-    trace, ret = snoop(getpid(), measurements; increment = increment) do snooper
+    trace, ret = snoop(measurements, getpid(); increment = increment) do snooper
         for _ in SystemSnoop.Timeout(Dates.Second(1))
             measure!(snooper)
             sleep(0.1)
@@ -83,7 +83,7 @@ end
     @test length(trace) < 11
 
     # `Cmd` version
-    trace = snoop(`sleep 1`, measurements; increment = increment) do snooper
+    trace = snoop(measurements, `sleep 1`; increment = increment) do snooper
         for _ in SystemSnoop.Timeout(Dates.Second(1))
             measure!(snooper)
             sleep(0.1)

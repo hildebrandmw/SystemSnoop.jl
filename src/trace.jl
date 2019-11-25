@@ -92,8 +92,10 @@ isrunning(S::Snooper) = isrunning(S.process)
 maybewrap(x, ::Nothing) = x
 maybewrap(x, y) = (x, y)
 
-snoop(f, measurements::NamedTuple; kw...) = snoop(f, GlobalProcess(), measurements; kw...)
-function snoop(f, process::AbstractProcess, measurements::NamedTuple; kw...)
+"""
+    snoop(f, measurements::NamedTuple, [process = GlobalProcess()]) -> StructArray
+"""
+function snoop(f, measurements::NamedTuple, process::AbstractProcess = GlobalProcess(); kw...)
     snooper = Snooper(measurements, process; kw...)
     val = f(snooper)
     clean(snooper)
@@ -106,16 +108,16 @@ function snoop(f, process::AbstractProcess, measurements::NamedTuple; kw...)
 end
 
 # Specilizations for some stuff
-snoop(f, pid::Integer, x...; kw...) = snoop(f, SnoopedProcess(pid), x...; pid = pid, kw...)
-snoop(f, process::Base.Process, x...; kw...) = snoop(f, getpid(process), x...; kw...)
-function snoop(f, cmd::Base.AbstractCmd, measurements::NamedTuple; kw...)
+snoop(f, x, pid::Integer; kw...) = snoop(f, x, SnoopedProcess(pid); pid = pid, kw...)
+snoop(f, x, process::Base.Process; kw...) = snoop(f, x, getpid(process); kw...)
+function snoop(f, measurements::NamedTuple, cmd::Base.AbstractCmd; kw...)
     local process
     try
         # Launch a process
         process = run(cmd; wait = false)
 
         # Send it up the dispatch chain!
-        return snoop(f, process, measurements; kw...)
+        return snoop(f, measurements, process; kw...)
     finally
         kill(process)
     end
