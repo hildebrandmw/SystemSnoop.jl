@@ -1,34 +1,132 @@
 module SystemSnoop
 
-export  snoop,
-        # Measurement API
-        measure!,
-        # Process Exports
-        SnoopedProcess,
-        Pausable,
-        Unpausable,
-        # Random utilities
-        Forever,
-        Timeout,
-        PIDException,
-        pause,
-        resume,
-        isrunning,
-        SmartSample,
-        Timestamp
+export @snooped
 
-import Base: iterate, IteratorSize, IsInfinite, getpid, tail
 using Dates
-using StructArrays: StructArrays
+import StructArrays
 
 #####
-##### File Includes
+##### Sample periodically
 #####
 
-include("process.jl")
-include("trace.jl")
-include("base.jl")
-include("utils.jl")
+"""
+    SystemSnoop.SmartSample(t::TimePeriod) -> SmartSample
+
+Smart Sampler to ensure measurements happen every `t` time units. Samples will happen at
+multiples of `t` from the first measurement. If a sample period is missed, the sampler will
+wait until the next appropriate multiple of `t`.
+"""
+mutable struct SmartSample{T <: TimePeriod}
+    initial::DateTime
+    increment::T
+    iteration::Int64
+end
+
+SmartSample(s::TimePeriod) = SmartSample(now(), s, 0)
+function Base.sleep(s::SmartSample)
+    # Initialize the sampler
+    if s.iteration == 0
+        s.initial = now()
+        s.iteration = 1
+    end
+
+    # Compute the amount of time we need to sleep
+    sleeptime = s.initial + (s.iteration * s.increment) - now()
+
+    # In case measurements took longer than anticipated
+    while sleeptime < zero(sleeptime)
+        s.iteration += 1
+        sleeptime = s.initial + (s.iteration * s.increment) - now()
+    end
+    sleep(sleeptime)
+    s.iteration += 1
+    return nothing
+end
+
+#####
+##### API
+#####
+
+"""
+    prepare(x)
+
+This method is optional.
+"""
+prepare(::Any) = nothing
+
+"""
+    measure(x)
+
+Perform a measurement for `x`.
+
+This method is required.
+"""
+measure(x::T) where {T} = error("Implement `measure` for $T")
+
+"""
+    clean(x) -> Nothing
+
+Perform any cleanup needed by your measurement. This method is optional.
+"""
+clean(::Any) = nothing
+
+#####
+##### Timestamp
+#####
+
+struct Timestamp end
+measure(::Timestamp) = now()
+
+#####
+##### Snoop Loop
+#####
+
+function snooploop(nt::NamedTuple, milliseconds::Integer, canexit)
+    return snooploop(nt, Dates.Millisecond(milliseconds), canexit)
+end
+
+function snooploop(nt::NamedTuple, sleeptime::TimePeriod, canexit)
+    return snooploop(nt, SmartSample(sleeptime), canexit)
+end
+
+function snooploop(nt::NamedTuple, sampler, canexit)
+    prepare(nt)
+    # Do the first measurement
+    sleep(sampler)
+    trace = StructArrays.StructArray([measure(nt)])
+    while !canexit[]
+        sleep(sampler)
+        push!(trace, measure(nt))
+    end
+    clean(nt)
+    return trace
+end
+
+prepare(nt::NamedTuple) = prepare.(Tuple(nt))
+clean(nt::NamedTuple) = clean.(Tuple(nt))
+
+@generated function measure(nt::NamedTuple{names}) where {names}
+    exprs = [:(measure(nt.$name)) for name in names]
+    return :(NamedTuple{($(QuoteNode.(names)...),)}(($(exprs...),)))
+end
+
+#####
+##### Macro
+#####
+
+macro snooped(nt, sampler, expr)
+    return quote
+        canexit = Ref(false)
+        task = @async snooploop($(esc(nt)), $(esc(sampler)), canexit)
+
+        # Splice in the expression.
+        $(esc(expr))
+
+        # Expression done, let the snooper know to finish up.
+        canexit[] = true
+        fetch(task)
+    end
+end
 
 end # module
 
