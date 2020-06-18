@@ -3,7 +3,7 @@ module SystemSnoop
 export @snooped
 
 using Dates
-import StructArrays
+import StructArrays: StructArray
 
 #####
 ##### Sample periodically
@@ -93,7 +93,7 @@ function snooploop(nt::NamedTuple, sampler, canexit)
     prepare(nt)
     # Do the first measurement
     sleep(sampler)
-    trace = StructArrays.StructArray([measure(nt)])
+    trace = StructArray([measure(nt)])
     while !canexit[]
         sleep(sampler)
         push!(trace, measure(nt))
@@ -105,10 +105,11 @@ end
 prepare(nt::NamedTuple) = prepare.(Tuple(nt))
 clean(nt::NamedTuple) = clean.(Tuple(nt))
 
-@generated function measure(nt::NamedTuple{names}) where {names}
-    exprs = [:(measure(nt.$name)) for name in names]
-    return :(NamedTuple{($(QuoteNode.(names)...),)}(($(exprs...),)))
+function measure(nt::NamedTuple{names}) where {names}
+    return NamedTuple{names}(measure.(Tuple(nt)))
 end
+
+container(nt::NamedTuple) = StructArray{Base.promote_op(measure, typeof(nt))}(undef, 0)
 
 #####
 ##### Macro
