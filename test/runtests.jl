@@ -71,6 +71,7 @@ end
     increment = 20
     trace = @snooped measurements 1000 sleep(2)
 
+    # Test that inference works correctly
     expected = Base.promote_op(
         SystemSnoop.snooploop,
         typeof(measurements),
@@ -79,6 +80,7 @@ end
     )
     @test typeof(trace) == expected
 
+    # Were the correct methods called?
     @test incrementer.prepare_count == 1
     @test incrementer.clean_count == 1
 

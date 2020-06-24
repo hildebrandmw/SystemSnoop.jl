@@ -81,15 +81,15 @@ measure(::Timestamp) = now()
 ##### Snoop Loop
 #####
 
-function snooploop(nt::NamedTuple, milliseconds::Integer, canexit)
+function snooploop(nt::NamedTuple, milliseconds::Integer, canexit::Ref{Bool})
     return snooploop(nt, Dates.Millisecond(milliseconds), canexit)
 end
 
-function snooploop(nt::NamedTuple, sleeptime::TimePeriod, canexit)
+function snooploop(nt::NamedTuple, sleeptime::TimePeriod, canexit::Ref{Bool})
     return snooploop(nt, SmartSample(sleeptime), canexit)
 end
 
-function snooploop(nt::NamedTuple, sampler, canexit)
+function snooploop(nt::NamedTuple, sampler, canexit::Ref{Bool})
     prepare(nt)
     # Do the first measurement
     sleep(sampler)
@@ -103,11 +103,8 @@ function snooploop(nt::NamedTuple, sampler, canexit)
 end
 
 prepare(nt::NamedTuple) = prepare.(Tuple(nt))
+measure(nt::NamedTuple{names}) where {names} = NamedTuple{names}(measure.(Tuple(nt)))
 clean(nt::NamedTuple) = clean.(Tuple(nt))
-
-function measure(nt::NamedTuple{names}) where {names}
-    return NamedTuple{names}(measure.(Tuple(nt)))
-end
 
 container(nt::NamedTuple) = StructArray{Base.promote_op(measure, typeof(nt))}(undef, 0)
 
