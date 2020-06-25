@@ -81,24 +81,26 @@ measure(::Timestamp) = now()
 ##### Snoop Loop
 #####
 
-function snooploop(nt::NamedTuple, milliseconds::Integer, canexit::Ref{Bool})
-    return snooploop(nt, Dates.Millisecond(milliseconds), canexit)
+function snooploop(x, milliseconds::Integer, canexit::Ref{Bool})
+    return snooploop(x, Dates.Millisecond(milliseconds), canexit)
 end
 
-function snooploop(nt::NamedTuple, sleeptime::TimePeriod, canexit::Ref{Bool})
-    return snooploop(nt, SmartSample(sleeptime), canexit)
+function snooploop(x, sleeptime::TimePeriod, canexit::Ref{Bool})
+    return snooploop(x, SmartSample(sleeptime), canexit)
 end
 
-function snooploop(nt::NamedTuple, sampler, canexit::Ref{Bool})
-    prepare(nt)
+function snooploop(x, sampler, canexit::Ref{Bool})
+    prepare(x)
     # Do the first measurement
     sleep(sampler)
-    trace = StructArray([measure(nt)])
+
+    trace = container(x)
+    push!(trace, measure(x))
     while !canexit[]
         sleep(sampler)
-        push!(trace, measure(nt))
+        push!(trace, measure(x))
     end
-    clean(nt)
+    clean(x)
     return trace
 end
 
@@ -138,6 +140,7 @@ end
 Return an empty `StructArray` that can hold elements of type `measure(nt)`.
 """
 container(nt::NamedTuple) = StructArray{Base.promote_op(measure, typeof(nt))}(undef, 0)
+container(x::T) where {T} = Vector{Base.promote_op(measure, T)}(undef, 0)
 
 #####
 ##### Macro
@@ -182,11 +185,14 @@ macro snooped(nt, sampler, expr)
         canexit = Ref(false)
         task = @async snooploop($(esc(nt)), $(esc(sampler)), canexit)
 
-        # Splice in the expression.
-        $(esc(expr))
+        try
+            # Splice in the expression.
+            $(esc(expr))
+        finally
+            # Expression done, let the snooper know to finish up.
+            canexit[] = true
+        end
 
-        # Expression done, let the snooper know to finish up.
-        canexit[] = true
         fetch(task)
     end
 end

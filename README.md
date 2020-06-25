@@ -9,49 +9,30 @@ This is particularly useful when writing measurement to gather either system wid
 
 For a measurement of Julia type `T`, SystemSnoop requires the implementation of a single method
 ```julia
-SystemSnoop.measure(x::T, [kw]) where {T}
+SystemSnoop.measure(x::T) where {T}
 ```
-to be compatible, where `kw` is an optional `NamedTuple` if the measurement requires additional external arguments (described below).
+to be compatible.
 When called, `measure(x)` should return a measurement value when called.
 
-## Snoop Function
+## Snooped Macro
 
-The main exported function for this module is
+The main export for this module is
 ```julia
-snoop(f, measurements::NamedTuple, [process = GlobalProcess()]; kw...) -> trace
+trace = @snooped measurement(s) sampletime expr
 ```
-where
-* `f` is a function that accepts a single argument of type `SystemSnoop.Snooper` (discussed below)
-* `measurements` is a `NamedTuple` where each **value** in the `NamedTuple` implements the SystemSnoop API.
-* `process` is an `AbstractProcess`.
-* `kw...` is a collection of keyword arguments that will be converted to a `NamedTuple` and forwared as a second positional argument to the SystemSnoop API functions.
+which takes measurements from `measurement(s)` every `sampletime` while concurrently running `expr`. 
 
-### Return Value
+If `sampletime` is an `Integer`, then it is interpreted as milliseconds, and so `@snooped x 500 sleep(10)` will measure `x` every 500 milliseconds.
+Alternative, `sampletime` can be an arbitrary `Dates.TimePeriod`.
 
-The function `snoop` will return a trace in the form of a [`StructArray`](https://github.com/JuliaArrays/StructArrays.jl).
+Argument `measurement(s)` can either be in instance of type `T` that implements `SystemSnoop.measure`, or a `NamedTuple` of such types.
+If `measurement` is just a single object, then `trace` will be a `Vector` of measurements.
+If `measurements` is a `NamedTuple`, then `trace` will be a [`StructArray`](https://github.com/JuliaArrays/StructArrays.jl) of measurements.
 The **propertynames** of the trace are the same as the property names of `measurements`.
 That is:
 ```
 propertynames(trace) == propertynames(measurements)
 ```
-The rows of trace correspond to subsequent calls of `measure!` on the `SystemSnoop.Snooper` type.
-
-Additionally, if the function `f` returns a value, then `snoop` will return a tuple `(trace, val)` where `val` is the return value of `f`.
-See the examples below for more detail.
-
-### `SystemSnoop.Snooper`
-
-The `Snooper` is an opaque type with two methods:
-
-```julia
-measure!(::Snooper)
-```
-Which calls `SystemSnoop.measure` on each measurement and appends this result to the current `trace`.
-
-```julia
-postprocess(::Snooper) -> NamedTuple
-```
-Call `postprocess` on each measurement, flatten the results into a NamedTuple (see detailed example below).
 
 ## Snoop API
 
@@ -60,30 +41,23 @@ Each of these function can optionally accept a second positional argument `kw::N
 
 ### Mandatory
 ```julia
-SystemSnoop.measure(x::T, [kw]) where {T}
+SystemSnoop.measure(x::T) where {T}
 ```
 Return a measurement value.
 
 ### Optional
 
 ```julia
-SystemSnoop.prepare(x::T, [kw]) where {T}
+SystemSnoop.prepare(x::T) where {T}
 ```
 Perform any steps necessary to prepare measurement `x`. 
 Called once before any measurements are taken.
 
 ```julia
-SystemSnoop.cleanup(x::T, [kw]) where {T}
+SystemSnoop.clean(x::T) where {T}
 ```
 Perform any cleanup steps necessary for measurement `x`.
 Called once just before `snoop` returns.
-
-```julia
-SystemSnoop.postprocess(x::T, v, [kw]) where {T} -> NamedTuple
-```
-Perform any post processing for measurement `x`.
-Argument `v` is the vector of measurements taken by `x`.
-Result must be a `NamedTuple` with any names.
 
 ## Simple Example
 
@@ -97,55 +71,71 @@ mutable struct DummyMeasurement
 end
 
 # Print out a message when `prepare` is called
-SystemSnoop.prepare(d::DummyMeasurement, kw) = println("Prepare Dummy Measurements: kw = ", kw)
+SystemSnoop.prepare(d::DummyMeasurement) = println("Prepare Dummy Measurements")
 
 # Increment the count according to the keyword argument `increment` and return
-function SystemSnoop.measure(d::DummyMeasurement, kw)
-    d.count += kw.increment
+function SystemSnoop.measure(d::DummyMeasurement)
+    d.count += 1
     return d.count
 end
 
-# Now, we construct a list of measurements to take in a `NamedTuple` to pass to `snoop`.
+# Now, we construct a list of measurements to take in a `NamedTuple` to pass to `@snooped`.
 measurements = (
     timestamp = SystemSnoop.Timestamp(),
     dummy = DummyMeasurement(0),
 )
 
-trace = snoop(measurements; increment = 10) do snooper
-    for _ in 1:5
-        sleep(1)
-        measure!(snooper)
-    end
-end
+# Sample every 1000 milliseconds
+trace = @snooped measurements 1000 sleep(5)
 
 # Show the results of the trace.
 display(trace)
 # 5-element StructArray(::Array{Dates.DateTime,1}, ::Array{Int64,1}) with eltype NamedTuple{(:timestamp, :dummy),Tuple{Dates.DateTime,Int64}}:
-#  (timestamp = 2019-11-25T11:55:40.699, dummy = 10)
-#  (timestamp = 2019-11-25T11:55:41.701, dummy = 20)
-#  (timestamp = 2019-11-25T11:55:42.703, dummy = 30)
-#  (timestamp = 2019-11-25T11:55:43.705, dummy = 40)
-#  (timestamp = 2019-11-25T11:55:44.707, dummy = 50)
+#  (timestamp = 2020-06-25T11:25:55.075, dummy = 1)
+#  (timestamp = 2020-06-25T11:25:56.075, dummy = 2)
+#  (timestamp = 2020-06-25T11:25:57.075, dummy = 3)
+#  (timestamp = 2020-06-25T11:25:58.075, dummy = 4)
+#  (timestamp = 2020-06-25T11:25:59.075, dummy = 5)
 
 # Since the result is a `StructArray`, we can access it either through fields or by index:
 display(trace.timetamp)
 # 5-element Array{Dates.DateTime,1}:
-#  2019-11-25T11:55:40.699
-#  2019-11-25T11:55:41.701
-#  2019-11-25T11:55:42.703
-#  2019-11-25T11:55:43.705
-#  2019-11-25T11:55:44.707
+#  2020-06-25T11:25:55.075
+#  2020-06-25T11:25:56.075
+#  2020-06-25T11:25:57.075
+#  2020-06-25T11:25:58.075
+#  2020-06-25T11:25:59.075
 
 display(trace.dummy)
 # 5-element Array{Int64,1}:
-#  10
-#  20
-#  30
-#  40
-#  50
+#  1
+#  2
+#  3
+#  4
+#  5
 
 display(trace[2])
-# (timestamp = 2019-11-25T11:55:41.701, dummy = 20)
+# (timestamp = 2020-06-25T11:25:56.075, dummy = 2)
+```
+We also don't necessarily need to construct a `NamedTuple` of measurements.
+```julia
+using Dates
+sampletime = Dates.Millisecond(10)
+x = DummyMeasurement(0)
+trace = @snooped x sampletime sleep(0.1)
+
+display(trace)
+# 10-element Array{Int64,1}:
+#   1
+#   2
+#   3
+#   4
+#   5
+#   6
+#   7
+#   8
+#   9
+#  10
 ```
 
 ## Detailed Example
@@ -192,60 +182,47 @@ end
 ```
 Now, we can test if this works
 ```julia
-measurements = (
-    statm = Statm(),
-)
+trace = @snooped Statm() 500 begin
+    # Sleep for a little bit
+    sleep(2)
 
-trace = SystemSnoop.snoop(measurements) do snooper
-    # Perform some baseline measurements 
-    for _ in 1:5
-        SystemSnoop.measure!(snooper)
-        sleep(0.1)
-    end
-
-    # Now, allocate a huge array
+    # Now, allocate a large array
     x = Vector{Float32}(undef, 250_000_000)
 
-    # Take some more samples
-    for _ in 1:5
-        SystemSnoop.measure!(snooper)
-        sleep(0.1)
-    end
+    # sleep again
+    sleep(2)
 
     # Finally, write to `x` to ensure that its memory is actually allocated by the OS
     x .= one(eltype(x))
 
-    # Take some more samples
-    for _ in 1:5
-        SystemSnoop.measure!(snooper)
-        sleep(0.1)
-    end
+    # sleep to get more samples
+    sleep(2)
 end
 
 using UnicodePlots
 
-lineplot(trace.statm; xlim = (0, 15), border = :ascii, canvas = AsciiCanvas)
+lineplot(trace; xlim = (0, 15), border = :ascii, canvas = AsciiCanvas)
 ```
 for which we see the output (if running in a fresh Julia session)
 ```
-              +----------------------------------------+
-   1300000000 |                             .__________|
-              |                             |          |
-              |                            .`          |
-              |                            |           |
-              |                            /           |
-              |                            |           |
-              |                            |           |
-              |                           .`           |
-              |                           |            |
-              |                           /            |
-              |                           |            |
-              |                           |            |
-              |                          .`            |
-              |                          |             |
-    200000000 |  """""""""""""\-----------             |
-              +----------------------------------------+
-              0                                       15
+                  +----------------------------------------+
+   1.4246346752e9 |                                        |
+                  |                        ,---------------|
+                  |                        /               |
+                  |                       ,`               |
+                  |                       .                |
+                  |                       |                |
+                  |                      .`                |
+                  |                      |                 |
+                  |                      |                 |
+                  |                      |                 |
+                  |                     ,`                 |
+                  |   __________________/                  |
+                  |                                        |
+                  |                                        |
+                0 |                                        |
+                  +----------------------------------------+
+                  0                                       13
 ```
 
 ### Explanation
@@ -281,73 +258,59 @@ function SystemSnoop.measure(::Statm)
     end
 end
 
-function SystemSnoop.postprocess(::Statm, trace)
-    return (
-        virtual = getproperty.(trace, :virtual),
-        resident = getproperty.(trace, :resident),
-    )
-end
-
 measurements = (
     statm = Statm(),
 )
 
-trace, post = SystemSnoop.snoop(measurements) do snooper
-    # Perform some baseline measurements 
-    for _ in 1:5
-        SystemSnoop.measure!(snooper)
-        sleep(0.1)
-    end
+trace = @snooped Statm() 500 begin
+    # Sleep for a little bit
+    sleep(2)
 
-    # Now, allocate a huge array
+    # Now, allocate a large array
     x = Vector{Float32}(undef, 250_000_000)
 
-    # Take some more samples
-    for _ in 1:5
-        SystemSnoop.measure!(snooper)
-        sleep(0.1)
-    end
+    # sleep again
+    sleep(2)
 
     # Finally, write to `x` to ensure that its memory is actually allocated by the OS
     x .= one(eltype(x))
 
-    # Take some more samples
-    for _ in 1:5
-        SystemSnoop.measure!(snooper)
-        sleep(0.1)
-    end
-    return SystemSnoop.postprocess(snooper)
+    # sleep to get more samples
+    sleep(2)
 end
 
+virtual = getproperty.(trace, :virtual)
+resident = getproperty.(trace, :resident)
+
 plt = lineplot(
-      post.virtual; 
-      xlim = (0, 15), 
-      ylim = (0, 1.05 * maximum(post.virtual)), 
+      virtual; 
+      xlim = (0, length(trace)), 
+      ylim = (0, 1.05 * maximum(virtual)), 
       border = :ascii, 
       canvas = AsciiCanvas
 )
-lineplot!(plt, post.resident)
+lineplot!(plt, resident)
 ```
 Which generates the following plot
 ```
-              +----------------------------------------+
-   1910479872 |               .________________________|
-              |               .                        |
-              |               |                        |
-              |              .`                        |
-              |              .                         |
-              |              |              |""""""""""|
-              |             .`             |           |
-              |             .              |           |
-              |  \----------/              |           |
-              |                           |            |
-              |                           |            |
-              |                           |            |
-              |  ._______________________]             |
-              |                                        |
-            0 |                                        |
-              +----------------------------------------+
-              0                                       15
+                        +----------------------------------------+
+   1.9901607936000001e9 |            ____________________________|
+                        |           ,`                           |
+                        |           /                            |
+                        |          .`                            |
+                        |          .                             |
+                        |          /             /"""""""""""""""|
+                        |         ,`            .`               |
+                        |         |             .                |
+                        |   """"""`             /                |
+                        |                      ,`                |
+                        |                      |                 |
+                        |                     .`                 |
+                        |   __________________/                  |
+                        |                                        |
+                      0 |                                        |
+                        +----------------------------------------+
+                        0                                       13
 ```
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
