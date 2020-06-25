@@ -48,23 +48,23 @@ end
 #####
 
 """
-    prepare(x)
+    SystemSnoop.prepare(x)
 
 This method is optional.
 """
 prepare(::Any) = nothing
 
 """
-    measure(x)
+    SystemSnoop.measure(x)
 
 Perform a measurement for `x`.
 
-This method is required.
+This method is **required**.
 """
 measure(x::T) where {T} = error("Implement `measure` for $T")
 
 """
-    clean(x) -> Nothing
+    SystemSnoop.clean(x) -> Nothing
 
 Perform any cleanup needed by your measurement. This method is optional.
 """
@@ -102,16 +102,81 @@ function snooploop(nt::NamedTuple, sampler, canexit::Ref{Bool})
     return trace
 end
 
-prepare(nt::NamedTuple) = prepare.(Tuple(nt))
-measure(nt::NamedTuple{names}) where {names} = NamedTuple{names}(measure.(Tuple(nt)))
-clean(nt::NamedTuple) = clean.(Tuple(nt))
+"""
+    SystemSnoop.prepare(nt::NamedTuple) 
 
+Call `SystemSnoop.prepare` on each element in `nt`.
+"""
+function prepare(nt::NamedTuple) 
+    prepare.(Tuple(nt))
+    return nothing
+end
+
+"""
+    SystemSnoop.measure(nt::NamedTuple)::NamedTuple
+
+Call `SystemSnoop.measure` on each element of `nt`.
+The result is a `NamedTuple` with the same names as `nt`.
+The values of the returned object are the result from calling `SystemSnoop.measure` on the
+corresponding element of `nt`.
+"""
+measure(nt::NamedTuple{names}) where {names} = NamedTuple{names}(measure.(Tuple(nt)))
+
+"""
+    SystemSnoop.clean(nt::NamedTuple)::NamedTuple
+
+Call `SystemSnoop.clean` on each element of `nt`.
+"""
+function clean(nt::NamedTuple) 
+    clean.(Tuple(nt))
+    return nothing
+end
+
+"""
+    SystemSnoop.container(nt::NamedTuple)
+
+Return an empty `StructArray` that can hold elements of type `measure(nt)`.
+"""
 container(nt::NamedTuple) = StructArray{Base.promote_op(measure, typeof(nt))}(undef, 0)
 
 #####
 ##### Macro
 #####
 
+"""
+    trace = @snooped measurements::NamedTuple sampletime expr
+
+Run execute `expr`. Every `sampletime` period (described below), take a measurement from the
+`measurements` NamedTuple.
+
+When `expr` finished execution, return all measurements taken as a `StructArray`.
+
+Behavior of `sampletime`
+* `sampletine::Int` -  Sample every `sampletime` milliseconds.
+* `sampletime::Dates.TimePeriod` - Sample every `sampletime`.
+
+Example
+-------
+```julia
+juila> measurements = (
+    timestamp_a = SystemSnoop.Timestamp(),
+    timestamp_b = SystemSnoop.Timestamp(),
+);
+
+# Sample every 500 milliseconds
+julia> trace = @snooped measurements 500 run(`sleep 5`)
+6-element StructArray(::Array{Dates.DateTime,1}, ::Array{Dates.DateTime,1}) with eltype NamedTuple{(:timestamp_a, :timestamp_b),Tuple{Dates.DateTime,Dates.DateTime}}:
+ (timestamp_a = 2020-06-25T10:25:19.706, timestamp_b = 2020-06-25T10:25:19.706)
+ (timestamp_a = 2020-06-25T10:25:20.205, timestamp_b = 2020-06-25T10:25:20.205)
+ (timestamp_a = 2020-06-25T10:25:20.706, timestamp_b = 2020-06-25T10:25:20.706)
+ (timestamp_a = 2020-06-25T10:25:21.206, timestamp_b = 2020-06-25T10:25:21.206)
+ (timestamp_a = 2020-06-25T10:25:21.705, timestamp_b = 2020-06-25T10:25:21.705)
+ (timestamp_a = 2020-06-25T10:25:22.206, timestamp_b = 2020-06-25T10:25:22.206)
+
+julia> propertynames(measurements) == propertynames(trace)
+true
+```
+"""
 macro snooped(nt, sampler, expr)
     return quote
         canexit = Ref(false)
