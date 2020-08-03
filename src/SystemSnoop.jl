@@ -105,11 +105,11 @@ function snooploop(x, sampler, canexit::Ref{Bool})
 end
 
 """
-    SystemSnoop.prepare(nt::NamedTuple) 
+    SystemSnoop.prepare(nt::NamedTuple)
 
 Call `SystemSnoop.prepare` on each element in `nt`.
 """
-function prepare(nt::NamedTuple) 
+function prepare(nt::NamedTuple)
     prepare.(Tuple(nt))
     return nothing
 end
@@ -122,14 +122,17 @@ The result is a `NamedTuple` with the same names as `nt`.
 The values of the returned object are the result from calling `SystemSnoop.measure` on the
 corresponding element of `nt`.
 """
-measure(nt::NamedTuple{names}) where {names} = NamedTuple{names}(measure.(Tuple(nt)))
+@generated function measure(nt::NamedTuple{names}) where {names}
+    exprs = [:(measure(nt.$name)) for name in names]
+    return :(NamedTuple{names}(($(exprs...),)))
+end
 
 """
     SystemSnoop.clean(nt::NamedTuple)::NamedTuple
 
 Call `SystemSnoop.clean` on each element of `nt`.
 """
-function clean(nt::NamedTuple) 
+function clean(nt::NamedTuple)
     clean.(Tuple(nt))
     return nothing
 end
