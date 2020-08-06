@@ -109,9 +109,12 @@ end
 
 Call `SystemSnoop.prepare` on each element in `nt`.
 """
-function prepare(nt::NamedTuple)
-    prepare.(Tuple(nt))
-    return nothing
+@generated function prepare(nt::NamedTuple{names}) where {names}
+    exprs = [:(prepare(nt.$name)) for name in names]
+    return quote
+        $(exprs...)
+        return nothing
+    end
 end
 
 """
@@ -132,9 +135,12 @@ end
 
 Call `SystemSnoop.clean` on each element of `nt`.
 """
-function clean(nt::NamedTuple)
-    clean.(Tuple(nt))
-    return nothing
+@generated function clean(nt::NamedTuple{names}) where {names}
+    exprs = [:(clean(nt.$name)) for name in names]
+    return quote
+        $(exprs...)
+        return nothing
+    end
 end
 
 """
