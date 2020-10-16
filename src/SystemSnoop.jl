@@ -81,16 +81,16 @@ measure(::Timestamp) = now()
 ##### Snoop Loop
 #####
 
-function snooploop(x, milliseconds::Integer, canexit::Ref{Bool})
-    return snooploop(x, Dates.Millisecond(milliseconds), canexit)
+function snooploop(x, milliseconds::Integer, kw::NamedTuple, canexit::Ref{Bool})
+    return snooploop(x, Dates.Millisecond(milliseconds), kw, canexit)
 end
 
-function snooploop(x, sleeptime::TimePeriod, canexit::Ref{Bool})
-    return snooploop(x, SmartSample(sleeptime), canexit)
+function snooploop(x, sleeptime::TimePeriod, kw::NamedTuple, canexit::Ref{Bool})
+    return snooploop(x, SmartSample(sleeptime), kw, canexit)
 end
 
-function snooploop(x, sampler, canexit::Ref{Bool})
-    prepare(x)
+function snooploop(x, sampler, kw::NamedTuple, canexit::Ref{Bool})
+    prepare(x, kw)
     # Do the first measurement
     sleep(sampler)
 
@@ -104,13 +104,23 @@ function snooploop(x, sampler, canexit::Ref{Bool})
     return trace
 end
 
+names(x) = ()
+vnames(x) = Val(names(x))
+
+_prepare(x, kw::NamedTuple) = _prepare(x, kw, vnames(x))
+_prepare(x, kw::NamedTuple, ::Val{Tuple{}}) = prepare(x)
+@generated function _prepare(x, kw::NamedTuple, ::Val{names}) where {names}
+    exprs = [:(kw.$name) for name in names]
+    :(prepare(x, $(exprs...)))
+end
+
 """
     SystemSnoop.prepare(nt::NamedTuple)
 
 Call `SystemSnoop.prepare` on each element in `nt`.
 """
-@generated function prepare(nt::NamedTuple{names}) where {names}
-    exprs = [:(prepare(nt.$name)) for name in names]
+@generated function prepare(nt::NamedTuple{names}, kw::NamedTuple) where {names}
+    exprs = [:(_prepare(nt.$name, kw)) for name in names]
     return quote
         $(exprs...)
         return nothing
@@ -156,7 +166,7 @@ container(x::T) where {T} = Vector{Base.promote_op(measure, T)}(undef, 0)
 #####
 
 """
-    trace = @snooped measurements::NamedTuple sampletime expr
+    trace = @snooped measurements::NamedTuple sampletime [kw] expr
 
 Run execute `expr`. Every `sampletime` period (described below), take a measurement from the
 `measurements` NamedTuple.
@@ -190,9 +200,17 @@ true
 ```
 """
 macro snooped(nt, sampler, expr)
+    return snooped_impl(nt, sampler, (;), expr)
+end
+
+macro snooped(nt, sampler, kw, expr)
+    return snooped_impl(nt, sampler, kw, expr)
+end
+
+function snooped_impl(nt, sampler, kw, expr)
     return quote
         canexit = Ref(false)
-        task = @async snooploop($(esc(nt)), $(esc(sampler)), canexit)
+        task = @async snooploop($(esc(nt)), $(esc(sampler)), $(esc(kw)), canexit)
 
         try
             # Splice in the expression.
@@ -204,6 +222,18 @@ macro snooped(nt, sampler, expr)
 
         fetch(task)
     end
+end
+
+#####
+##### CMD function
+#####
+
+function snoop(cmd::Base.AbstractCmd, sampler, measurements, kw = (;))
+    process = run(cmd; wait = false)
+    pid = getpid(process)
+    kw = merge(kw, (; pid))
+    trace = @snooped measurements sampler kw wait(process)
+    return trace
 end
 
 end # module

@@ -76,6 +76,7 @@ end
         SystemSnoop.snooploop,
         typeof(measurements),
         typeof(1000),
+        NamedTuple{},
         Ref{Bool}
     )
     @test typeof(trace) == expected
