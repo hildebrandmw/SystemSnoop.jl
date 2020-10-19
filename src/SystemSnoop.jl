@@ -104,10 +104,10 @@ function snooploop(x, sampler, kw::NamedTuple, canexit::Ref{Bool})
     return trace
 end
 
-names(x) = ()
-vnames(x) = Val(names(x))
+argnames(x) = ()
+vargnames(x) = Val(argnames(x))
 
-_prepare(x, kw::NamedTuple) = _prepare(x, kw, vnames(x))
+_prepare(x, kw::NamedTuple) = _prepare(x, kw, vargnames(x))
 _prepare(x, kw::NamedTuple, ::Val{Tuple{}}) = prepare(x)
 @generated function _prepare(x, kw::NamedTuple, ::Val{names}) where {names}
     exprs = [:(kw.$name) for name in names]
