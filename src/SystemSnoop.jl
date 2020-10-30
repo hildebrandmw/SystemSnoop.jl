@@ -47,6 +47,9 @@ end
 ##### API
 #####
 
+struct StopMeasuringException <: Exception end
+stopmeasuring() = throw(StopMeasuringException())
+
 """
     SystemSnoop.prepare(x)
 
@@ -95,12 +98,20 @@ function snooploop(x, sampler, kw::NamedTuple, canexit::Ref{Bool})
     sleep(sampler)
 
     trace = container(x)
-    push!(trace, measure(x))
-    while !canexit[]
-        sleep(sampler)
+    try
         push!(trace, measure(x))
+        while !canexit[]
+            sleep(sampler)
+            push!(trace, measure(x))
+        end
+    catch e
+        if !(e <: StopMeasuring)
+            rethrow(e)
+        end
+    finally
+        clean(x)
     end
-    clean(x)
+
     return trace
 end
 
