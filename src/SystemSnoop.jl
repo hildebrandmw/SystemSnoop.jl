@@ -84,23 +84,23 @@ measure(::Timestamp) = now()
 ##### Snoop Loop
 #####
 
-function snooploop(x, milliseconds::Integer, kw::NamedTuple, canexit::Ref{Bool})
-    return snooploop(x, Dates.Millisecond(milliseconds), kw, canexit)
+function snooploop(x, milliseconds::Integer, kw::NamedTuple, canexit, firstsample)
+    return snooploop(x, Dates.Millisecond(milliseconds), kw, canexit, firstsample)
 end
 
-function snooploop(x, sleeptime::TimePeriod, kw::NamedTuple, canexit::Ref{Bool})
-    return snooploop(x, SmartSample(sleeptime), kw, canexit)
+function snooploop(x, sleeptime::TimePeriod, kw::NamedTuple, canexit, firstsample)
+    return snooploop(x, SmartSample(sleeptime), kw, canexit, firstsample)
 end
 
-function snooploop(x, sampler, kw::NamedTuple, canexit::Ref{Bool})
+function snooploop(x, sampler, kw::NamedTuple, canexit, firstsample)
     prepare(x, kw)
     # Do the first measurement
     sleep(sampler)
-
     trace = container(x)
     try
         push!(trace, measure(x))
-        while !canexit[]
+        firstsample[] = 1
+        while canexit[] == 0
             sleep(sampler)
             push!(trace, measure(x))
         end
@@ -110,8 +110,8 @@ function snooploop(x, sampler, kw::NamedTuple, canexit::Ref{Bool})
         end
     finally
         clean(x)
+        firstsample[] = 1
     end
-
     return trace
 end
 
@@ -218,17 +218,23 @@ macro snooped(nt, sampler, kw, expr)
     return snooped_impl(nt, sampler, kw, expr)
 end
 
+
 function snooped_impl(nt, sampler, kw, expr)
     return quote
-        canexit = Ref(false)
-        task = @async snooploop($(esc(nt)), $(esc(sampler)), $(esc(kw)), canexit)
+        canexit = Threads.Atomic{Int}(0)
+        firstsample = Threads.Atomic{Int}(1)
+        task = @async snooploop($(esc(nt)), $(esc(sampler)), $(esc(kw)), canexit, firstsample)
+        # Wait until the sampler begins sampling.
+        while firstsample[] == 0
+            sleep(0.001)
+        end
 
         try
             # Splice in the expression.
             $(esc(expr))
         finally
             # Expression done, let the snooper know to finish up.
-            canexit[] = true
+            canexit[] = 1
         end
 
         fetch(task)
@@ -240,10 +246,7 @@ end
 #####
 
 function snoop(cmd::Base.AbstractCmd, sampler, measurements, kw = (;))
-    process = run(cmd; wait = false)
-    pid = getpid(process)
-    kw = merge(kw, (; pid))
-    trace = @snooped measurements sampler kw wait(process)
+    trace = @snooped measurements sampler run(cmd; wait = true)
     return trace
 end
 

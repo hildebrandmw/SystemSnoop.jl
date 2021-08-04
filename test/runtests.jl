@@ -77,7 +77,8 @@ end
         typeof(measurements),
         typeof(1000),
         NamedTuple{},
-        Ref{Bool}
+        Threads.Atomic{Int},
+        Threads.Atomic{Int},
     )
     @test typeof(trace) == expected
 
