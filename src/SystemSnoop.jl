@@ -1,6 +1,6 @@
 module SystemSnoop
 
-export @snooped
+export @snooped, Timestamp, measure, prepare, clean, stopmeasuring, container
 
 using Dates
 import StructArrays: StructArray
