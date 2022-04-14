@@ -115,11 +115,11 @@ function snooploop(x, sampler, kw::NamedTuple, canexit, firstsample)
     return trace
 end
 
-argnames(x) = ()
+argnames(::Any) = ()
 vargnames(x) = Val(argnames(x))
 
 _prepare(x, kw::NamedTuple) = _prepare(x, kw, vargnames(x))
-_prepare(x, kw::NamedTuple, ::Val{Tuple{}}) = prepare(x)
+_prepare(x, ::NamedTuple, ::Val{Tuple{}}) = prepare(x)
 @generated function _prepare(x, kw::NamedTuple, ::Val{names}) where {names}
     exprs = [:(kw.$name) for name in names]
     :(prepare(x, $(exprs...)))
